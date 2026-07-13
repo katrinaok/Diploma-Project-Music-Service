@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. КОРИСТУВАЧІ ТА БЕЗПЕКА
+// ==========================================
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  setting   UserSetting?
+  sessions  Session[]
+  playlists Playlist[]
+  favorites Favorite[]
+  history   ListeningHistory[]
+  
+  followers Follower[] @relation("Followers")
+  following Follower[] @relation("Following")
+}
+
+model UserSetting {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  theme     String  @default("dark")
+  isPrivate Boolean @default(false)
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  refreshToken String   @unique
+  device       String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 2. МУЗИЧНИЙ КОНТЕНТ (Зі Spotify)
+// ==========================================
+model Track {
+  id            Int      @id @default(autoincrement())
+  spotifyId     String   @unique 
+  title         String
+  artistName    String
+  albumCoverUrl String?
+  previewUrl    String?  
+
+  playlists     PlaylistTrack[]
+  favorites     Favorite[]
+  history       ListeningHistory[]
+  tags          TrackTag[]
+}
+
+// ==========================================
+// 3. БІБЛІОТЕКА ТА ВЗАЄМОДІЯ
+// ==========================================
+model Playlist {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  description String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks      PlaylistTrack[]
+}
+
+model PlaylistTrack {
+  playlistId Int
+  trackId    Int
+  addedAt    DateTime @default(now())
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, trackId])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  trackId   Int
+  addedAt   DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+}
+
+// ==========================================
+// 4. АНАЛІТИКА ТА СОЦІАЛКА
+// ==========================================
+model ListeningHistory {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  trackId    Int
+  listenedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model Follower {
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+}
+
+// ==========================================
+// 5. КАСТОМІЗАЦІЯ (Теги)
+// ==========================================
+model Tag {
+  id     Int        @id @default(autoincrement())
+  name   String     @unique
+  color  String     @default("#8A2BE2") 
+
+  tracks TrackTag[]
+}
+
+model TrackTag {
+  trackId Int
+  tagId   Int
+
+  track   Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  tag     Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, tagId])
+}
