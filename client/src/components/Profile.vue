@@ -1,27 +1,31 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-8">
+  <div class="w-full p-8">
     <div class="max-w-4xl mx-auto space-y-6">
       
-      <!-- Шапка профілю -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Привіт, Користувачу! 👋</h1>
-          <p class="text-gray-500 text-sm mt-1">Твій музичний всесвіт MusicVerse</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('profile.hello') }}</h1>
+          <p class="text-gray-500 text-sm mt-1">{{ $t('profile.subtitle') }}</p>
         </div>
-        <button @click="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
-          Вийти
-        </button>
+        
+        <a 
+          href="/settings" 
+          class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+          :title="$t('settings.title')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </a>
       </div>
 
-      <!-- Секція контенту (Плейлисти) -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h2 class="text-lg font-bold text-gray-900 mb-4 text-purple-600">Мої плейлисти</h2>
-        
+        <h2 class="text-lg font-bold text-gray-900 mb-4 text-purple-600">{{ $t('profile.playlists') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <!-- Заглушка для пустого стану -->
           <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-purple-400 hover:bg-purple-50 cursor-pointer transition-all">
             <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-xl mb-2">+</div>
-            <p class="text-sm font-medium text-gray-700">Створити плейлист</p>
+            <p class="text-sm font-medium text-gray-700">{{ $t('profile.create_playlist') }}</p>
           </div>
         </div>
       </div>
@@ -32,16 +36,12 @@
 
 <script setup>
 import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 onMounted(() => {
   const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/';
-  }
+  if (!token) window.location.href = '/';
 });
-
-const logout = () => {
-  localStorage.removeItem('token');
-  window.location.href = '/';
-};
 </script>

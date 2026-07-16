@@ -11,5 +11,15 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
 
-  integrations: [vue()]
+  integrations: [vue({
+    appEntrypoint: '/src/plugins/vue-i18n.ts'
+  })],
+
+  i18n: {
+    defaultLocale: 'uk',
+    locales: ['uk', 'en'],
+    routing: {
+      prefixDefaultLocale: false
+    }
+  }
 });

@@ -1,0 +1,12 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Home from "../../components/Home.vue";
+import { useTranslations } from "../../i18n/utils";
+
+const lang = (Astro.currentLocale || 'uk') as 'uk' | 'en';
+const t = useTranslations(lang);
+---
+
+<Layout title={`MusicVerse - ${t('page.home')}`}>
+    <Home client:load />
+</Layout>

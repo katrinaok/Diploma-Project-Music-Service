@@ -1,14 +1,42 @@
 ---
+import LanguagePicker from '../components/LanguagePicker.astro';
+import { useTranslations } from '../i18n/utils';
+
+const lang = (Astro.currentLocale || 'uk') as 'uk' | 'en';
+const t = useTranslations(lang);
+const basePath = lang === 'uk' ? '' : `/${lang}`;
 ---
+
 <header class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+  <div
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
+  >
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">M</div>
-      <a href="/" class="text-xl font-extrabold text-gray-900 tracking-tight hover:text-purple-600 transition-colors">
+      <div
+        class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+      >
+        M
+      </div>
+      <a
+        href={`${basePath}/home`}
+        class="text-xl font-extrabold text-gray-900 tracking-tight hover:text-purple-600 transition-colors"
+      >
         MusicVerse
       </a>
     </div>
-    <nav>
-      </nav>
+
+    <nav class="flex items-center gap-6">
+      <a
+        href={`${basePath}/home`}
+        class="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+        >{t('nav.home')}</a
+      >
+      <a
+        href={`${basePath}/profile`}
+        class="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+        >{t('nav.profile')}</a
+      >
+      <LanguagePicker />
+    </nav>
   </div>
 </header>

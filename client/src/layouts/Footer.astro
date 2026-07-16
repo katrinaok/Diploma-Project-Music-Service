@@ -1,9 +1,13 @@
 ---
+import { useTranslations } from '../i18n/utils';
+
+const lang = (Astro.currentLocale || 'uk') as 'uk' | 'en';
+const t = useTranslations(lang);
 const year = new Date().getFullYear();
 ---
 <footer class="bg-white border-t border-gray-100 mt-auto">
   <div class="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
-    &copy; {year} MusicVerse. Всі права захищені. <br/>
-    <span class="text-xs text-gray-400">Дипломний проєкт</span>
+    &copy; {year} MusicVerse. {t('footer.rights')} <br/>
+    <span class="text-xs text-gray-400">{t('footer.project')}</span>
   </div>
 </footer>
