@@ -12,14 +12,6 @@ export default defineConfig({
   },
 
   integrations: [vue({
-    appEntrypoint: '/src/plugins/vue-i18n.ts'
-  })],
-
-  i18n: {
-    defaultLocale: 'uk',
-    locales: ['uk', 'en'],
-    routing: {
-      prefixDefaultLocale: false
-    }
-  }
+    appEntrypoint: '/src/utils/vue-i18n.ts'
+  })]
 });

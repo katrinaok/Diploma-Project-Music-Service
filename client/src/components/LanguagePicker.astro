@@ -1,31 +1,27 @@
 ---
-const currentLang = Astro.currentLocale || 'uk';
+const currentLang = Astro.params.lang || 'uk';
 const pathname = Astro.url.pathname;
 
 function getPathFor(lang: string) {
-  let pathWithoutLang = pathname;
-  if (pathname.startsWith('/en/')) {
-    pathWithoutLang = pathname.replace(/^\/en/, '');
-  } else if (pathname === '/en') {
-    pathWithoutLang = '/';
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] === 'uk' || segments[0] === 'en') {
+    segments.shift();
   }
-  
-  if (lang === 'uk') return pathWithoutLang || '/';
-  if (pathWithoutLang === '/') return `/${lang}`;
-  return `/${lang}${pathWithoutLang}`;
+  if (segments.length === 0) return `/${lang}`;
+  return `/${lang}/${segments.join('/')}`;
 }
 ---
 
-<div class="flex items-center bg-gray-100 rounded-lg p-1 text-xs font-bold">
+<div class="flex items-center bg-gray-100 dark:bg-[#231036] rounded-lg p-1 text-xs font-bold transition-colors">
   <a 
     href={getPathFor('uk')}
-    class={`px-2 py-1 rounded-md transition-colors ${currentLang === 'uk' ? 'bg-white shadow-sm text-purple-700' : 'text-gray-500 hover:text-gray-700'}`}
+    class={`px-2 py-1 rounded-md transition-colors ${currentLang === 'uk' ? 'bg-white dark:bg-[#32184d] shadow-sm text-purple-700 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
   >
     UA
   </a>
   <a 
     href={getPathFor('en')}
-    class={`px-2 py-1 rounded-md transition-colors ${currentLang === 'en' ? 'bg-white shadow-sm text-purple-700' : 'text-gray-500 hover:text-gray-700'}`}
+    class={`px-2 py-1 rounded-md transition-colors ${currentLang === 'en' ? 'bg-white dark:bg-[#32184d] shadow-sm text-purple-700 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
   >
     EN
   </a>

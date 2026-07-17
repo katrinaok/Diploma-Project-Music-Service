@@ -1,0 +1,73 @@
+{
+  "nav": {
+    "home": "Домівка",
+    "profile": "Мій Профіль"
+  },
+  "page": {
+    "login": "Вхід",
+    "home": "Домівка",
+    "profile": "Мій профіль",
+    "settings": "Налаштування"
+  },
+  "auth": {
+    "login_title": "З поверненням!",
+    "register_title": "Створити акаунт",
+    "subtitle": "MusicVerse чекає на тебе",
+    "username": "Ім'я користувача",
+    "email": "Email адреса",
+    "password": "Пароль",
+    "password_confirm": "Підтвердіть пароль",
+    "remember_me": "Запам'ятати мене",
+    "btn_login": "Увійти",
+    "btn_register": "Зареєструватися",
+    "toggle_to_register": "Немає акаунту? Створити",
+    "toggle_to_login": "Вже є акаунт? Увійти",
+    "err_password_mismatch": "Паролі не збігаються",
+    "err_something_wrong": "Щось пішло не так",
+    "err_server": "Помилка з'єднання з сервером",
+    "success_register": "Акаунт створено! Заходимо...",
+    "msg_login_manual": "Будь ласка, увійдіть вручну"
+  },
+  "home": {
+    "title": "Головна стрічка 🎵",
+    "subtitle": "Знайди свої улюблені треки, слухай прев'ю та досліджуй нову музику",
+    "search_title": "Знайти музику",
+    "search_placeholder": "Наприклад: Falling in Reverse...",
+    "search_btn": "Шукати",
+    "searching": "Шукаємо...",
+    "preview_unavailable": "Прев'ю недоступне",
+    "add_to_playlist": "Додати в плейлист"
+  },
+  "profile": {
+    "title": "Мій Профіль",
+    "hello": "Привіт, Користувачу! 👋",
+    "subtitle": "Твій особистий музичний простір",
+    "playlists": "Мої плейлисти",
+    "create_playlist": "Створити плейлист"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "subtitle": "Керування акаунтом та виглядом MusicVerse",
+    "to_profile": "До профілю",
+    "security": "Безпека та акаунт",
+    "change_password": "Змінити пароль",
+    "new_password": "Новий пароль",
+    "update": "Оновити",
+    "appearance": "Оформлення",
+    "dark_theme": "Темна тема",
+    "dark_theme_desc": "Перемкнути застосунок у нічний режим",
+    "switch_account": "Змінити акаунт",
+    "logout": "Вийти",
+    "danger_zone": "Небезпечна зона",
+    "delete_account": "Видалити акаунт",
+    "delete_account_desc": "Усі твої дані та плейлисти буде видалено назавжди.",
+    "delete": "Видалити",
+    "delete_confirm": "Ти дійсно хочеш назавжди видалити цей акаунт? Цю дію неможливо скасувати.",
+    "cancel": "Скасувати",
+    "delete_sent": "Запит на видалення надіслано (заглушка)"
+  },
+  "footer": {
+    "rights": "Всі права захищені.",
+    "project": "Дипломний проєкт"
+  }
+}

@@ -76,6 +76,26 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   res.json({ message: 'Вхід успішний!', token });
 });
 
+// Роут видалення акаунту
+app.delete('/api/auth/delete', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret') as { userId: number };
+
+    await prisma.user.delete({
+      where: { id: decoded.userId }
+    });
+
+    res.json({ message: 'Акаунт успішно видалено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка при видаленні акаунту' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🚀 Сервер летить на http://localhost:${PORT}`);

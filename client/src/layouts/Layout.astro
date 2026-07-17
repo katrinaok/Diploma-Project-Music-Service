@@ -4,7 +4,7 @@ import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 
 const { title = "MusicVerse" } = Astro.props;
-const lang = Astro.currentLocale || "uk";
+const lang = Astro.params.lang || "uk";
 ---
 
 <html lang={lang}>
@@ -12,8 +12,24 @@ const lang = Astro.currentLocale || "uk";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
+      })();
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
   </head>
-  <body class="bg-gray-50 antialiased min-h-screen flex flex-col">
+  <body class="bg-gray-50 dark:bg-[#0c0514] text-gray-900 dark:text-gray-100 antialiased min-h-screen flex flex-col transition-colors duration-300">
     <Header />
 
     <main class="flex-grow">

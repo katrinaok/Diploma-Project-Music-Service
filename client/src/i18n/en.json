@@ -1,0 +1,73 @@
+{
+  "nav": {
+    "home": "Home",
+    "profile": "My Profile"
+  },
+  "page": {
+    "login": "Login",
+    "home": "Home",
+    "profile": "My Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login_title": "Welcome back!",
+    "register_title": "Create account",
+    "subtitle": "MusicVerse is waiting for you",
+    "username": "Username",
+    "email": "Email address",
+    "password": "Password",
+    "password_confirm": "Confirm password",
+    "remember_me": "Remember me",
+    "btn_login": "Log in",
+    "btn_register": "Sign up",
+    "toggle_to_register": "No account? Create one",
+    "toggle_to_login": "Already have an account? Log in",
+    "err_password_mismatch": "Passwords do not match",
+    "err_something_wrong": "Something went wrong",
+    "err_server": "Server connection error",
+    "success_register": "Account created! Logging in...",
+    "msg_login_manual": "Please log in manually"
+  },
+  "home": {
+    "title": "Main Feed 🎵",
+    "subtitle": "Find your favorite tracks, listen to previews and explore new music",
+    "search_title": "Search Music",
+    "search_placeholder": "E.g.: Falling in Reverse...",
+    "search_btn": "Search",
+    "searching": "Searching...",
+    "preview_unavailable": "Preview unavailable",
+    "add_to_playlist": "Add to playlist"
+  },
+  "profile": {
+    "title": "My Profile",
+    "hello": "Hello, User! 👋",
+    "subtitle": "Your personal music space",
+    "playlists": "My playlists",
+    "create_playlist": "Create playlist"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage account and appearance of MusicVerse",
+    "to_profile": "To profile",
+    "security": "Security and account",
+    "change_password": "Change password",
+    "new_password": "New password",
+    "update": "Update",
+    "appearance": "Appearance",
+    "dark_theme": "Dark theme",
+    "dark_theme_desc": "Switch app to night mode",
+    "switch_account": "Switch account",
+    "logout": "Log out",
+    "danger_zone": "Danger zone",
+    "delete_account": "Delete account",
+    "delete_account_desc": "All your data and playlists will be permanently deleted.",
+    "delete": "Delete",
+    "delete_confirm": "Are you sure you want to permanently delete this account? This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete_sent": "Delete request sent (stub)"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "project": "Diploma Project"
+  }
+}

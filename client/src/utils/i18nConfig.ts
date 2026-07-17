@@ -1,5 +1,5 @@
-import ukTranslations from './uk';
-import enTranslations from './en';
+import ukTranslations from '../i18n/uk.json';
+import enTranslations from '../i18n/en.json';
 
 export const languages = {
   uk: 'UA',
