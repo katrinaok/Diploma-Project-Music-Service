@@ -14,7 +14,8 @@
     "register_title": "Create account",
     "subtitle": "MusicVerse is waiting for you",
     "username": "Username",
-    "email": "Email address",
+    "email": "Email Address",
+    "login_identifier": "Email or Username",
     "password": "Password",
     "password_confirm": "Confirm password",
     "remember_me": "Remember me",
@@ -40,7 +41,8 @@
   },
   "profile": {
     "title": "My Profile",
-    "hello": "Hello, User! 👋",
+    "hello": "Hello, {name}! 👋",
+    "default_user": "User",
     "subtitle": "Your personal music space",
     "playlists": "My playlists",
     "create_playlist": "Create playlist"
@@ -64,7 +66,10 @@
     "delete": "Delete",
     "delete_confirm": "Are you sure you want to permanently delete this account? This action cannot be undone.",
     "cancel": "Cancel",
-    "delete_sent": "Delete request sent (stub)"
+    "delete_sent": "Delete request sent (stub)",
+    "success_password_update": "Password successfully updated!",
+    "err_password_short": "Password must be at least 6 characters",
+    "err_something_wrong": "Something went wrong"
   },
   "footer": {
     "rights": "All rights reserved.",

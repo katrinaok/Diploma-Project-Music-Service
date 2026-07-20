@@ -1,0 +1,67 @@
+---
+const currentLang = Astro.params.lang || 'uk';
+const pathname = Astro.url.pathname;
+
+function getPathFor(lang: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] === 'uk' || segments[0] === 'en') {
+    segments.shift();
+  }
+  if (segments.length === 0) return `/${lang}`;
+  return `/${lang}/${segments.join('/')}`;
+}
+---
+
+<div class="relative flex items-center bg-gray-100 dark:bg-[#231036] rounded-lg p-1 text-xs font-bold transition-colors w-fit">
+  <!-- Animated Slider Background -->
+  <div id="lang-slider" class={`absolute top-1 bottom-1 w-8 bg-white dark:bg-[#32184d] rounded-md shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${currentLang === 'uk' ? 'translate-x-0' : 'translate-x-8'}`}></div>
+
+  <a 
+    href={getPathFor('uk')}
+    data-lang="uk"
+    class={`lang-btn relative z-10 w-8 py-1 flex items-center justify-center transition-colors duration-300 ${currentLang === 'uk' ? 'text-purple-700 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+  >
+    UA
+  </a>
+  <a 
+    href={getPathFor('en')}
+    data-lang="en"
+    class={`lang-btn relative z-10 w-8 py-1 flex items-center justify-center transition-colors duration-300 ${currentLang === 'en' ? 'text-purple-700 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+  >
+    EN
+  </a>
+</div>
+
+<script>
+  const btns = document.querySelectorAll('.lang-btn');
+  const slider = document.getElementById('lang-slider');
+  
+  btns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const lang = btn.getAttribute('data-lang');
+      const href = btn.getAttribute('href');
+
+      if (lang === 'uk') {
+        slider?.classList.remove('translate-x-8');
+        slider?.classList.add('translate-x-0');
+      } else {
+        slider?.classList.remove('translate-x-0');
+        slider?.classList.add('translate-x-8');
+      }
+
+      btns.forEach(b => {
+        b.classList.remove('text-purple-700', 'dark:text-purple-400');
+        b.classList.add('text-gray-500', 'dark:text-gray-400');
+      });
+      btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+      btn.classList.add('text-purple-700', 'dark:text-purple-400');
+      
+      if (href) {
+        setTimeout(() => {
+          window.location.href = href;
+        }, 150);
+      }
+    });
+  });
+</script>

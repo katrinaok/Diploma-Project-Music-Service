@@ -4,7 +4,7 @@
       
       <div class="bg-white dark:bg-[#170a24] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#32184d] flex justify-between items-center transition-colors">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $t('profile.hello') }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $t('profile.hello', { name: username || $t('profile.default_user') }) }}</h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ $t('profile.subtitle') }}</p>
         </div>
         
@@ -35,13 +35,28 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
+const props = defineProps({ lang: String, initialUsername: String });
+const { t, locale } = useI18n();
+if (props.lang) locale.value = props.lang;
+
+const username = ref(props.initialUsername || '');
 
 onMounted(() => {
   const token = localStorage.getItem('token');
-  if (!token) window.location.href = '/';
+  if (!token) {
+    window.location.href = '/';
+    return;
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.username) {
+      username.value = payload.username;
+    }
+  } catch (e) {
+    // console.error('Failed to decode token');
+  }
 });
 </script>

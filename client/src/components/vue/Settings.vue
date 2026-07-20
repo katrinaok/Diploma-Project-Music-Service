@@ -18,11 +18,18 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('settings.change_password') }}</label>
-              <div class="flex gap-3">
-                <input type="password" :placeholder="$t('settings.new_password')" class="flex-1 px-4 py-2 border border-gray-200 dark:border-[#432166] bg-white dark:bg-[#231036] text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" />
-                <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">
-                  {{ $t('settings.update') }}
-                </button>
+              <div class="flex flex-col gap-2">
+                <div class="flex gap-3">
+                  <input v-model="newPassword" type="password" :placeholder="$t('settings.new_password')" class="flex-1 px-4 py-2 border border-gray-200 dark:border-[#432166] bg-white dark:bg-[#231036] text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" />
+                  <button @click="updatePassword" :disabled="isUpdatingPassword || !newPassword" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2">
+                    <svg v-if="isUpdatingPassword" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ $t('settings.update') }}
+                  </button>
+                </div>
+                <p v-if="passwordMessage" :class="passwordError ? 'text-red-500' : 'text-green-500'" class="text-sm font-medium">{{ passwordMessage }}</p>
               </div>
             </div>
           </div>
@@ -100,29 +107,65 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { isDark, toggleTheme, initTheme } from '../../store/theme';
 
+const props = defineProps({ lang: String });
 const { t, locale } = useI18n();
-const isDark = ref(false);
+if (props.lang) locale.value = props.lang;
+
 const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
+
+const newPassword = ref('');
+const isUpdatingPassword = ref(false);
+const passwordMessage = ref('');
+const passwordError = ref(false);
+
+const updatePassword = async () => {
+  if (!newPassword.value || newPassword.value.length < 6) {
+    passwordError.value = true;
+    passwordMessage.value = t('settings.err_password_short') || 'Password too short';
+    return;
+  }
+  
+  isUpdatingPassword.value = true;
+  passwordMessage.value = '';
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch('http://localhost:5001/api/auth/password', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ newPassword: newPassword.value })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      passwordError.value = false;
+      passwordMessage.value = t('settings.success_password_update') || 'Password updated';
+      newPassword.value = '';
+    } else {
+      passwordError.value = true;
+      passwordMessage.value = data.error || t('settings.err_something_wrong') || 'Error';
+    }
+  } catch (error) {
+    passwordError.value = true;
+    passwordMessage.value = t('settings.err_something_wrong') || 'Error';
+  } finally {
+    isUpdatingPassword.value = false;
+    setTimeout(() => { passwordMessage.value = '' }, 3000);
+  }
+};
 
 onMounted(() => {
   const token = localStorage.getItem('token');
   if (!token) window.location.href = '/';
-  
-  isDark.value = document.documentElement.classList.contains('dark');
+  initTheme();
 });
-
-const toggleTheme = () => {
-  isDark.value = !isDark.value;
-  if (isDark.value) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-};
 
 const confirmDelete = () => {
   isDeleteModalOpen.value = true;
@@ -142,6 +185,7 @@ const executeDelete = async () => {
     if (res.ok) {
       localStorage.removeItem('token');
       localStorage.removeItem('theme');
+      document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       window.location.href = `/${locale.value}`;
     } else {
       alert(t('settings.err_something_wrong') || 'Error');
@@ -156,6 +200,7 @@ const executeDelete = async () => {
 
 const logout = () => {
   localStorage.removeItem('token');
+  document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   window.location.href = '/';
 };
 </script>

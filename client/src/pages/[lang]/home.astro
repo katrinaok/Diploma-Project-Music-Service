@@ -1,13 +1,7 @@
 ---
-
-export function getStaticPaths() {
-  return [
-    { params: { lang: 'uk' } },
-    { params: { lang: 'en' } }
-  ];
-}
 import Layout from "../../layouts/Layout.astro";
-import Home from "../../components/Home.vue";
+import Home from "../../components/vue/Home.vue";
+import "../../styles/global.css";
 import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
@@ -15,5 +9,5 @@ const t = useTranslations(lang);
 ---
 
 <Layout title={`MusicVerse - ${t('page.home')}`}>
-    <Home client:load />
+    <Home lang={lang} client:load />
 </Layout>

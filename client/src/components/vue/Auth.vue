@@ -25,11 +25,18 @@
               :placeholder="$t('auth.username')" />
           </div>
 
-          <div>
+          <div v-if="!isLogin">
             <label for="email-address" class="sr-only">{{ $t('auth.email') }}</label>
             <input v-model="form.email" id="email-address" name="email" type="email" required
               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-[#432166] bg-white dark:bg-[#231036] placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
               :placeholder="$t('auth.email')" />
+          </div>
+
+          <div v-else>
+            <label for="login-identifier" class="sr-only">{{ $t('auth.login_identifier') }}</label>
+            <input v-model="form.login" id="login-identifier" name="login" type="text" required
+              class="appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-[#432166] bg-white dark:bg-[#231036] placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              :placeholder="$t('auth.login_identifier')" />
           </div>
 
           <div>
@@ -78,10 +85,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+const props = defineProps({ lang: String });
 const { t, locale } = useI18n();
+if (props.lang) locale.value = props.lang;
 
 const isLogin = ref(true);
 const message = ref('');
@@ -91,8 +100,17 @@ const rememberMe = ref(false);
 const form = reactive({
   username: '',
   email: '',
+  login: '',
   password: '',
   passwordConfirm: ''
+});
+
+onMounted(() => {
+  const savedLogin = localStorage.getItem('savedLogin');
+  if (savedLogin) {
+    form.login = savedLogin;
+    rememberMe.value = true;
+  }
 });
 
 const toggleMode = () => {
@@ -134,6 +152,17 @@ const handleSubmit = async () => {
     if (isLogin.value && data.token) {
       const storage = rememberMe.value ? localStorage : sessionStorage;
       storage.setItem('token', data.token);
+      
+      if (rememberMe.value) {
+        localStorage.setItem('savedLogin', form.login);
+      } else {
+        localStorage.removeItem('savedLogin');
+      }
+
+      try {
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        if (payload.username) document.cookie = `username=${encodeURIComponent(payload.username)}; path=/; max-age=31536000`;
+      } catch (e) {}
       window.location.href = `/${locale.value}/home`;
     } 
     // РЕЄСТРАЦІЯ (Автологін)
@@ -150,6 +179,10 @@ const handleSubmit = async () => {
 
       if (loginResponse.ok && loginData.token) {
         localStorage.setItem('token', loginData.token);
+        try {
+          const payload = JSON.parse(atob(loginData.token.split('.')[1]));
+          if (payload.username) document.cookie = `username=${encodeURIComponent(payload.username)}; path=/; max-age=31536000`;
+        } catch (e) {}
         window.location.href = `/${locale.value}/home`;
       } else {
         isLogin.value = true;

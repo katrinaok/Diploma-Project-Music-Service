@@ -63,15 +63,23 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
 // Роут логіну
 app.post('/api/auth/login', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { login, password, email } = req.body;
+  const identifier = login || email;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    }
+  });
   if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(401).json({ error: 'Невірний пароль' });
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'supersecret', { expiresIn: '1h' });
+  const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET || 'supersecret', { expiresIn: '1h' });
 
   res.json({ message: 'Вхід успішний!', token });
 });
@@ -83,7 +91,8 @@ app.delete('/api/auth/delete', async (req: Request, res: Response) => {
     if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret') as { userId: number };
+    if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
 
     await prisma.user.delete({
       where: { id: decoded.userId }
@@ -93,6 +102,35 @@ app.delete('/api/auth/delete', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка при видаленні акаунту' });
+  }
+});
+
+// Роут оновлення пароля
+app.put('/api/auth/password', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Пароль має бути щонайменше 6 символів' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ message: 'Пароль успішно оновлено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка оновлення пароля' });
   }
 });
 

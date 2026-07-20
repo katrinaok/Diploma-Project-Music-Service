@@ -1,20 +1,14 @@
 ---
-
-export function getStaticPaths() {
-  return [
-    { params: { lang: 'uk' } },
-    { params: { lang: 'en' } }
-  ];
-}
 import Layout from "../../layouts/Layout.astro";
-import Profile from "../../components/Profile.vue";
+import Profile from "../../components/vue/Profile.vue";
 import "../../styles/global.css";
 import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
+const username = Astro.cookies.get('username')?.value || '';
 ---
 
 <Layout title={`MusicVerse - ${t('page.profile')}`}>
-    <Profile client:load />
+    <Profile lang={lang} initialUsername={username} client:load />
 </Layout>
