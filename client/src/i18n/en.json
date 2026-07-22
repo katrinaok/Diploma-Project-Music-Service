@@ -7,7 +7,8 @@
     "login": "Login",
     "home": "Home",
     "profile": "My Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "playlist": "Playlist"
   },
   "auth": {
     "login_title": "Welcome back!",
@@ -45,7 +46,30 @@
     "default_user": "User",
     "subtitle": "Your personal music space",
     "playlists": "My playlists",
-    "create_playlist": "Create playlist"
+    "create_playlist": "Create playlist",
+    "update_photo": "Update photo",
+    "edit_name": "Edit name",
+    "playlist_name_label": "Name",
+    "playlist_name_placeholder": "My awesome playlist",
+    "playlist_desc_label": "Description (optional)",
+    "playlist_desc_placeholder": "What is this playlist about?",
+    "btn_cancel": "Cancel",
+    "btn_save": "Save"
+  },
+  "playlist": {
+    "type": "Playlist",
+    "tracks_count": "tracks",
+    "tracks": "Tracks",
+    "add_tracks": "Add tracks",
+    "empty_title": "It's empty here",
+    "empty_desc": "This playlist is waiting for your favorite songs. Find them on the search page and save them here!",
+    "find_music": "Find music",
+    "error_fetch": "Failed to load playlist",
+    "public": "Public",
+    "private": "Private",
+    "delete": "Delete playlist",
+    "confirm_delete": "Are you sure you want to delete this playlist? This action cannot be undone.",
+    "back_to_profile": "Back to profile"
   },
   "settings": {
     "title": "Settings",

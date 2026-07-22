@@ -1,0 +1,14 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PlaylistDetail from "../../../components/vue/PlaylistDetail.vue";
+import "../../../styles/global.css";
+import { useTranslations } from "../../../utils/i18n";
+
+const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
+const id = Astro.params.id as string;
+const t = useTranslations(lang);
+---
+
+<Layout title={`MusicVerse - ${t('page.playlist')}`}>
+    <PlaylistDetail lang={lang} playlistId={id} client:load />
+</Layout>

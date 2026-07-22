@@ -7,7 +7,8 @@
     "login": "Вхід",
     "home": "Домівка",
     "profile": "Мій профіль",
-    "settings": "Налаштування"
+    "settings": "Налаштування",
+    "playlist": "Плейлист"
   },
   "auth": {
     "login_title": "З поверненням!",
@@ -45,7 +46,30 @@
     "default_user": "Користувачу",
     "subtitle": "Твій особистий музичний простір",
     "playlists": "Мої плейлисти",
-    "create_playlist": "Створити плейлист"
+    "create_playlist": "Створити плейлист",
+    "update_photo": "Оновити фото",
+    "edit_name": "Редагувати ім'я",
+    "playlist_name_label": "Назва",
+    "playlist_name_placeholder": "Мій крутий плейлист",
+    "playlist_desc_label": "Опис (необов'язково)",
+    "playlist_desc_placeholder": "Про що цей плейлист?",
+    "btn_cancel": "Скасувати",
+    "btn_save": "Зберегти"
+  },
+  "playlist": {
+    "type": "Плейлист",
+    "tracks_count": "треків",
+    "tracks": "Треки",
+    "add_tracks": "Додати треки",
+    "empty_title": "Тут поки що порожньо",
+    "empty_desc": "Цей плейлист чекає на твої улюблені пісні. Знайди їх на сторінці пошуку та збережи сюди!",
+    "find_music": "Знайти музику",
+    "error_fetch": "Не вдалося завантажити плейлист",
+    "public": "Публічний",
+    "private": "Приватний",
+    "delete": "Видалити плейлист",
+    "confirm_delete": "Ви впевнені, що хочете видалити цей плейлист? Цю дію неможливо скасувати.",
+    "back_to_profile": "Повернутися до профілю"
   },
   "settings": {
     "title": "Налаштування",

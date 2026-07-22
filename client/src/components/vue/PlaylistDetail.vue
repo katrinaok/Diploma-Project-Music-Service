@@ -1,0 +1,331 @@
+<template>
+  <div class="w-full p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+      
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex justify-center py-20">
+        <svg class="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-3xl text-center">
+        {{ error }}
+      </div>
+
+      <template v-else-if="playlist">
+        <!-- Back Button -->
+        <a :href="`/${$i18n.locale}/profile`" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          {{ $t('playlist.back_to_profile') }}
+        </a>
+
+        <!-- Playlist Header -->
+        <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
+          
+          <!-- Playlist Cover -->
+          <div class="relative w-40 h-40 md:w-56 md:h-56 rounded-2xl shadow-lg flex-shrink-0 group overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600">
+            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover" />
+            <div v-else class="w-full h-full flex items-center justify-center text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
+            
+            <label class="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span class="text-sm font-medium">Змінити фото</span>
+              <input type="file" class="hidden" accept="image/*" @change="handleCoverUpload" />
+            </label>
+          </div>
+
+          <!-- Playlist Info -->
+          <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-2">
+            
+            <div class="flex items-center justify-center md:justify-start gap-2 mb-4">
+              <div class="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full">
+                {{ $t('playlist.type') }}
+              </div>
+              
+              <button 
+                @click="togglePublicStatus"
+                class="inline-flex items-center gap-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-gray-200 dark:border-gray-700"
+                :class="playlist.isPublic ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800'"
+              >
+                <svg v-if="playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {{ playlist.isPublic ? $t('playlist.public') : $t('playlist.private') }}
+              </button>
+            </div>
+            
+            <!-- Editable Title -->
+            <div v-if="isEditingTitle" class="mb-4 flex items-center justify-center md:justify-start gap-2">
+              <input 
+                v-model="editTitleValue" 
+                @keyup.enter="saveTitle"
+                @keyup.esc="cancelEditTitle"
+                ref="titleInputRef"
+                type="text" 
+                class="text-3xl md:text-5xl font-bold bg-transparent border-b-2 border-purple-500 focus:outline-none text-gray-900 dark:text-white w-full max-w-md"
+              />
+              <button @click="saveTitle" class="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <button @click="cancelEditTitle" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div v-else class="group flex items-center justify-center md:justify-start gap-3 mb-4">
+              <h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white line-clamp-2">
+                {{ playlist.title }}
+              </h1>
+              <button @click="startEditingTitle" class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-purple-600 transition-all rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+            
+            <p v-if="playlist.description" class="text-gray-600 dark:text-gray-400 mb-6 text-sm md:text-base">
+              {{ playlist.description }}
+            </p>
+            
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-medium text-gray-500 dark:text-gray-400 mt-6">
+              <div class="flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {{ new Date(playlist.createdAt).toLocaleDateString() }}
+              </div>
+              <div class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+              <div>
+                {{ playlist.tracks.length }} {{ $t('playlist.tracks_count') }}
+              </div>
+              <div class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+              <button 
+                @click="deletePlaylist"
+                class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors"
+                :title="$t('playlist.delete')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {{ $t('playlist.delete') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tracks List -->
+        <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors mt-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $t('playlist.tracks') }}</h2>
+            <a :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+              {{ $t('playlist.add_tracks') }}
+            </a>
+          </div>
+
+          <div v-if="playlist.tracks.length === 0" class="text-center py-12 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
+            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{{ $t('playlist.empty_title') }}</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">{{ $t('playlist.empty_desc') }}</p>
+            <a :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-xl transition-colors">
+              {{ $t('playlist.find_music') }}
+            </a>
+          </div>
+          
+          <div v-else class="space-y-2">
+            <!-- List of tracks will go here when implemented -->
+          </div>
+        </div>
+      </template>
+
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const props = defineProps({ 
+  lang: String,
+  playlistId: {
+    type: String,
+    required: true
+  }
+});
+const { t, locale } = useI18n();
+if (props.lang) locale.value = props.lang;
+
+const playlist = ref(null);
+const isLoading = ref(true);
+const error = ref(null);
+const playlistCoverUrl = ref(null);
+
+const isEditingTitle = ref(false);
+const editTitleValue = ref('');
+const titleInputRef = ref(null);
+
+const handleCoverUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      playlistCoverUrl.value = e.target.result;
+      localStorage.setItem(`playlistCover_${props.playlistId}`, e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const startEditingTitle = () => {
+  editTitleValue.value = playlist.value.title;
+  isEditingTitle.value = true;
+  // Use timeout to wait for DOM update before focusing
+  setTimeout(() => {
+    if (titleInputRef.value) titleInputRef.value.focus();
+  }, 50);
+};
+
+const cancelEditTitle = () => {
+  isEditingTitle.value = false;
+};
+
+const saveTitle = async () => {
+  if (!editTitleValue.value.trim() || editTitleValue.value.trim() === playlist.value.title) {
+    isEditingTitle.value = false;
+    return;
+  }
+  
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const newTitle = editTitleValue.value.trim();
+  
+  try {
+    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
+      method: 'PUT',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title: newTitle })
+    });
+    
+    if (response.ok) {
+      playlist.value.title = newTitle;
+    }
+  } catch (err) {
+    console.error('Failed to update playlist title:', err);
+  } finally {
+    isEditingTitle.value = false;
+  }
+};
+
+const togglePublicStatus = async () => {
+  const token = localStorage.getItem('token');
+  if (!token || !playlist.value) return;
+
+  const newStatus = !playlist.value.isPublic;
+  
+  try {
+    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
+      method: 'PUT',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ isPublic: newStatus })
+    });
+    
+    if (response.ok) {
+      playlist.value.isPublic = newStatus;
+    }
+  } catch (err) {
+    console.error('Failed to update playlist public status:', err);
+  }
+};
+
+const deletePlaylist = async () => {
+  if (!confirm(t('playlist.confirm_delete'))) return;
+
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      localStorage.removeItem(`playlistCover_${props.playlistId}`);
+      window.location.href = `/${locale.value}/profile`;
+    } else {
+      console.error('Failed to delete playlist');
+      alert(t('playlist.error_fetch'));
+    }
+  } catch (err) {
+    console.error('Failed to delete playlist:', err);
+  }
+};
+
+onMounted(async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/';
+    return;
+  }
+  
+  playlistCoverUrl.value = localStorage.getItem(`playlistCover_${props.playlistId}`);
+
+  try {
+    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+      return;
+    }
+    
+    if (response.ok) {
+      const data = await response.json();
+      playlist.value = data.playlist;
+    } else {
+      const errorData = await response.json();
+      error.value = errorData.error || t('playlist.error_fetch');
+    }
+  } catch (e) {
+    console.error('Failed to fetch playlist:', e);
+    error.value = t('playlist.error_fetch');
+  } finally {
+    isLoading.value = false;
+  }
+});
+</script>

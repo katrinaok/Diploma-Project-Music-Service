@@ -134,6 +134,187 @@ app.put('/api/auth/password', async (req: Request, res: Response) => {
   }
 });
 
+// ==========================================
+// PLAYLIST ROUTES
+// ==========================================
+
+// Middleware для перевірки JWT токену
+const authenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+    // @ts-ignore
+    req.user = decoded; // Додаємо дані користувача в об'єкт req
+    next();
+  } catch (error) {
+    console.error('Помилка валідації токену:', error);
+    return res.status(401).json({ error: 'Токен недійсний або його термін дії минув' });
+  }
+};
+
+// Отримати всі плейлисти поточного користувача
+app.get('/api/playlists', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+
+    const playlists = await prisma.playlist.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ status: 'success', playlists });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання плейлистів' });
+  }
+});
+
+// Створити новий плейлист
+app.post('/api/playlists', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+
+    const { title, description } = req.body;
+    
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ error: 'Назва плейлиста обов\'язкова' });
+    }
+
+    const playlist = await prisma.playlist.create({
+      data: {
+        userId,
+        title: title.trim(),
+        description: description || null,
+        isPublic: true // За замовчуванням робимо публічним (можна змінити потім)
+      }
+    });
+
+    res.status(201).json({ status: 'success', playlist, message: 'Плейлист створено!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка створення плейлиста' });
+  }
+});
+
+// Отримати плейлист за ID
+app.get('/api/playlists/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId },
+      include: {
+        tracks: {
+          include: {
+            track: true
+          },
+          orderBy: { addedAt: 'desc' }
+        }
+      }
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    // Якщо плейлист приватний і не належить користувачу
+    if (!playlist.isPublic && playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
+    }
+
+    res.json({ status: 'success', playlist });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання плейлиста' });
+  }
+});
+
+// Оновити плейлист
+app.put('/api/playlists/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+    const { title, isPublic } = req.body;
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    if (playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
+    }
+
+    const updatedPlaylist = await prisma.playlist.update({
+      where: { id: playlistId },
+      data: {
+        title: title !== undefined ? title?.trim() : playlist.title,
+        isPublic: isPublic !== undefined ? Boolean(isPublic) : playlist.isPublic
+      }
+    });
+
+    res.json({ status: 'success', playlist: updatedPlaylist });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка оновлення плейлиста' });
+  }
+});
+
+// Видалити плейлист
+app.delete('/api/playlists/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    if (playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
+    }
+
+    await prisma.playlist.delete({
+      where: { id: playlistId }
+    });
+
+    res.json({ status: 'success', message: 'Плейлист видалено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка видалення плейлиста' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🚀 Сервер летить на http://localhost:${PORT}`);
