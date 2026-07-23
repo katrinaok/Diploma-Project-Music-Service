@@ -1,3 +1,87 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
+
+:root {
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f9fafb;
+  --bg-surface-alt: #f3f4f6;
+  --border-subtle: #f3f4f6;
+  --border-strong: #e5e7eb;
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+
+  --text-accent: #9333ea;
+  --text-accent-hover: #7e22ce;
+
+  --bg-success-subtle: #f0fdf4;
+  --text-success: #16a34a;
+  --border-success-subtle: #bbf7d0;
+
+  --bg-error-subtle: #fef2f2;
+  --text-error: #dc2626;
+  --text-error-strong: #991b1b;
+  --border-error-subtle: #fee2e2;
+
+  --bg-accent-subtle: #f3e8ff;
+  --bg-accent-hover: #e9d5ff;
+}
+
+.dark {
+  --bg-surface: #170a24;
+  --bg-surface-hover: #231036;
+  --bg-surface-alt: #231036;
+  --border-subtle: #32184d;
+  --border-strong: #432166;
+
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+  
+  --text-accent: #c084fc;
+  --text-accent-hover: #d8b4fe;
+  
+  --bg-success-subtle: rgb(20 83 45 / 0.2);
+  --text-success: #4ade80;
+  --border-success-subtle: #166534;
+  
+  --bg-error-subtle: rgb(127 29 29 / 0.2);
+  --text-error: #f87171;
+  --text-error-strong: #f87171;
+  --border-error-subtle: rgb(127 29 29 / 0.5);
+
+  --bg-accent-subtle: rgb(88 28 135 / 0.3);
+  --bg-accent-hover: rgb(88 28 135 / 0.5);
+}
+
+@theme {
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-surface-alt: var(--bg-surface-alt);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-text-accent: var(--text-accent);
+  --color-text-accent-hover: var(--text-accent-hover);
+  
+  --color-success-subtle: var(--bg-success-subtle);
+  --color-text-success: var(--text-success);
+  --color-border-success: var(--border-success-subtle);
+  
+  --color-error-subtle: var(--bg-error-subtle);
+  --color-text-error: var(--text-error);
+  --color-text-error-strong: var(--text-error-strong);
+  --color-border-error: var(--border-error-subtle);
+
+  --color-accent-subtle: var(--bg-accent-subtle);
+  --color-accent-hover: var(--bg-accent-hover);
+}

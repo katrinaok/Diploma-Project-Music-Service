@@ -8,43 +8,69 @@ const t = useTranslations(lang);
 const basePath = `/${lang}`;
 ---
 
-<header class="bg-white dark:bg-[#170a24] border-b border-gray-100 dark:border-[#32184d] shadow-sm sticky top-0 z-50 transition-colors">
-  <div
-    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 grid grid-cols-3 items-center"
-  >
+<header class="bg-surface border-b border-border-subtle shadow-sm sticky top-0 z-50 transition-colors relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
     <!-- Left: Logo -->
-    <div class="flex items-center gap-3 justify-self-start">
+    <div class="flex items-center gap-3">
       <div
-        class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+        class="w-8 h-8 bg-purple-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-xl"
       >
         M
       </div>
       <a
         href={`${basePath}/home`}
-        class="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+        class="hidden sm:block text-xl font-extrabold text-text-primary tracking-tight hover:text-text-accent transition-colors"
       >
         MusicVerse
       </a>
     </div>
 
-    <!-- Center: Navigation -->
-    <nav class="flex items-center gap-6 justify-self-center">
+    <!-- Center: Desktop Navigation -->
+    <nav class="hidden sm:flex items-center gap-4 sm:gap-6">
       <a
         href={`${basePath}/home`}
-        class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+        class="text-sm font-medium text-text-secondary hover:text-text-accent transition-colors whitespace-nowrap"
         >{t('nav.home')}</a
       >
       <a
         href={`${basePath}/profile`}
-        class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+        class="text-sm font-medium text-text-secondary hover:text-text-accent transition-colors whitespace-nowrap"
         >{t('nav.profile')}</a
       >
     </nav>
 
-    <!-- Right: Controls -->
-    <div class="flex items-center gap-2 justify-self-end">
+    <!-- Right: Controls & Mobile Toggle -->
+    <div class="flex items-center gap-1 sm:gap-2">
       <ThemeToggle client:load />
       <LanguageSwitcher />
+      
+      <!-- Mobile Menu Button -->
+      <button id="mobile-menu-toggle" class="sm:hidden p-2 text-text-primary hover:bg-surface-hover rounded-lg transition-colors ml-1" aria-label="Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
   </div>
+
+  <!-- Mobile Navigation Menu -->
+  <div id="mobile-menu" class="hidden sm:hidden absolute top-16 left-0 w-full bg-surface border-b border-border-subtle shadow-lg py-4 px-6 flex flex-col gap-4 z-50">
+    <a href={`${basePath}/home`} class="block text-base font-bold text-text-primary hover:text-text-accent transition-colors">
+      {t('nav.home')}
+    </a>
+    <a href={`${basePath}/profile`} class="block text-base font-bold text-text-primary hover:text-text-accent transition-colors">
+      {t('nav.profile')}
+    </a>
+  </div>
 </header>
+
+<script>
+  const toggleBtn = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  if (toggleBtn && mobileMenu) {
+    toggleBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+</script>

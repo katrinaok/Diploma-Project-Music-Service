@@ -1,6 +1,6 @@
 <template>
   <button @click="toggleTheme" 
-          class="relative rounded-lg hover:bg-gray-100 dark:hover:bg-[#32184d] transition-colors focus:outline-none w-8 h-8 flex items-center justify-center"
+          class="relative rounded-lg hover:bg-border-subtle transition-colors focus:outline-none w-8 h-8 flex items-center justify-center"
           title="Toggle Theme">
     <div class="relative w-full h-full">
       <!-- Sun icon -->

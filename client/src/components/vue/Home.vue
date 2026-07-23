@@ -1,47 +1,47 @@
 <template>
-  <div class="w-full p-8">
+  <div class="w-full p-4 md:p-8">
     <div class="max-w-4xl mx-auto space-y-6">
       
-      <div class="bg-white dark:bg-[#170a24] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#32184d] transition-colors">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $t('home.title') }}</h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ $t('home.subtitle') }}</p>
+      <div class="bg-surface p-6 rounded-2xl shadow-sm border border-border-subtle transition-colors">
+        <h1 class="text-2xl font-bold text-text-primary">{{ $t('home.title') }}</h1>
+        <p class="text-text-tertiary text-sm mt-1">{{ $t('home.subtitle') }}</p>
       </div>
 
-      <div class="bg-white dark:bg-[#170a24] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#32184d] transition-colors">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 text-purple-600 dark:text-purple-400">{{ $t('home.search_title') }}</h2>
+      <div class="bg-surface p-6 rounded-2xl shadow-sm border border-border-subtle transition-colors">
+        <h2 class="text-lg font-bold text-text-primary mb-4 text-text-accent">{{ $t('home.search_title') }}</h2>
         
-        <div class="flex gap-3 mb-6">
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
           <input 
             v-model="searchQuery" 
             @keyup.enter="searchTracks"
             type="text" 
             :placeholder="$t('home.search_placeholder')" 
-            class="flex-1 px-4 py-2 border border-gray-200 dark:border-[#432166] bg-white dark:bg-[#231036] text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            class="w-full sm:flex-1 px-4 py-2 border border-border-strong bg-surface-hover text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           />
           <button 
             @click="searchTracks" 
             :disabled="isLoading"
-            class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+            class="w-full sm:w-auto px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
           >
             {{ isLoading ? $t('home.searching') : $t('home.search_btn') }}
           </button>
         </div>
 
         <div class="space-y-3">
-          <div v-for="track in tracks" :key="track.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#231036] border border-transparent hover:border-gray-100 dark:hover:border-gray-600 transition-all group">
+          <div v-for="track in tracks" :key="track.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-hover border border-transparent hover:border-border-strong transition-all group">
             
             <img v-if="track.album.images.length" :src="track.album.images[2].url" alt="Cover" class="w-12 h-12 rounded-lg shadow-sm object-cover" />
-            <div v-else class="w-12 h-12 bg-gray-200 dark:bg-[#32184d] rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400">🎵</div>
+            <div v-else class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">🎵</div>
             
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{{ track.name }}</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ track.artists.map(a => a.name).join(', ') }}</p>
+              <h3 class="text-sm font-bold text-text-primary truncate">{{ track.name }}</h3>
+              <p class="text-xs text-text-tertiary truncate">{{ track.artists.map(a => a.name).join(', ') }}</p>
             </div>
 
             <button 
               v-if="track.preview_url" 
               @click="togglePlay(track)" 
-              class="w-10 h-10 flex-shrink-0 rounded-full bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center transition-colors"
+              class="w-10 h-10 flex-shrink-0 rounded-full bg-accent-subtle hover:bg-accent-hover text-text-accent flex items-center justify-center transition-colors"
             >
               <svg v-if="playingTrackId === track.id" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -50,7 +50,7 @@
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
               </svg>
             </button>
-            <div v-else class="text-xs text-gray-400 dark:text-gray-500 italic px-2">{{ $t('home.preview_unavailable') }}</div>
+            <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
 
             <button class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-purple-600 transition-all" :title="$t('home.add_to_playlist')">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

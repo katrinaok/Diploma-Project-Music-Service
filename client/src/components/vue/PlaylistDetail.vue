@@ -11,13 +11,13 @@
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-3xl text-center">
+      <div v-else-if="error" class="bg-error-subtle text-text-error p-6 rounded-3xl text-center">
         {{ error }}
       </div>
 
       <template v-else-if="playlist">
         <!-- Back Button -->
-        <a :href="`/${$i18n.locale}/profile`" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors mb-2">
+        <a :href="`/${$i18n.locale}/profile`" class="inline-flex items-center gap-2 text-sm font-medium text-text-tertiary hover:text-text-accent transition-colors mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -25,39 +25,43 @@
         </a>
 
         <!-- Playlist Header -->
-        <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
+        <div class="bg-surface rounded-3xl p-6 md:p-10 shadow-sm border border-border-subtle transition-colors flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
           
           <!-- Playlist Cover -->
-          <div class="relative w-40 h-40 md:w-56 md:h-56 rounded-2xl shadow-lg flex-shrink-0 group overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600">
-            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover" />
+          <div 
+            class="group relative w-40 h-40 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300 hover:scale-[1.02]"
+            @click="triggerCoverUpload"
+          >
+            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
             <div v-else class="w-full h-full flex items-center justify-center text-white">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
             </div>
             
-            <label class="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Hover Edit Overlay -->
+            <div class="absolute inset-0 bg-purple-900/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span class="text-sm font-medium">Змінити фото</span>
-              <input type="file" class="hidden" accept="image/*" @change="handleCoverUpload" />
-            </label>
+              <span class="text-xs font-semibold uppercase tracking-widest">{{ $t('profile.update_photo') }}</span>
+            </div>
+            <input type="file" ref="coverInput" class="hidden" accept="image/*" @change="handleCoverUpload" />
           </div>
 
           <!-- Playlist Info -->
           <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-2">
             
             <div class="flex items-center justify-center md:justify-start gap-2 mb-4">
-              <div class="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full">
+              <div class="inline-flex items-center gap-1.5 bg-surface-alt text-text-secondary text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full">
                 {{ $t('playlist.type') }}
               </div>
               
               <button 
                 @click="togglePublicStatus"
-                class="inline-flex items-center gap-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-gray-200 dark:border-gray-700"
-                :class="playlist.isPublic ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800'"
+                class="inline-flex items-center gap-1.5 hover:bg-border-subtle transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-border-strong"
+                :class="playlist.isPublic ? 'text-text-success bg-success-subtle border-border-success' : 'text-text-tertiary bg-surface-hover'"
               >
                 <svg v-if="playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -70,54 +74,48 @@
             </div>
             
             <!-- Editable Title -->
-            <div v-if="isEditingTitle" class="mb-4 flex items-center justify-center md:justify-start gap-2">
-              <input 
-                v-model="editTitleValue" 
-                @keyup.enter="saveTitle"
-                @keyup.esc="cancelEditTitle"
-                ref="titleInputRef"
-                type="text" 
-                class="text-3xl md:text-5xl font-bold bg-transparent border-b-2 border-purple-500 focus:outline-none text-gray-900 dark:text-white w-full max-w-md"
-              />
-              <button @click="saveTitle" class="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-              <button @click="cancelEditTitle" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div v-else class="group flex items-center justify-center md:justify-start gap-3 mb-4">
-              <h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white line-clamp-2">
-                {{ playlist.title }}
-              </h1>
-              <button @click="startEditingTitle" class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-purple-600 transition-all rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-full relative group mb-4">
+              <h1 
+                v-if="!isEditingTitle"
+                class="text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
+                @click="startEditingTitle"
+                :title="$t('profile.edit_name')"
+              >
+                <span class="line-clamp-2">{{ playlist.title }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-3 mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-              </button>
+              </h1>
+              
+              <div v-else>
+                <input 
+                  type="text" 
+                  v-model="editTitleValue" 
+                  @blur="saveTitle"
+                  @keyup.enter="saveTitle"
+                  class="text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                  autofocus
+                  ref="titleInputRef"
+                />
+              </div>
             </div>
             
-            <p v-if="playlist.description" class="text-gray-600 dark:text-gray-400 mb-6 text-sm md:text-base">
+            <p v-if="playlist.description" class="text-text-secondary mb-6 text-sm md:text-base">
               {{ playlist.description }}
             </p>
             
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-medium text-gray-500 dark:text-gray-400 mt-6">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-medium text-text-tertiary mt-6">
               <div class="flex items-center gap-1.5">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 {{ new Date(playlist.createdAt).toLocaleDateString() }}
               </div>
-              <div class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
               <div>
                 {{ playlist.tracks.length }} {{ $t('playlist.tracks_count') }}
               </div>
-              <div class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
               <button 
                 @click="deletePlaylist"
                 class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors"
@@ -133,10 +131,10 @@
         </div>
 
         <!-- Tracks List -->
-        <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors mt-6">
+        <div class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $t('playlist.tracks') }}</h2>
-            <a :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
+            <h2 class="text-xl font-bold text-text-primary">{{ $t('playlist.tracks') }}</h2>
+            <a :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-text-accent-hover dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
               </svg>
@@ -144,15 +142,15 @@
             </a>
           </div>
 
-          <div v-if="playlist.tracks.length === 0" class="text-center py-12 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
-            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div v-if="playlist.tracks.length === 0" class="text-center py-12 border-2 border-dashed border-border-subtle rounded-2xl">
+            <div class="w-16 h-16 bg-surface-hover text-text-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{{ $t('playlist.empty_title') }}</h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">{{ $t('playlist.empty_desc') }}</p>
-            <a :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded-xl transition-colors">
+            <h3 class="text-lg font-bold text-text-primary mb-2">{{ $t('playlist.empty_title') }}</h3>
+            <p class="text-text-tertiary mb-6 max-w-md mx-auto">{{ $t('playlist.empty_desc') }}</p>
+            <a :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-xl transition-colors">
               {{ $t('playlist.find_music') }}
             </a>
           </div>
@@ -189,6 +187,13 @@ const playlistCoverUrl = ref(null);
 const isEditingTitle = ref(false);
 const editTitleValue = ref('');
 const titleInputRef = ref(null);
+const coverInput = ref(null);
+
+const triggerCoverUpload = () => {
+  if (coverInput.value) {
+    coverInput.value.click();
+  }
+};
 
 const handleCoverUpload = (event) => {
   const file = event.target.files[0];
@@ -209,10 +214,6 @@ const startEditingTitle = () => {
   setTimeout(() => {
     if (titleInputRef.value) titleInputRef.value.focus();
   }, 50);
-};
-
-const cancelEditTitle = () => {
-  isEditingTitle.value = false;
 };
 
 const saveTitle = async () => {

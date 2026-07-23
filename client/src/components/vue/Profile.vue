@@ -3,16 +3,16 @@
     <div class="max-w-4xl mx-auto space-y-6">
       
       <!-- Profile Header Card -->
-      <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
+      <div class="bg-surface rounded-3xl p-6 md:p-10 shadow-sm border border-border-subtle transition-colors">
         <div class="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
           
           <!-- Avatar Container -->
           <div 
-            class="group relative w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden shadow-sm border-2 border-gray-100 dark:border-gray-700 flex-shrink-0 cursor-pointer bg-gray-50 dark:bg-gray-800 transition-transform duration-300 hover:scale-[1.02]"
+            class="group relative w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 cursor-pointer bg-surface-hover transition-transform duration-300 hover:scale-[1.02]"
             @click="triggerAvatarUpload"
           >
             <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
-            <div v-else class="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600">
+            <div v-else class="w-full h-full flex items-center justify-center text-text-muted">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -31,14 +31,14 @@
 
           <!-- User Info -->
           <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-2">
-            <div class="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full self-center md:self-start mb-3">
+            <div class="inline-flex items-center gap-1.5 bg-surface-alt text-text-secondary text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full self-center md:self-start mb-3">
               {{ $t('page.profile') }}
             </div>
             
             <div class="w-full relative group">
               <h1 
                 v-if="!isEditingName"
-                class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors inline-flex items-center justify-center md:justify-start"
+                class="text-3xl md:text-4xl font-bold text-text-primary mb-2 cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start"
                 @click="startEditingName"
                 :title="$t('profile.edit_name')"
               >
@@ -54,7 +54,7 @@
                   v-model="editNameValue" 
                   @blur="saveName"
                   @keyup.enter="saveName"
-                  class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                  class="text-3xl md:text-4xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
                   autofocus
                   ref="nameInput"
                 />
@@ -66,7 +66,7 @@
           <div class="absolute top-6 right-6 md:static">
              <a 
                 :href="`/${$i18n.locale}/settings`" 
-                class="flex items-center justify-center p-2.5 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 bg-gray-50 dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all shadow-sm border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800/50 group"
+                class="flex items-center justify-center p-2.5 text-text-muted hover:text-text-accent bg-surface-hover hover:bg-accent-subtle rounded-xl transition-all shadow-sm border border-border-strong hover:border-border-strong group"
                 :title="$t('settings.title')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,8 +79,8 @@
       </div>
 
       <!-- Playlists Section -->
-      <div class="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <div class="bg-surface p-6 md:p-8 rounded-3xl shadow-sm border border-border-subtle transition-colors">
+        <h2 class="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
           </svg>
@@ -89,34 +89,34 @@
         
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <!-- Create Playlist Button -->
-          <div @click="openPlaylistModal" class="group border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-all duration-300 min-h-[160px]">
-            <div class="w-12 h-12 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm">
+          <div @click="openPlaylistModal" class="group border-2 border-dashed border-border-strong rounded-2xl p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-4 sm:gap-0 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-surface-hover/50 cursor-pointer transition-all duration-300 sm:min-h-[160px]">
+            <div class="w-16 h-16 sm:w-12 sm:h-12 flex-shrink-0 bg-surface-alt text-text-tertiary rounded-xl sm:rounded-full flex items-center justify-center sm:mb-3 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm ">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p class="text-sm font-semibold text-gray-600 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-400">{{ $t('profile.create_playlist') }}</p>
+            <p class="text-base sm:text-sm font-semibold text-text-secondary group-hover:text-text-accent-hover">{{ $t('profile.create_playlist') }}</p>
           </div>
           
           <!-- Fetched Playlists -->
-          <div v-for="playlist in playlists" :key="playlist.id" @click="goToPlaylist(playlist.id)" class="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 flex flex-col hover:bg-purple-50 dark:hover:bg-gray-800 transition-colors border border-gray-100 dark:border-gray-800 group cursor-pointer">
+          <div v-for="playlist in playlists" :key="playlist.id" @click="goToPlaylist(playlist.id)" class="bg-surface-hover/50 rounded-2xl p-4 flex flex-row sm:flex-col items-center sm:items-stretch gap-4 sm:gap-0 hover:bg-surface-hover transition-colors border border-border-subtle group cursor-pointer sm:min-h-[160px]">
              <!-- Playlist Cover -->
-             <div class="w-full aspect-square rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center overflow-hidden shadow-sm mb-4">
+             <div class="w-16 h-16 sm:w-full sm:h-auto sm:aspect-square flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center overflow-hidden shadow-sm sm:mb-4">
                 <img v-if="playlist.coverUrl" :src="playlist.coverUrl" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white opacity-50 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-12 sm:w-12 text-white opacity-50 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
              </div>
 
-             <div class="flex-grow flex flex-col">
+             <div class="flex-grow flex flex-col min-w-0">
                <div class="flex items-center justify-between mb-1 gap-2">
-                 <h3 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">{{ playlist.title }}</h3>
-                 <svg v-if="!playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" :title="$t('playlist.private')">
+                 <h3 class="text-base font-bold text-text-primary group-hover:text-text-accent transition-colors truncate">{{ playlist.title }}</h3>
+                 <svg v-if="!playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" :title="$t('playlist.private')">
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                  </svg>
                </div>
-               <p v-if="playlist.description" class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2 flex-grow">{{ playlist.description }}</p>
-               <div class="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 mt-auto pt-2">
+               <p v-if="playlist.description" class="text-xs text-text-tertiary line-clamp-1 sm:line-clamp-2 mb-1 sm:mb-2 flex-grow">{{ playlist.description }}</p>
+               <div class="text-[10px] uppercase font-bold tracking-wider text-text-muted sm:mt-auto sm:pt-2">
                  {{ new Date(playlist.createdAt).toLocaleDateString() }}
                </div>
              </div>
@@ -128,28 +128,28 @@
 
     <!-- Create Playlist Modal -->
     <div v-if="isPlaylistModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div class="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-100 dark:border-gray-800">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ $t('profile.create_playlist') }}</h3>
+      <div class="bg-surface rounded-2xl p-6 w-full max-w-md shadow-xl border border-border-subtle">
+        <h3 class="text-xl font-bold text-text-primary mb-4">{{ $t('profile.create_playlist') }}</h3>
         
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('profile.playlist_name_label') }}</label>
+            <label class="block text-sm font-medium text-text-primary mb-1">{{ $t('profile.playlist_name_label') }}</label>
             <input 
               type="text" 
               v-model="newPlaylistTitle"
               @keyup.enter="createPlaylist"
               :placeholder="$t('profile.playlist_name_placeholder')"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+              class="w-full px-4 py-2 border border-border-strong rounded-xl bg-surface-hover text-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
               autofocus
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('profile.playlist_desc_label') }}</label>
+            <label class="block text-sm font-medium text-text-primary mb-1">{{ $t('profile.playlist_desc_label') }}</label>
             <textarea 
               v-model="newPlaylistDescription"
               :placeholder="$t('profile.playlist_desc_placeholder')"
               rows="3"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors resize-none"
+              class="w-full px-4 py-2 border border-border-strong rounded-xl bg-surface-hover text-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors resize-none"
             ></textarea>
           </div>
         </div>
@@ -157,7 +157,7 @@
         <div class="mt-6 flex justify-end gap-3">
           <button 
             @click="closePlaylistModal"
-            class="px-5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors font-medium"
+            class="px-5 py-2 text-text-secondary hover:bg-surface-alt rounded-xl transition-colors font-medium"
           >
             {{ $t('profile.btn_cancel') }}
           </button>
