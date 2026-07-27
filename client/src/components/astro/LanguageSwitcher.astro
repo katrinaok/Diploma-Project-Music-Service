@@ -36,27 +36,55 @@ function getPathFor(lang: string) {
   const btns = document.querySelectorAll('.lang-btn');
   const slider = document.getElementById('lang-slider');
   
+  const updateUI = (lang) => {
+    if (lang === 'uk') {
+      slider?.classList.remove('translate-x-8');
+      slider?.classList.add('translate-x-0');
+    } else {
+      slider?.classList.remove('translate-x-0');
+      slider?.classList.add('translate-x-8');
+    }
+
+    btns.forEach(b => {
+      if (b.getAttribute('data-lang') === lang) {
+        b.classList.remove('text-gray-500', 'dark:text-gray-400');
+        b.classList.add('text-purple-700', 'dark:text-purple-400');
+      } else {
+        b.classList.remove('text-purple-700', 'dark:text-purple-400');
+        b.classList.add('text-gray-500', 'dark:text-gray-400');
+      }
+    });
+  };
+
+  window.addEventListener('language-changed', (e) => {
+    updateUI(e.detail);
+  });
+  
   btns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
       const lang = btn.getAttribute('data-lang');
       const href = btn.getAttribute('href');
 
-      if (lang === 'uk') {
-        slider?.classList.remove('translate-x-8');
-        slider?.classList.add('translate-x-0');
-      } else {
-        slider?.classList.remove('translate-x-0');
-        slider?.classList.add('translate-x-8');
+      updateUI(lang);
+      window.dispatchEvent(new CustomEvent('language-changed', { detail: lang }));
+      
+      const token = localStorage.getItem('token');
+      if (token && lang) {
+        try {
+          await fetch('http://localhost:5001/api/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ language: lang })
+          });
+        } catch (err) {
+          console.error('Failed to save language', err);
+        }
       }
 
-      btns.forEach(b => {
-        b.classList.remove('text-purple-700', 'dark:text-purple-400');
-        b.classList.add('text-gray-500', 'dark:text-gray-400');
-      });
-      btn.classList.remove('text-gray-500', 'dark:text-gray-400');
-      btn.classList.add('text-purple-700', 'dark:text-purple-400');
-      
       if (href) {
         setTimeout(() => {
           window.location.href = href;

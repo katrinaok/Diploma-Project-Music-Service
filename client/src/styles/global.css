@@ -85,3 +85,7 @@
   --color-accent-subtle: var(--bg-accent-subtle);
   --color-accent-hover: var(--bg-accent-hover);
 }
+
+html {
+  scrollbar-gutter: stable;
+}

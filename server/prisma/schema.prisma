@@ -41,8 +41,14 @@ model User {
 model UserSetting {
   id        Int     @id @default(autoincrement())
   userId    Int     @unique
-  theme     String  @default("dark")
+  theme     String  @default("light")
+  language  String  @default("uk")
   isPrivate Boolean @default(false)
+
+  // Поля для Spotify інтеграції
+  spotifyAccessToken  String?
+  spotifyRefreshToken String?
+  spotifyTokenExpiresAt DateTime?
 
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

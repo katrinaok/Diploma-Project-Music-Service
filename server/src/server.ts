@@ -51,6 +51,12 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
         username,
         email,
         password: hashedPassword,
+        setting: {
+          create: {
+            theme: 'light',
+            language: 'uk'
+          }
+        }
       },
     });
 
@@ -134,6 +140,60 @@ app.put('/api/auth/password', async (req: Request, res: Response) => {
   }
 });
 
+// Роут отримання налаштувань
+app.get('/api/settings', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+
+    const setting = await prisma.userSetting.findUnique({
+      where: { userId: decoded.userId }
+    });
+
+    res.json({ status: 'success', setting });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання налаштувань' });
+  }
+});
+
+// Роут оновлення налаштувань
+app.put('/api/settings', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+
+    const { theme, language, isPrivate } = req.body;
+
+    const updateData: any = {};
+    if (theme !== undefined) updateData.theme = theme;
+    if (language !== undefined) updateData.language = language;
+    if (isPrivate !== undefined) updateData.isPrivate = isPrivate;
+
+    const setting = await prisma.userSetting.upsert({
+      where: { userId: decoded.userId },
+      update: updateData,
+      create: {
+        userId: decoded.userId,
+        ...updateData
+      }
+    });
+
+    res.json({ status: 'success', setting, message: 'Налаштування оновлено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка оновлення налаштувань' });
+  }
+});
+
 // ==========================================
 // PLAYLIST ROUTES
 // ==========================================
@@ -200,6 +260,112 @@ app.post('/api/playlists', authenticateToken, async (req: Request, res: Response
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка створення плейлиста' });
+  }
+});
+
+// Додати трек до плейлиста (з Upsert треку в локальну базу)
+app.post('/api/playlists/:id/tracks', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const { spotifyId, title, artistName, albumCoverUrl, previewUrl } = req.body;
+    if (!spotifyId || !title || !artistName) {
+      return res.status(400).json({ error: 'Неповні дані про трек' });
+    }
+
+    // Перевіряємо, чи належить плейлист користувачу
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist || playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Плейлист не знайдено або доступ заборонено' });
+    }
+
+    // Upsert треку
+    const track = await prisma.track.upsert({
+      where: { spotifyId },
+      update: {
+        title,
+        artistName,
+        albumCoverUrl,
+        previewUrl
+      },
+      create: {
+        spotifyId,
+        title,
+        artistName,
+        albumCoverUrl,
+        previewUrl
+      }
+    });
+
+    // Додаємо зв'язку в PlaylistTrack, якщо її ще немає
+    // Використовуємо upsert або просто перевіряємо чи існує
+    const existingPlaylistTrack = await prisma.playlistTrack.findUnique({
+      where: {
+        playlistId_trackId: {
+          playlistId,
+          trackId: track.id
+        }
+      }
+    });
+
+    if (!existingPlaylistTrack) {
+      await prisma.playlistTrack.create({
+        data: {
+          playlistId,
+          trackId: track.id
+        }
+      });
+    }
+
+    res.status(201).json({ status: 'success', message: 'Трек успішно додано до плейлиста!', track });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка додавання треку' });
+  }
+});
+
+// Видалити трек з плейлиста
+app.delete('/api/playlists/:id/tracks/:trackId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+    const trackId = parseInt(req.params.trackId as string, 10);
+
+    if (isNaN(playlistId) || isNaN(trackId)) {
+      return res.status(400).json({ error: 'Некоректний ID' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist || playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Плейлист не знайдено або доступ заборонено' });
+    }
+
+    await prisma.playlistTrack.delete({
+      where: {
+        playlistId_trackId: {
+          playlistId,
+          trackId
+        }
+      }
+    });
+
+    res.json({ status: 'success', message: 'Трек успішно видалено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка видалення треку' });
   }
 });
 
@@ -396,5 +562,179 @@ app.get('/api/spotify/search', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка пошуку треків' });
+  }
+});
+
+// ==========================================
+// SPOTIFY OAUTH (USER AUTHENTICATION)
+// ==========================================
+
+app.get('/api/spotify/auth-url', authenticateToken, (req: Request, res: Response) => {
+  // @ts-ignore
+  const userId = req.user.userId;
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const redirectUri = 'http://127.0.0.1:5001/api/spotify/callback';
+  const scope = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
+  
+  // Передаємо userId у параметрі state, щоб в callback знати, кому зберігати токен
+  const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+  
+  const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+  
+  res.json({ url: authUrl });
+});
+
+app.get('/api/spotify/callback', async (req: Request, res: Response) => {
+  const code = req.query.code as string;
+  const stateStr = req.query.state as string;
+  
+  if (!code || !stateStr) {
+    return res.status(400).send('Помилка авторизації Spotify');
+  }
+
+  let userId: number;
+  try {
+    const stateObj = JSON.parse(Buffer.from(stateStr, 'base64').toString('utf-8'));
+    userId = stateObj.userId;
+  } catch (e) {
+    return res.status(400).send('Недійсний state');
+  }
+
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const redirectUri = 'http://127.0.0.1:5001/api/spotify/callback';
+
+  try {
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer.from(clientId + ':' + clientSecret).toString('base64')
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Не вдалося отримати токен від Spotify');
+    }
+
+    const data = await response.json();
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+    await prisma.userSetting.upsert({
+      where: { userId },
+      update: {
+        spotifyAccessToken: data.access_token,
+        spotifyRefreshToken: data.refresh_token,
+        spotifyTokenExpiresAt: expiresAt
+      },
+      create: {
+        userId,
+        spotifyAccessToken: data.access_token,
+        spotifyRefreshToken: data.refresh_token,
+        spotifyTokenExpiresAt: expiresAt
+      }
+    });
+
+    // Редірект назад на фронтенд після успішної авторизації
+    res.redirect('http://127.0.0.1:4371/uk/settings?spotify=success');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Помилка з\'єднання зі Spotify');
+  }
+});
+
+// Відв'язати Spotify
+app.post('/api/spotify/disconnect', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    
+    await prisma.userSetting.upsert({
+      where: { userId },
+      update: {
+        spotifyAccessToken: null,
+        spotifyRefreshToken: null,
+        spotifyTokenExpiresAt: null
+      },
+      create: {
+        userId,
+        theme: 'light',
+        language: 'uk',
+        isPrivate: false
+      }
+    });
+    
+    res.json({ status: 'success', message: 'Spotify відключено' });
+  } catch (error) {
+    console.error('Failed to disconnect Spotify', error);
+    res.status(500).json({ error: 'Помилка відключення Spotify' });
+  }
+});
+
+app.get('/api/spotify/me', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const setting = await prisma.userSetting.findUnique({ where: { userId } });
+
+    if (!setting || !setting.spotifyAccessToken) {
+      return res.json({ connected: false });
+    }
+
+    // Перевіряємо, чи не прострочений токен (з запасом в 1 хвилину)
+    if (setting.spotifyTokenExpiresAt && setting.spotifyTokenExpiresAt.getTime() < Date.now() + 60000) {
+      if (!setting.spotifyRefreshToken) {
+        return res.json({ connected: false }); // Немає refresh token, треба наново
+      }
+
+      // Оновлюємо токен
+      const clientId = process.env.SPOTIFY_CLIENT_ID;
+      const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+      
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ' + Buffer.from(clientId + ':' + clientSecret).toString('base64')
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: setting.spotifyRefreshToken
+        })
+      });
+
+      if (!response.ok) {
+        // Якщо не вдалося оновити (наприклад, юзер забрав доступ)
+        await prisma.userSetting.update({
+          where: { userId },
+          data: { spotifyAccessToken: null, spotifyRefreshToken: null, spotifyTokenExpiresAt: null }
+        });
+        return res.json({ connected: false });
+      }
+
+      const data = await response.json();
+      const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+      const updatedSetting = await prisma.userSetting.update({
+        where: { userId },
+        data: {
+          spotifyAccessToken: data.access_token,
+          spotifyRefreshToken: data.refresh_token ? data.refresh_token : setting.spotifyRefreshToken, // Іноді refresh_token не повертається новий
+          spotifyTokenExpiresAt: expiresAt
+        }
+      });
+
+      return res.json({ connected: true, token: updatedSetting.spotifyAccessToken });
+    }
+
+    return res.json({ connected: true, token: setting.spotifyAccessToken });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання статусу Spotify' });
   }
 });

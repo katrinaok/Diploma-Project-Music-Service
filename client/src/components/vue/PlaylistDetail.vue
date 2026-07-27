@@ -155,8 +155,38 @@
             </a>
           </div>
           
-          <div v-else class="space-y-2">
-            <!-- List of tracks will go here when implemented -->
+          <div v-else class="space-y-3">
+            <div v-for="item in playlist.tracks" :key="item.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-hover border border-transparent hover:border-border-strong transition-all group">
+              
+              <img v-if="item.track.albumCoverUrl" :src="item.track.albumCoverUrl" alt="Cover" class="w-12 h-12 rounded-lg shadow-sm object-cover" />
+              <div v-else class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">🎵</div>
+              
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
+                <p class="text-xs text-text-tertiary truncate">{{ item.track.artistName }}</p>
+              </div>
+              
+              <!-- Player logic -->
+              <button 
+                v-if="isSpotifyConnected || item.track.previewUrl" 
+                @click="togglePlay(item.track)" 
+                class="w-10 h-10 flex-shrink-0 rounded-full bg-accent-subtle hover:bg-accent-hover text-text-accent flex items-center justify-center transition-colors"
+              >
+                <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
+              
+              <button @click="removeTrack(item.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all" title="Remove track">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </template>
@@ -188,6 +218,77 @@ const isEditingTitle = ref(false);
 const editTitleValue = ref('');
 const titleInputRef = ref(null);
 const coverInput = ref(null);
+
+const currentAudio = ref(null);
+const playingTrackId = ref(null);
+const isSpotifyConnected = ref(false);
+
+const handleSpotifyState = (e) => {
+  if (e.detail) {
+    if (e.detail.isPlaying && e.detail.trackId) {
+      playingTrackId.value = e.detail.trackId;
+    } else {
+      playingTrackId.value = null;
+    }
+  }
+};
+
+import { onBeforeUnmount } from 'vue';
+
+onBeforeUnmount(() => {
+  if (currentAudio.value) currentAudio.value.pause();
+  window.removeEventListener('spotify-state-update', handleSpotifyState);
+});
+
+const togglePlay = (track) => {
+  if (isSpotifyConnected.value) {
+    if (playingTrackId.value === track.spotifyId) {
+      window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
+    } else {
+      const uri = `spotify:track:${track.spotifyId}`;
+      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: uri, id: track.spotifyId } }));
+      // Чекаємо підтвердження від Spotify (spotify-state-update) замість оптимістичного оновлення
+    }
+    return;
+  }
+
+  // Fallback до звичайного preview
+  if (!track.previewUrl) return;
+
+  if (playingTrackId.value === track.spotifyId) {
+    currentAudio.value.pause();
+    playingTrackId.value = null;
+    return;
+  }
+  if (currentAudio.value) currentAudio.value.pause();
+
+  currentAudio.value = new Audio(track.previewUrl);
+  currentAudio.value.play();
+  playingTrackId.value = track.spotifyId;
+
+  currentAudio.value.onended = () => {
+    playingTrackId.value = null;
+  };
+};
+
+const removeTrack = async (playlistTrackId) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  
+  if (!confirm("Видалити трек з плейлиста?")) return;
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks/${playlistTrackId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      playlist.value.tracks = playlist.value.tracks.filter(t => t.id !== playlistTrackId);
+    }
+  } catch (err) {
+    console.error('Failed to remove track', err);
+  }
+};
 
 const triggerCoverUpload = () => {
   if (coverInput.value) {
@@ -305,8 +406,19 @@ onMounted(async () => {
   playlistCoverUrl.value = localStorage.getItem(`playlistCover_${props.playlistId}`);
 
   try {
+    // Check Spotify status
+    fetch('http://localhost:5001/api/spotify/me', {
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store'
+    }).then(res => res.json()).then(data => {
+      isSpotifyConnected.value = !!data.connected;
+    });
+
+    window.addEventListener('spotify-state-update', handleSpotifyState);
+
     const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store'
     });
     
     if (response.status === 401) {

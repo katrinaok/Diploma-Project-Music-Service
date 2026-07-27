@@ -157,14 +157,14 @@
         <div class="mt-6 flex justify-end gap-3">
           <button 
             @click="closePlaylistModal"
-            class="px-5 py-2 text-text-secondary hover:bg-surface-alt rounded-xl transition-colors font-medium"
+            class="px-5 py-2 text-text-secondary hover:bg-surface-alt rounded-xl transition-colors font-medium cursor-pointer"
           >
             {{ $t('profile.btn_cancel') }}
           </button>
           <button 
             @click="createPlaylist"
             :disabled="isCreatingPlaylist || !newPlaylistTitle.trim()"
-            class="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl transition-colors font-medium flex items-center gap-2"
+            class="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl transition-colors font-medium flex items-center gap-2 cursor-pointer"
           >
             <svg v-if="isCreatingPlaylist" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
