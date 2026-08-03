@@ -36,6 +36,7 @@ model User {
   
   followers Follower[] @relation("Followers")
   following Follower[] @relation("Following")
+  tags      Tag[]
 }
 
 model UserSetting {
@@ -149,10 +150,15 @@ model Follower {
 // ==========================================
 model Tag {
   id     Int        @id @default(autoincrement())
-  name   String     @unique
-  color  String     @default("#8A2BE2") 
+  name   String
+  color  String?    @default("#8A2BE2") 
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
 
   tracks TrackTag[]
+
+  @@unique([name, userId])
 }
 
 model TrackTag {
