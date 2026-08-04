@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full p-4 md:p-8">
+  <div class="w-full p-4 md:p-8 pb-32">
     <div class="max-w-4xl mx-auto space-y-6">
       
       <!-- Loading State -->
@@ -144,7 +144,7 @@
                   type="text" 
                   v-model="searchQuery" 
                   class="w-full bg-surface-alt border border-border-subtle rounded-full py-1.5 pl-9 pr-4 text-sm text-text-primary focus:outline-none focus:border-purple-500 transition-colors"
-                  placeholder="Пошук (або #тег)..."
+                  :placeholder="$t('playlist.search_placeholder')"
                 />
               </div>
 
@@ -165,7 +165,7 @@
               type="text" 
               v-model="searchQuery" 
               class="w-full bg-surface-alt border border-border-subtle rounded-full py-2 pl-9 pr-4 text-sm text-text-primary focus:outline-none focus:border-purple-500 transition-colors"
-              placeholder="Пошук (або #тег)..."
+              :placeholder="$t('playlist.search_placeholder')"
             />
           </div>
 
@@ -182,9 +182,9 @@
             </a>
           </div>
           
-          <div v-else class="space-y-3 pb-32">
+          <div v-else class="space-y-3">
             <div v-if="filteredTracks.length === 0 && searchQuery" class="text-center py-8 text-text-secondary">
-              За вашим запитом нічого не знайдено.
+              {{ $t('playlist.search_empty') }}
             </div>
             
             <div v-for="item in filteredTracks" :key="item.track.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-hover border border-transparent hover:border-border-strong transition-all group">
@@ -204,7 +204,7 @@
                       :style="{ backgroundColor: t.tag.color + '20', color: t.tag.color, borderColor: t.tag.color + '40' }"
                     >
                       <span>#{{ t.tag.name }}</span>
-                      <button @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" title="Видалити тег">
+                      <button @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" :title="$t('playlist.remove_tag')">
                         <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                       </button>
                     </span>
@@ -217,7 +217,7 @@
               <button 
                 v-if="isSpotifyConnected || item.track.previewUrl" 
                 @click="togglePlay(item.track)" 
-                class="w-10 h-10 flex-shrink-0 rounded-full bg-accent-subtle hover:bg-accent-hover text-text-accent flex items-center justify-center transition-colors"
+                class="w-10 h-10 flex-shrink-0 rounded-full bg-accent-subtle hover:bg-accent-hover text-text-accent flex items-center justify-center transition-colors cursor-pointer"
               >
                 <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -230,7 +230,7 @@
               
               <!-- Menu logic -->
               <div class="relative">
-                <button @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none" title="Опції">
+                <button @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
@@ -238,17 +238,17 @@
                 
                 <!-- Dropdown -->
                 <div v-if="openMenuId === item.track.id" class="absolute right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-xl shadow-lg z-10 overflow-hidden">
-                  <button @click="openTagModal(item.track.id)" class="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2">
+                  <button @click="openTagModal(item.track.id)" class="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2 cursor-pointer">
                     <svg class="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
-                    Додати тег
+                    {{ $t('playlist.add_tag') }}
                   </button>
-                  <button @click="removeTrack(item.track.id); closeMenu()" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface-hover transition-colors flex items-center gap-2 border-t border-border-subtle">
+                  <button @click="removeTrack(item.track.id); closeMenu()" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface-hover transition-colors flex items-center gap-2 border-t border-border-subtle cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Видалити з плейлиста
+                    {{ $t('playlist.remove_from_playlist') }}
                   </button>
                 </div>
               </div>
@@ -365,7 +365,7 @@ const removeTagFromTrack = async (trackId, tagId) => {
       }
     }
   } catch (err) {
-    console.error('Помилка видалення тегу:', err);
+    console.error(t('playlist.error_remove_tag'), err);
   }
 };
 
@@ -426,7 +426,7 @@ const removeTrack = async (playlistTrackId) => {
   const token = localStorage.getItem('token');
   if (!token) return;
   
-  if (!confirm("Видалити трек з плейлиста?")) return;
+  if (!confirm(t('playlist.confirm_remove_track'))) return;
 
   try {
     const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks/${playlistTrackId}`, {
@@ -554,6 +554,13 @@ onMounted(async () => {
     return;
   }
   
+  // Sync initial state from GlobalPlayer if it's already playing
+  if (typeof window !== 'undefined' && window.__spotifyState) {
+    if (window.__spotifyState.isPlaying && window.__spotifyState.currentTrack) {
+      playingTrackId.value = window.__spotifyState.currentTrack.id;
+    }
+  }
+
   document.addEventListener('click', closeMenuOnClickOutside);
   
   playlistCoverUrl.value = localStorage.getItem(`playlistCover_${props.playlistId}`);

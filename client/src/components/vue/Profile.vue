@@ -270,8 +270,10 @@ const closePlaylistModal = () => {
   isPlaylistModalOpen.value = false;
 };
 
+import { navigate } from 'astro:transitions/client';
+
 const goToPlaylist = (id) => {
-  window.location.href = `/${locale.value}/playlist/${id}`;
+  navigate(`/${locale.value}/playlist/${id}`);
 };
 
 const handleAuthError = () => {

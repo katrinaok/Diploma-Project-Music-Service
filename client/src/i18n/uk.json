@@ -71,7 +71,24 @@
     "private": "Приватний",
     "delete": "Видалити плейлист",
     "confirm_delete": "Ви впевнені, що хочете видалити цей плейлист? Цю дію неможливо скасувати.",
-    "back_to_profile": "Повернутися до профілю"
+    "back_to_profile": "Повернутися до профілю",
+    "search_placeholder": "Пошук (або #тег)...",
+    "search_empty": "За вашим запитом нічого не знайдено.",
+    "remove_tag": "Видалити тег",
+    "add_tag": "Додати тег",
+    "remove_from_playlist": "Видалити з плейлиста",
+    "confirm_remove_track": "Видалити трек з плейлиста?",
+    "error_remove_tag": "Помилка видалення тегу"
+  },
+  "global_player": {
+    "default_title": "Spotify Плеєр",
+    "ready_to_play": "Готовий до відтворення",
+    "spotify_connect": "Spotify Connect",
+    "error_not_ready": "Spotify плеєр ще не готовий або вимагає оновлення сторінки.",
+    "error_playback": "Помилка відтворення! Можливо, потрібен Spotify Premium, або трек недоступний у вашому регіоні.",
+    "error_device_not_found": "Пристрій не знайдено. Будь ласка, оновіть сторінку.",
+    "error_api": "Не вдалося запустити трек. Spotify API повернув помилку ",
+    "error_connection": "Помилка з'єднання зі Spotify."
   },
   "settings": {
     "title": "Налаштування",
@@ -109,5 +126,21 @@
   "footer": {
     "rights": "Всі права захищені.",
     "project": "Дипломний проєкт"
+  },
+  "tag_modal": {
+    "new_tag": "Новий тег",
+    "add_tag": "Додати тег",
+    "no_tags": "У вас ще немає тегів.",
+    "create_tag": "Створити тег",
+    "create_new_tag": "Створити новий тег",
+    "tag_name": "Назва тегу",
+    "tag_placeholder": "rock, gym, focus...",
+    "color": "Колір",
+    "back": "Назад",
+    "save": "Зберегти",
+    "error_no_token": "Немає токену авторизації",
+    "error_no_track_id": "ID треку відсутній",
+    "error_save": "Помилка {status}: Не вдалося зберегти тег",
+    "error_network": "Мережева помилка при збереженні тегу"
   }
 }

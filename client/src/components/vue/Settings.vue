@@ -53,8 +53,8 @@
                 <p class="text-sm font-medium text-text-primary">{{ $t('settings.dark_theme') }}</p>
                 <p class="text-xs text-text-tertiary">{{ $t('settings.dark_theme_desc') }}</p>
               </div>
-              <button @click="handleThemeToggle" class="w-12 h-6 rounded-full p-1 transition-colors focus:outline-none relative cursor-pointer" :class="isDark ? 'bg-purple-600' : 'bg-border-strong'">
-                <span class="block w-4 h-4 bg-white rounded-full shadow transform transition-transform" :class="isDark ? 'translate-x-6' : 'translate-x-0'"></span>
+              <button @click="handleThemeToggle" class="w-12 h-6 rounded-full p-1 transition-colors focus:outline-none relative cursor-pointer" :class="localThemeState ? 'bg-purple-600' : 'bg-border-strong'">
+                <span class="block w-4 h-4 bg-white rounded-full shadow transform transition-transform" :class="localThemeState ? 'translate-x-6' : 'translate-x-0'"></span>
               </button>
             </div>
 
@@ -176,6 +176,8 @@ import { isDark, toggleTheme, initTheme } from '../../store/theme';
 const props = defineProps({ lang: String });
 const { t, locale } = useI18n();
 if (props.lang) locale.value = props.lang;
+
+const localThemeState = ref(false);
 
 const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
@@ -300,6 +302,7 @@ onMounted(async () => {
   const token = localStorage.getItem('token');
   if (!token) window.location.href = '/';
   initTheme();
+  localThemeState.value = isDark.value;
 
   // Check URL params for Spotify callback success
   const urlParams = new URLSearchParams(window.location.search);
@@ -338,6 +341,7 @@ onMounted(async () => {
 
 const handleThemeToggle = async () => {
   toggleTheme();
+  localThemeState.value = isDark.value;
   const token = localStorage.getItem('token');
   if (!token) return;
 

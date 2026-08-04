@@ -2,7 +2,7 @@
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="close">
     <div class="bg-surface border border-border-subtle rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-text-primary">{{ isCreating ? 'Новий тег' : 'Додати тег' }}</h3>
+        <h3 class="text-xl font-bold text-text-primary">{{ isCreating ? $t('tag_modal.new_tag') : $t('tag_modal.add_tag') }}</h3>
         <button @click="close" class="text-text-tertiary hover:text-text-primary">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -23,9 +23,9 @@
 
       <div v-else-if="!isCreating">
         <div v-if="tags.length === 0" class="text-center py-6">
-          <p class="text-text-secondary mb-4">У вас ще немає тегів.</p>
+          <p class="text-text-secondary mb-4">{{ $t('tag_modal.no_tags') }}</p>
           <button @click="isCreating = true" class="px-4 py-2 bg-accent-subtle text-text-accent hover:bg-accent-hover rounded-xl font-medium transition-colors w-full">
-            Створити тег
+            {{ $t('tag_modal.create_tag') }}
           </button>
         </div>
         <div v-else>
@@ -41,28 +41,28 @@
             </button>
           </div>
           <button @click="isCreating = true" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover border border-border-subtle text-text-primary rounded-xl font-medium transition-colors w-full">
-            Створити новий тег
+            {{ $t('tag_modal.create_new_tag') }}
           </button>
         </div>
       </div>
 
       <div v-else class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-text-secondary mb-1">Назва тегу</label>
+          <label class="block text-sm font-medium text-text-secondary mb-1">{{ $t('tag_modal.tag_name') }}</label>
           <div class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">#</span>
             <input 
               v-model="newTagName" 
               type="text" 
               class="w-full bg-surface-alt border border-border-strong rounded-xl py-2 pl-7 pr-3 text-text-primary focus:outline-none focus:border-purple-500 transition-colors"
-              placeholder="rock, gym, focus..."
+              :placeholder="$t('tag_modal.tag_placeholder')"
               @keyup.enter="createNewTag"
             />
           </div>
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-text-secondary mb-2">Колір</label>
+          <label class="block text-sm font-medium text-text-secondary mb-2">{{ $t('tag_modal.color') }}</label>
           <div class="flex gap-3 justify-center">
             <button 
               v-for="c in colors" 
@@ -77,14 +77,14 @@
 
         <div class="flex gap-2 pt-2">
           <button @click="isCreating = false" class="flex-1 px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary rounded-xl font-medium transition-colors">
-            Назад
+            {{ $t('tag_modal.back') }}
           </button>
           <button 
             @click="createNewTag" 
             :disabled="!newTagName.trim() || isSubmitting"
             class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-500 hover:to-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ isSubmitting ? '...' : 'Зберегти' }}
+            {{ isSubmitting ? '...' : $t('tag_modal.save') }}
           </button>
         </div>
       </div>
@@ -94,6 +94,9 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   isOpen: Boolean,
@@ -157,11 +160,11 @@ const createNewTag = async () => {
 const attachTagToTrack = async (name, color) => {
   const token = localStorage.getItem('token');
   if (!token) {
-    errorMessage.value = 'Немає токену авторизації';
+    errorMessage.value = t('tag_modal.error_no_token');
     return;
   }
   if (!props.trackId) {
-    errorMessage.value = 'ID треку відсутній';
+    errorMessage.value = t('tag_modal.error_no_track_id');
     return;
   }
   
@@ -183,11 +186,11 @@ const attachTagToTrack = async (name, color) => {
       close();
     } else {
       const errorData = await res.json();
-      errorMessage.value = errorData.error || `Помилка ${res.status}: Не вдалося зберегти тег`;
+      errorMessage.value = errorData.error || t('tag_modal.error_save', { status: res.status });
     }
   } catch (err) {
     console.error('Failed to attach tag:', err);
-    errorMessage.value = 'Мережева помилка при збереженні тегу';
+    errorMessage.value = t('tag_modal.error_network');
   } finally {
     isSubmitting.value = false;
   }

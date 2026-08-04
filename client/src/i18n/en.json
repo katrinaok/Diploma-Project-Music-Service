@@ -71,7 +71,24 @@
     "private": "Private",
     "delete": "Delete playlist",
     "confirm_delete": "Are you sure you want to delete this playlist? This action cannot be undone.",
-    "back_to_profile": "Back to profile"
+    "back_to_profile": "Back to profile",
+    "search_placeholder": "Search (or #tag)...",
+    "search_empty": "Nothing found for your search.",
+    "remove_tag": "Remove tag",
+    "add_tag": "Add tag",
+    "remove_from_playlist": "Remove from playlist",
+    "confirm_remove_track": "Remove track from playlist?",
+    "error_remove_tag": "Error removing tag"
+  },
+  "global_player": {
+    "default_title": "Spotify Player",
+    "ready_to_play": "Ready to play",
+    "spotify_connect": "Spotify Connect",
+    "error_not_ready": "Spotify player is not ready or requires page refresh.",
+    "error_playback": "Playback error! You might need Spotify Premium, or the track is unavailable in your region.",
+    "error_device_not_found": "Device not found. Please refresh the page.",
+    "error_api": "Failed to play track. Spotify API returned error ",
+    "error_connection": "Error connecting to Spotify."
   },
   "settings": {
     "title": "Settings",
@@ -109,5 +126,21 @@
   "footer": {
     "rights": "All rights reserved.",
     "project": "Diploma Project"
+  },
+  "tag_modal": {
+    "new_tag": "New tag",
+    "add_tag": "Add tag",
+    "no_tags": "You don't have any tags yet.",
+    "create_tag": "Create tag",
+    "create_new_tag": "Create new tag",
+    "tag_name": "Tag name",
+    "tag_placeholder": "rock, gym, focus...",
+    "color": "Color",
+    "back": "Back",
+    "save": "Save",
+    "error_no_token": "No authorization token",
+    "error_no_track_id": "Track ID is missing",
+    "error_save": "Error {status}: Failed to save tag",
+    "error_network": "Network error while saving tag"
   }
 }

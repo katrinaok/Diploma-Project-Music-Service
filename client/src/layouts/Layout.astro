@@ -1,5 +1,6 @@
 ---
-import { ClientRouter } from 'astro:transitions';
+import { ClientRouter } from "astro:transitions";
+import ReplacementSwap from "astro-vtbot/components/ReplacementSwap.astro";
 import "../styles/global.css";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
@@ -15,33 +16,54 @@ const lang = Astro.params.lang || "uk";
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
     <ClientRouter />
+    <ReplacementSwap />
     <script is:inline>
-      const theme = (() => {
-        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-          return localStorage.getItem('theme');
+      // 0. Diagnostic: Catch and display errors
+      window.addEventListener("error", (e) => {
+        console.error("Global error caught:", e.message);
+      });
+
+      // 1. Theme handling
+      const applyTheme = () => {
+        const theme = (() => {
+          if (
+            typeof localStorage !== "undefined" &&
+            localStorage.getItem("theme")
+          ) {
+            return localStorage.getItem("theme");
+          }
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            return "dark";
+          }
+          return "light";
+        })();
+
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
         }
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          return 'dark';
-        }
-        return 'light';
-      })();
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      };
+
+      // Run immediately on first load
+      applyTheme();
+
+      // Re-apply theme when navigating to a new page using Astro View Transitions
+      document.addEventListener("astro:after-swap", applyTheme);
     </script>
   </head>
-  <body class="bg-gray-50 dark:bg-[#0c0514] text-gray-900 dark:text-gray-100 antialiased min-h-screen flex flex-col transition-colors duration-300">
+  <body
+    class="bg-gray-50 dark:bg-[#0c0514] text-gray-900 dark:text-gray-100 antialiased min-h-screen flex flex-col transition-colors duration-300"
+  >
     <Header />
 
-    <main class="flex-grow">
+    <main class="flex-grow" data-vtbot-replace="main">
       <slot />
     </main>
 
     <Footer />
-    
+
     <!-- SPA Persisted Spotify Player -->
-    <GlobalPlayer client:load />
+    <GlobalPlayer client:load transition:persist="player" />
   </body>
 </html>

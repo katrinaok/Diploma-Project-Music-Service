@@ -5,7 +5,12 @@ export const isDark = ref(false);
 
 export const initTheme = () => {
   if (typeof window !== 'undefined') {
-    isDark.value = document.documentElement.classList.contains('dark');
+    const theme = localStorage.getItem('theme');
+    if (theme) {
+      isDark.value = theme === 'dark';
+    } else {
+      isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
   }
 };
 
