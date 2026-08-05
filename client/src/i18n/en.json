@@ -83,12 +83,17 @@
   "global_player": {
     "default_title": "Spotify Player",
     "ready_to_play": "Ready to play",
-    "spotify_connect": "Spotify Connect",
+    "spotify_connect": "Spotify Connected",
+    "initializing": "Initializing Spotify Player",
+    "loading_player": "Loading player...",
     "error_not_ready": "Spotify player is not ready or requires page refresh.",
     "error_playback": "Playback error! You might need Spotify Premium, or the track is unavailable in your region.",
     "error_device_not_found": "Device not found. Please refresh the page.",
     "error_api": "Failed to play track. Spotify API returned error ",
-    "error_connection": "Error connecting to Spotify."
+    "error_connection": "Error connecting to Spotify.",
+    "error_init": "Failed to initialize Spotify. Ensure your browser allows playback.",
+    "error_auth": "Spotify authentication error. You may need to reconnect your account.",
+    "error_account": "Spotify account error! This player requires a Spotify Premium subscription."
   },
   "settings": {
     "title": "Settings",

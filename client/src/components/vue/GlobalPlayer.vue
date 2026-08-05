@@ -67,10 +67,14 @@
     </div>
     
     <div class="flex items-center justify-end w-1/3">
-      <!-- Volume control or status could go here -->
-      <span class="text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center gap-2">
+      <!-- Status indicator -->
+      <span v-if="deviceId" class="text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center gap-2" :title="$t('global_player.spotify_connect')">
         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
         {{ $t('global_player.spotify_connect') }}
+      </span>
+      <span v-else class="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center gap-2" :title="$t('global_player.initializing')">
+        <span class="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
+        {{ $t('global_player.loading_player') }}
       </span>
     </div>
   </div>
@@ -250,6 +254,22 @@ const setupSpotifyPlayer = () => {
 
   player.addListener('not_ready', ({ device_id }) => {
     console.log('Device ID has gone offline', device_id);
+    deviceId.value = null;
+  });
+
+  player.addListener('initialization_error', ({ message }) => {
+    console.error('Failed to initialize', message);
+    alert(t('global_player.error_init'));
+  });
+
+  player.addListener('authentication_error', ({ message }) => {
+    console.error('Failed to authenticate', message);
+    alert(t('global_player.error_auth'));
+  });
+
+  player.addListener('account_error', ({ message }) => {
+    console.error('Failed to validate Spotify account', message);
+    alert(t('global_player.error_account'));
   });
 
   player.addListener('player_state_changed', state => {

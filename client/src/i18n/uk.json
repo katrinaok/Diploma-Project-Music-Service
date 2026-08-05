@@ -83,12 +83,17 @@
   "global_player": {
     "default_title": "Spotify Плеєр",
     "ready_to_play": "Готовий до відтворення",
-    "spotify_connect": "Spotify Connect",
+    "spotify_connect": "Spotify підключено",
+    "initializing": "Ініціалізація плеєра Spotify",
+    "loading_player": "Завантаження плеєра...",
     "error_not_ready": "Spotify плеєр ще не готовий або вимагає оновлення сторінки.",
     "error_playback": "Помилка відтворення! Можливо, потрібен Spotify Premium, або трек недоступний у вашому регіоні.",
     "error_device_not_found": "Пристрій не знайдено. Будь ласка, оновіть сторінку.",
     "error_api": "Не вдалося запустити трек. Spotify API повернув помилку ",
-    "error_connection": "Помилка з'єднання зі Spotify."
+    "error_connection": "Помилка з'єднання зі Spotify.",
+    "error_init": "Помилка ініціалізації Spotify. Переконайтесь, що ваш браузер дозволяє відтворення.",
+    "error_auth": "Помилка авторизації Spotify. Можливо, потрібно перепідключити акаунт.",
+    "error_account": "Помилка акаунта Spotify! Цей плеєр вимагає підписки Spotify Premium."
   },
   "settings": {
     "title": "Налаштування",

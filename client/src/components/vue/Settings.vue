@@ -342,22 +342,9 @@ onMounted(async () => {
 const handleThemeToggle = async () => {
   toggleTheme();
   localThemeState.value = isDark.value;
-  const token = localStorage.getItem('token');
-  if (!token) return;
-
-  try {
-    await fetch('http://localhost:5001/api/settings', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ theme: isDark.value ? 'dark' : 'light' })
-    });
-  } catch (error) {
-    console.error('Failed to save theme setting', error);
-  }
 };
+
+import { navigate } from 'astro:transitions/client';
 
 const handleLanguageChange = async (newLang) => {
   if (locale.value === newLang) return;
@@ -382,16 +369,16 @@ const handleLanguageChange = async (newLang) => {
     }
   }
 
+  // Update URL to reflect the new language so that F5 refresh works correctly
   const currentPath = window.location.pathname;
-  const pathParts = currentPath.split('/');
-  if (pathParts[1] === 'uk' || pathParts[1] === 'en') {
-    pathParts[1] = newLang;
+  const segments = currentPath.split('/').filter(Boolean);
+  if (segments[0] === 'uk' || segments[0] === 'en') {
+    segments[0] = newLang;
+  }
+  const newPath = '/' + segments.join('/');
+  if (newPath !== currentPath) {
     setTimeout(() => {
-      window.location.href = pathParts.join('/');
-    }, 150); // wait for animation
-  } else {
-    setTimeout(() => {
-      window.location.reload();
+      navigate(newPath);
     }, 150);
   }
 };

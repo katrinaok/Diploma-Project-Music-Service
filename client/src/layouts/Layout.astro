@@ -1,6 +1,5 @@
 ---
 import { ClientRouter } from "astro:transitions";
-import ReplacementSwap from "astro-vtbot/components/ReplacementSwap.astro";
 import "../styles/global.css";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
@@ -16,7 +15,6 @@ const lang = Astro.params.lang || "uk";
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
     <ClientRouter />
-    <ReplacementSwap />
     <script is:inline>
       // 0. Diagnostic: Catch and display errors
       window.addEventListener("error", (e) => {
@@ -57,7 +55,7 @@ const lang = Astro.params.lang || "uk";
   >
     <Header />
 
-    <main class="flex-grow" data-vtbot-replace="main">
+    <main class="flex-grow">
       <slot />
     </main>
 
