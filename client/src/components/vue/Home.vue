@@ -52,11 +52,14 @@
             </button>
             <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
 
-            <button @click="openPlaylistModal(track)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-purple-600 transition-all" :title="$t('home.add_to_playlist')">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-              </svg>
-            </button>
+            <div class="flex items-center gap-1">
+              <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(track.id)" />
+              <button @click="openPlaylistModal(track)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-purple-600 transition-all" :title="$t('home.add_to_playlist')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -105,6 +108,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
+import LikeButton from './LikeButton.vue';
 
 const props = defineProps({ lang: String });
 const { t, locale } = useI18n();
@@ -121,6 +125,7 @@ const isSpotifyConnected = ref(false);
 const playlists = ref([]);
 const isPlaylistModalOpen = ref(false);
 const trackToAdd = ref(null);
+const favoriteTrackIds = ref(new Set());
 
 onMounted(async () => {
   const token = localStorage.getItem('token');
@@ -142,6 +147,16 @@ onMounted(async () => {
         cache: 'no-store'
       }).then(res => res.json()).then(data => {
         isSpotifyConnected.value = !!data.connected;
+      });
+
+      // Отримуємо улюблені треки
+      fetch('http://localhost:5001/api/favorites', {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+      }).then(res => res.json()).then(data => {
+        if (data.favorites) {
+          favoriteTrackIds.value = new Set(data.favorites.map(f => f.track.spotifyId));
+        }
       });
     } catch (error) {
       console.error('Failed to init Home', error);

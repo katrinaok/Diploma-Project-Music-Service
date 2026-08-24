@@ -1,7 +1,8 @@
 {
   "nav": {
     "home": "Home",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "favorites": "Favorites"
   },
   "page": {
     "login": "Login",
@@ -56,7 +57,13 @@
     "playlist_desc_label": "Description (optional)",
     "playlist_desc_placeholder": "What is this playlist about?",
     "btn_cancel": "Cancel",
-    "btn_save": "Save"
+    "btn_save": "Save",
+    "favorites_desc": "Your saved tracks"
+  },
+  "favorites": {
+    "system_playlist": "System Playlist",
+    "empty_title": "It's empty here",
+    "empty_desc": "Search for tracks and add them to your favorites by clicking the heart."
   },
   "playlist": {
     "type": "Playlist",
@@ -138,6 +145,8 @@
     "no_tags": "You don't have any tags yet.",
     "create_tag": "Create tag",
     "create_new_tag": "Create new tag",
+    "delete_tag": "Delete tag",
+    "confirm_delete": "Are you sure you want to permanently delete this tag? It will disappear from all tracks.",
     "tag_name": "Tag name",
     "tag_placeholder": "rock, gym, focus...",
     "color": "Color",

@@ -117,7 +117,7 @@
               </div>
               <div class="w-1 h-1 rounded-full bg-border-strong"></div>
               <button 
-                @click="deletePlaylist"
+                @click="triggerDeletePlaylist"
                 class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors"
                 :title="$t('playlist.delete')"
               >
@@ -228,8 +228,15 @@
               </button>
               <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
               
-              <!-- Menu logic -->
-              <div class="relative">
+              <!-- Menu and Like logic -->
+              <div class="flex items-center gap-1 relative">
+                <LikeButton 
+                  :track="item.track" 
+                  :initial-liked="favoriteTrackIds.has(item.track.id)"
+                  @liked="onTrackLiked"
+                  @unliked="onTrackUnliked"
+                />
+                
                 <button @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -244,7 +251,7 @@
                     </svg>
                     {{ $t('playlist.add_tag') }}
                   </button>
-                  <button @click="removeTrack(item.track.id); closeMenu()" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface-hover transition-colors flex items-center gap-2 border-t border-border-subtle cursor-pointer">
+                  <button @click="triggerRemoveTrack(item.track.id)" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface-hover transition-colors flex items-center gap-2 border-t border-border-subtle cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -264,6 +271,27 @@
       :track-id="activeTrackIdForTag"
       @close="isTagModalOpen = false"
       @tag-added="onTagAdded"
+      @tag-deleted="onTagDeleted"
+    />
+
+    <ConfirmModal 
+      :is-open="isDeletePlaylistModalOpen"
+      :title="$t('playlist.delete')"
+      :description="$t('playlist.confirm_delete')"
+      :confirm-text="$t('playlist.delete')"
+      :is-loading="isDeletingPlaylist"
+      @confirm="executeDeletePlaylist"
+      @cancel="isDeletePlaylistModalOpen = false"
+    />
+
+    <ConfirmModal 
+      :is-open="isRemoveTrackModalOpen"
+      :title="$t('playlist.remove_from_playlist')"
+      :description="$t('playlist.confirm_remove_track')"
+      :confirm-text="$t('playlist.remove_from_playlist')"
+      :is-loading="isRemovingTrack"
+      @confirm="executeRemoveTrack"
+      @cancel="isRemoveTrackModalOpen = false"
     />
   </div>
 </template>
@@ -272,6 +300,8 @@
 import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import TagModal from './TagModal.vue';
+import LikeButton from './LikeButton.vue';
+import ConfirmModal from './ConfirmModal.vue';
 
 const props = defineProps({ 
   lang: String,
@@ -301,6 +331,15 @@ const searchQuery = ref('');
 const openMenuId = ref(null);
 const isTagModalOpen = ref(false);
 const activeTrackIdForTag = ref(null);
+const favoriteTrackIds = ref(new Set());
+
+const onTrackLiked = (track) => {
+  favoriteTrackIds.value.add(track.id);
+};
+
+const onTrackUnliked = (track) => {
+  favoriteTrackIds.value.delete(track.id);
+};
 
 const filteredTracks = computed(() => {
   if (!playlist.value || !playlist.value.tracks) return [];
@@ -346,6 +385,16 @@ const onTagAdded = (tag) => {
       item.track.tags.push({ tag, tagId: tag.id });
     }
   }
+};
+
+const onTagDeleted = (tagId) => {
+  if (!playlist.value || !playlist.value.tracks) return;
+  
+  playlist.value.tracks.forEach(item => {
+    if (item.track && item.track.tags) {
+      item.track.tags = item.track.tags.filter(t => t.tagId !== tagId);
+    }
+  });
 };
 
 const removeTagFromTrack = async (trackId, tagId) => {
@@ -422,22 +471,38 @@ const togglePlay = (track) => {
   };
 };
 
-const removeTrack = async (playlistTrackId) => {
+const isDeletePlaylistModalOpen = ref(false);
+const isDeletingPlaylist = ref(false);
+const isRemoveTrackModalOpen = ref(false);
+const trackToRemoveId = ref(null);
+const isRemovingTrack = ref(false);
+
+const triggerRemoveTrack = (playlistTrackId) => {
+  trackToRemoveId.value = playlistTrackId;
+  isRemoveTrackModalOpen.value = true;
+  closeMenu();
+};
+
+const executeRemoveTrack = async () => {
+  if (!trackToRemoveId.value) return;
+  isRemovingTrack.value = true;
   const token = localStorage.getItem('token');
   if (!token) return;
   
-  if (!confirm(t('playlist.confirm_remove_track'))) return;
-
   try {
-    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks/${playlistTrackId}`, {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks/${trackToRemoveId.value}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      playlist.value.tracks = playlist.value.tracks.filter(t => t.id !== playlistTrackId);
+      playlist.value.tracks = playlist.value.tracks.filter(t => t.track.id !== trackToRemoveId.value);
     }
   } catch (err) {
     console.error('Failed to remove track', err);
+  } finally {
+    isRemovingTrack.value = false;
+    isRemoveTrackModalOpen.value = false;
+    trackToRemoveId.value = null;
   }
 };
 
@@ -523,9 +588,12 @@ const togglePublicStatus = async () => {
   }
 };
 
-const deletePlaylist = async () => {
-  if (!confirm(t('playlist.confirm_delete'))) return;
+const triggerDeletePlaylist = () => {
+  isDeletePlaylistModalOpen.value = true;
+};
 
+const executeDeletePlaylist = async () => {
+  isDeletingPlaylist.value = true;
   const token = localStorage.getItem('token');
   if (!token) return;
 
@@ -544,6 +612,9 @@ const deletePlaylist = async () => {
     }
   } catch (err) {
     console.error('Failed to delete playlist:', err);
+  } finally {
+    isDeletingPlaylist.value = false;
+    isDeletePlaylistModalOpen.value = false;
   }
 };
 
@@ -585,6 +656,20 @@ onMounted(async () => {
       localStorage.removeItem('token');
       window.location.href = '/';
       return;
+    }
+    
+    // Fetch favorites
+    try {
+      const favRes = await fetch('http://localhost:5001/api/favorites', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (favRes.ok) {
+        const favData = await favRes.json();
+        const ids = new Set(favData.favorites.map(f => f.trackId));
+        favoriteTrackIds.value = ids;
+      }
+    } catch (e) {
+      console.error('Failed to fetch favorites:', e);
     }
     
     if (response.ok) {

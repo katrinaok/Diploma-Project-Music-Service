@@ -88,7 +88,6 @@
         </h2>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <!-- Create Playlist Button -->
           <div @click="openPlaylistModal" class="group border-2 border-dashed border-border-strong rounded-2xl p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-4 sm:gap-0 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-surface-hover/50 cursor-pointer transition-all duration-300 sm:min-h-[160px]">
             <div class="w-16 h-16 sm:w-12 sm:h-12 flex-shrink-0 bg-surface-alt text-text-tertiary rounded-xl sm:rounded-full flex items-center justify-center sm:mb-3 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm ">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,6 +95,21 @@
               </svg>
             </div>
             <p class="text-base sm:text-sm font-semibold text-text-secondary group-hover:text-text-accent-hover">{{ $t('profile.create_playlist') }}</p>
+          </div>
+          
+          <!-- Favorites Card -->
+          <div @click="goToFavorites" class="bg-surface-hover/50 rounded-2xl p-4 flex flex-row sm:flex-col items-center sm:items-stretch gap-4 sm:gap-0 hover:bg-surface-hover transition-colors border border-border-subtle group cursor-pointer sm:min-h-[160px]">
+             <div class="w-16 h-16 sm:w-full sm:h-auto sm:aspect-square flex-shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shadow-sm sm:mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-12 sm:w-12 text-white group-hover:scale-110 transition-transform duration-300" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                </svg>
+             </div>
+             <div class="flex-grow flex flex-col min-w-0">
+               <div class="flex items-center justify-between mb-1 gap-2">
+                 <h3 class="text-base font-bold text-text-primary group-hover:text-text-accent transition-colors truncate">{{ $t('nav.favorites') || 'Улюблене' }}</h3>
+               </div>
+               <p class="text-xs text-text-tertiary line-clamp-1 sm:line-clamp-2 mb-1 sm:mb-2 flex-grow">{{ $t('profile.favorites_desc') || 'Ваші збережені треки' }}</p>
+             </div>
           </div>
           
           <!-- Fetched Playlists -->
@@ -274,6 +288,10 @@ import { navigate } from 'astro:transitions/client';
 
 const goToPlaylist = (id) => {
   navigate(`/${locale.value}/playlist/${id}`);
+};
+
+const goToFavorites = () => {
+  navigate(`/${locale.value}/collection/tracks`);
 };
 
 const handleAuthError = () => {

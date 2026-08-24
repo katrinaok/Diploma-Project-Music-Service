@@ -1,0 +1,13 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Favorites from "../../../components/vue/Favorites.vue";
+import "../../../styles/global.css";
+import { useTranslations } from "../../../utils/i18n";
+
+const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
+const t = useTranslations(lang);
+---
+
+<Layout title={`MusicVerse - ${t('page.favorites') || 'Улюблене'}`}>
+    <Favorites lang={lang} client:load />
+</Layout>

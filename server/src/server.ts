@@ -609,6 +609,127 @@ app.delete('/api/tracks/:id/tags/:tagId', authenticateToken, async (req: Request
   }
 });
 
+// Повне видалення тегу
+app.delete('/api/tags/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const tagId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(tagId)) {
+      return res.status(400).json({ error: 'Некоректний ID тегу' });
+    }
+
+    const tag = await prisma.tag.findUnique({ where: { id: tagId } });
+    if (!tag || tag.userId !== userId) {
+      return res.status(403).json({ error: 'Тег не знайдено або немає доступу' });
+    }
+
+    await prisma.tag.delete({
+      where: { id: tagId }
+    });
+
+    res.json({ status: 'success', message: 'Тег успішно видалено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка видалення тегу' });
+  }
+});
+
+// ==========================================
+// FAVORITES ROUTES
+// ==========================================
+
+// Отримати улюблені треки
+app.get('/api/favorites', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+
+    const favorites = await prisma.favorite.findMany({
+      where: { userId },
+      include: {
+        track: {
+          include: {
+            tags: {
+              include: {
+                tag: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { addedAt: 'desc' }
+    });
+
+    res.json({ status: 'success', favorites });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання улюблених треків' });
+  }
+});
+
+// Додати/видалити трек з улюблених (Toggle)
+app.post('/api/favorites', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const { spotifyId, title, artistName, albumCoverUrl, previewUrl } = req.body;
+
+    if (!spotifyId || !title || !artistName) {
+      return res.status(400).json({ error: 'Неповні дані про трек' });
+    }
+
+    // Спочатку переконуємося, що трек є в нашій БД
+    const track = await prisma.track.upsert({
+      where: { spotifyId },
+      update: {
+        title,
+        artistName,
+        albumCoverUrl,
+        previewUrl
+      },
+      create: {
+        spotifyId,
+        title,
+        artistName,
+        albumCoverUrl,
+        previewUrl
+      }
+    });
+
+    // Перевіряємо чи він вже в улюблених
+    const existingFavorite = await prisma.favorite.findUnique({
+      where: {
+        userId_trackId: {
+          userId,
+          trackId: track.id
+        }
+      }
+    });
+
+    if (existingFavorite) {
+      // Якщо є - видаляємо (анлайк)
+      await prisma.favorite.delete({
+        where: { id: existingFavorite.id }
+      });
+      return res.json({ status: 'success', message: 'Трек видалено з улюблених', isFavorite: false });
+    } else {
+      // Якщо немає - додаємо (лайк)
+      await prisma.favorite.create({
+        data: {
+          userId,
+          trackId: track.id
+        }
+      });
+      return res.status(201).json({ status: 'success', message: 'Трек додано до улюблених', isFavorite: true, track });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка обробки улюбленого треку' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🚀 Сервер летить на http://localhost:${PORT}`);

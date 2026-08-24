@@ -1,14 +1,19 @@
 ---
-import { useTranslations } from '../utils/i18n';
+import { useTranslations } from "../utils/i18n";
 
-const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
+const lang = (Astro.params.lang || "uk") as "uk" | "en";
 const t = useTranslations(lang);
 const year = new Date().getFullYear();
 ---
-<footer class="bg-white dark:bg-[#170a24] border-t border-gray-100 dark:border-[#32184d] py-6 mt-auto transition-colors">
+
+<footer
+  class="bg-white dark:bg-[#170a24] border-t border-gray-100 dark:border-[#32184d] py-6 mt-auto transition-colors"
+>
   <div class="max-w-7xl mx-auto px-4">
     <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-      &copy; {year} MusicVerse. {t('footer.rights')} <span class="mx-2">|</span> {t('footer.project')}
+      &copy; {year} MusicVerse. {t("footer.rights")}
+      <span class="mx-2">|</span>
+      {t("footer.project")}
     </p>
   </div>
 </footer>

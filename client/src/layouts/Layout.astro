@@ -43,11 +43,30 @@ const lang = Astro.params.lang || "uk";
         }
       };
 
-      // Run immediately on first load
       applyTheme();
 
-      // Re-apply theme when navigating to a new page using Astro View Transitions
       document.addEventListener("astro:after-swap", applyTheme);
+      document.addEventListener("astro:page-load", applyTheme);
+
+      if (typeof window !== "undefined") {
+        const observer = new MutationObserver(() => {
+          const expected =
+            localStorage.getItem("theme") ||
+            (window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light");
+          const isDark = document.documentElement.classList.contains("dark");
+          if (expected === "dark" && !isDark) {
+            document.documentElement.classList.add("dark");
+          } else if (expected === "light" && isDark) {
+            document.documentElement.classList.remove("dark");
+          }
+        });
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
     </script>
   </head>
   <body

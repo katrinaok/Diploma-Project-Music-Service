@@ -30,15 +30,21 @@
         </div>
         <div v-else>
           <div class="flex flex-wrap gap-2 mb-6 max-h-48 overflow-y-auto pr-2">
-            <button 
+            <div 
               v-for="tag in tags" 
               :key="tag.id"
-              @click="addExistingTag(tag)"
-              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all hover:brightness-110 border"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all hover:brightness-110 border"
               :style="{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }"
             >
-              #{{ tag.name }}
-            </button>
+              <button @click="addExistingTag(tag)">
+                #{{ tag.name }}
+              </button>
+              <button @click.stop="triggerDeleteTag(tag.id)" class="opacity-50 hover:opacity-100 transition-all hover:text-red-500 hover:scale-110 flex items-center justify-center p-0.5 rounded-full" :title="$t('tag_modal.delete_tag') || 'Видалити тег'">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
           <button @click="isCreating = true" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover border border-border-subtle text-text-primary rounded-xl font-medium transition-colors w-full">
             {{ $t('tag_modal.create_new_tag') }}
@@ -89,12 +95,23 @@
         </div>
       </div>
     </div>
+    
+    <ConfirmModal 
+      :is-open="isDeleteTagModalOpen"
+      :title="$t('tag_modal.delete_tag') || 'Видалити тег'"
+      :description="$t('tag_modal.confirm_delete') || 'Ти дійсно хочеш повністю видалити цей тег? Він зникне з усіх треків.'"
+      :confirm-text="$t('settings.delete') || 'Видалити'"
+      :is-loading="isDeletingTag"
+      @confirm="executeDeleteTag"
+      @cancel="isDeleteTagModalOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import ConfirmModal from './ConfirmModal.vue';
 
 const { t } = useI18n();
 
@@ -103,7 +120,7 @@ const props = defineProps({
   trackId: Number
 });
 
-const emit = defineEmits(['close', 'tag-added']);
+const emit = defineEmits(['close', 'tag-added', 'tag-deleted']);
 
 const tags = ref([]);
 const isLoading = ref(false);
@@ -150,6 +167,45 @@ const close = () => {
 
 const addExistingTag = async (tag) => {
   await attachTagToTrack(tag.name, tag.color);
+};
+
+const isDeleteTagModalOpen = ref(false);
+const tagToDeleteId = ref(null);
+const isDeletingTag = ref(false);
+
+const triggerDeleteTag = (tagId) => {
+  tagToDeleteId.value = tagId;
+  isDeleteTagModalOpen.value = true;
+};
+
+const executeDeleteTag = async () => {
+  if (!tagToDeleteId.value) return;
+  isDeletingTag.value = true;
+  
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  
+  try {
+    const res = await fetch(`http://localhost:5001/api/tags/${tagToDeleteId.value}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (res.ok) {
+      tags.value = tags.value.filter(t => t.id !== tagToDeleteId.value);
+      emit('tag-deleted', tagToDeleteId.value);
+    } else {
+      const errorData = await res.json();
+      errorMessage.value = errorData.error || 'Помилка видалення';
+    }
+  } catch (err) {
+    console.error('Failed to delete tag:', err);
+    errorMessage.value = 'Помилка мережі';
+  } finally {
+    isDeletingTag.value = false;
+    isDeleteTagModalOpen.value = false;
+    tagToDeleteId.value = null;
+  }
 };
 
 const createNewTag = async () => {
