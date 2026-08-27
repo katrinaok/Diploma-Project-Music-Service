@@ -40,8 +40,9 @@
     "searching": "Searching...",
     "preview_unavailable": "Preview unavailable",
     "add_to_playlist": "Add to playlist",
-    "select_playlist": "Select playlist",
-    "no_playlists": "You don't have any playlists yet."
+    "select_playlist": "Select a playlist",
+    "no_playlists": "You don't have any playlists yet.",
+    "recently_played": "Recently Played"
   },
   "profile": {
     "title": "My Profile",

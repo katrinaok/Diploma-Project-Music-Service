@@ -302,6 +302,7 @@ import { useI18n } from 'vue-i18n';
 import TagModal from './TagModal.vue';
 import LikeButton from './LikeButton.vue';
 import ConfirmModal from './ConfirmModal.vue';
+import { recordListeningHistory } from '../../utils/history.js';
 
 const props = defineProps({ 
   lang: String,
@@ -324,6 +325,8 @@ const titleInputRef = ref(null);
 const coverInput = ref(null);
 
 const currentAudio = ref(null);
+const currentAudioTrackId = ref(null);
+const currentSpotifyTrackId = ref(null);
 const playingTrackId = ref(null);
 const isSpotifyConnected = ref(false);
 
@@ -420,6 +423,7 @@ const removeTagFromTrack = async (trackId, tagId) => {
 
 const handleSpotifyState = (e) => {
   if (e.detail) {
+    currentSpotifyTrackId.value = e.detail.trackId || null;
     if (e.detail.isPlaying && e.detail.trackId) {
       playingTrackId.value = e.detail.trackId;
     } else {
@@ -441,8 +445,12 @@ const closeMenuOnClickOutside = (e) => {
 };
 
 const togglePlay = (track) => {
+  if (playingTrackId.value !== track.spotifyId) {
+    recordListeningHistory(track);
+  }
+
   if (isSpotifyConnected.value) {
-    if (playingTrackId.value === track.spotifyId) {
+    if (playingTrackId.value === track.spotifyId || currentSpotifyTrackId.value === track.spotifyId) {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
       const uri = `spotify:track:${track.spotifyId}`;
@@ -460,10 +468,18 @@ const togglePlay = (track) => {
     playingTrackId.value = null;
     return;
   }
+  
+  if (currentAudioTrackId.value === track.spotifyId && currentAudio.value) {
+    currentAudio.value.play();
+    playingTrackId.value = track.spotifyId;
+    return;
+  }
+
   if (currentAudio.value) currentAudio.value.pause();
 
   currentAudio.value = new Audio(track.previewUrl);
   currentAudio.value.play();
+  currentAudioTrackId.value = track.spotifyId;
   playingTrackId.value = track.spotifyId;
 
   currentAudio.value.onended = () => {

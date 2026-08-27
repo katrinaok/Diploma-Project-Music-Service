@@ -41,7 +41,8 @@
     "preview_unavailable": "Прев'ю недоступне",
     "add_to_playlist": "Додати в плейлист",
     "select_playlist": "Оберіть плейлист",
-    "no_playlists": "У вас ще немає плейлистів."
+    "no_playlists": "У вас ще немає плейлистів.",
+    "recently_played": "Нещодавно прослухано"
   },
   "profile": {
     "title": "Мій Профіль",

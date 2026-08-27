@@ -7,6 +7,37 @@
         <p class="text-text-tertiary text-sm mt-1">{{ $t('home.subtitle') }}</p>
       </div>
 
+      <!-- History Section -->
+      <div v-if="historyTracks.length > 0" class="bg-surface p-6 rounded-2xl shadow-sm border border-border-subtle transition-colors">
+        <h2 class="text-lg font-bold text-text-primary mb-4 text-text-accent">{{ $t('home.recently_played') || 'Нещодавно прослухано' }}</h2>
+        
+        <div class="flex overflow-x-auto gap-4 pb-4 snap-x no-scrollbar">
+          <div v-for="item in historyTracks" :key="item.id" class="snap-start flex-shrink-0 w-32 md:w-40 group">
+            <div class="relative w-full aspect-square rounded-xl overflow-hidden shadow-sm mb-3 cursor-pointer group-hover:shadow-md transition-shadow bg-border-subtle">
+              <img v-if="item.track.albumCoverUrl" :src="item.track.albumCoverUrl" alt="Cover" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <div v-else class="w-full h-full flex items-center justify-center text-text-tertiary text-4xl">🎵</div>
+              
+              <!-- Play overlay -->
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+                <button 
+                  @click="togglePlay(item.track)" 
+                  class="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 cursor-pointer"
+                >
+                  <svg v-if="playingTrackId === (item.track.spotifyId || item.track.id)" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
+            <p class="text-xs text-text-tertiary truncate mt-0.5">{{ item.track.artistName }}</p>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-surface p-6 rounded-2xl shadow-sm border border-border-subtle transition-colors">
         <h2 class="text-lg font-bold text-text-primary mb-4 text-text-accent">{{ $t('home.search_title') }}</h2>
         
@@ -109,6 +140,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LikeButton from './LikeButton.vue';
+import { recordListeningHistory } from '../../utils/history.js';
 
 const props = defineProps({ lang: String });
 const { t, locale } = useI18n();
@@ -116,9 +148,12 @@ if (props.lang) locale.value = props.lang;
 
 const searchQuery = ref('');
 const tracks = ref([]);
+const historyTracks = ref([]);
 const isLoading = ref(false);
 
 const currentAudio = ref(null);
+const currentAudioTrackId = ref(null);
+const currentSpotifyTrackId = ref(null);
 const playingTrackId = ref(null);
 const isSpotifyConnected = ref(false);
 
@@ -158,6 +193,16 @@ onMounted(async () => {
           favoriteTrackIds.value = new Set(data.favorites.map(f => f.track.spotifyId));
         }
       });
+      
+      // Отримуємо історію прослуховувань
+      fetch('http://localhost:5001/api/history', {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+      }).then(res => res.json()).then(data => {
+        if (data.history) {
+          historyTracks.value = data.history;
+        }
+      });
     } catch (error) {
       console.error('Failed to init Home', error);
     }
@@ -168,6 +213,7 @@ onMounted(async () => {
 
 const handleSpotifyState = (e) => {
   if (e.detail) {
+    currentSpotifyTrackId.value = e.detail.trackId || null;
     if (e.detail.isPlaying && e.detail.trackId) {
       playingTrackId.value = e.detail.trackId;
     } else {
@@ -199,29 +245,45 @@ const searchTracks = async () => {
 };
 
 const togglePlay = (track) => {
+  const trackId = track.spotifyId || track.id;
+  if (playingTrackId.value !== trackId) {
+    recordListeningHistory(track);
+  }
+
   if (isSpotifyConnected.value) {
-    if (playingTrackId.value === track.id) {
+    if (playingTrackId.value === trackId || currentSpotifyTrackId.value === trackId) {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
-      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: track.uri, id: track.id } }));
+      const uri = track.uri || `spotify:track:${track.spotifyId}`;
+      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri, id: trackId } }));
       // Чекаємо підтвердження від Spotify (spotify-state-update) замість оптимістичного оновлення
     }
     return;
   }
 
   // Fallback до звичайного preview (якщо є)
-  if (!track.preview_url) return;
+  const preview = track.preview_url || track.previewUrl;
 
-  if (playingTrackId.value === track.id) {
+  if (!preview) return;
+
+  if (playingTrackId.value === trackId) {
     currentAudio.value.pause();
     playingTrackId.value = null;
     return;
   }
+  
+  if (currentAudioTrackId.value === trackId && currentAudio.value) {
+    currentAudio.value.play();
+    playingTrackId.value = trackId;
+    return;
+  }
+
   if (currentAudio.value) currentAudio.value.pause();
 
-  currentAudio.value = new Audio(track.preview_url);
+  currentAudio.value = new Audio(preview);
   currentAudio.value.play();
-  playingTrackId.value = track.id;
+  currentAudioTrackId.value = trackId;
+  playingTrackId.value = trackId;
 
   currentAudio.value.onended = () => {
     playingTrackId.value = null;
