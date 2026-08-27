@@ -41,14 +41,14 @@
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
   --text-muted: #6b7280;
-  
+
   --text-accent: #c084fc;
   --text-accent-hover: #d8b4fe;
-  
+
   --bg-success-subtle: rgb(20 83 45 / 0.2);
   --text-success: #4ade80;
   --border-success-subtle: #166534;
-  
+
   --bg-error-subtle: rgb(127 29 29 / 0.2);
   --text-error: #f87171;
   --text-error-strong: #f87171;
@@ -69,14 +69,14 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-text-muted: var(--text-muted);
-  
+
   --color-text-accent: var(--text-accent);
   --color-text-accent-hover: var(--text-accent-hover);
-  
+
   --color-success-subtle: var(--bg-success-subtle);
   --color-text-success: var(--text-success);
   --color-border-success: var(--border-success-subtle);
-  
+
   --color-error-subtle: var(--bg-error-subtle);
   --color-text-error: var(--text-error);
   --color-text-error-strong: var(--text-error-strong);

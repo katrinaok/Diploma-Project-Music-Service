@@ -101,7 +101,11 @@
     "error_connection": "Error connecting to Spotify.",
     "error_init": "Failed to initialize Spotify. Ensure your browser allows playback.",
     "error_auth": "Spotify authentication error. You may need to reconnect your account.",
-    "error_account": "Spotify account error! This player requires a Spotify Premium subscription."
+    "error_account": "Spotify account error! This player requires a Spotify Premium subscription.",
+    "lyrics": "Lyrics",
+    "lyrics_loading": "Searching for lyrics...",
+    "lyrics_not_found": "Lyrics not found",
+    "lyrics_error": "Error loading lyrics"
   },
   "settings": {
     "title": "Settings",

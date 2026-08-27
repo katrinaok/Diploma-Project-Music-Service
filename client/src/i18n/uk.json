@@ -101,7 +101,11 @@
     "error_connection": "Помилка з'єднання зі Spotify.",
     "error_init": "Помилка ініціалізації Spotify. Переконайтесь, що ваш браузер дозволяє відтворення.",
     "error_auth": "Помилка авторизації Spotify. Можливо, потрібно перепідключити акаунт.",
-    "error_account": "Помилка акаунта Spotify! Цей плеєр вимагає підписки Spotify Premium."
+    "error_account": "Помилка акаунта Spotify! Цей плеєр вимагає підписки Spotify Premium.",
+    "lyrics": "Текст пісні",
+    "lyrics_loading": "Шукаємо текст...",
+    "lyrics_not_found": "Текст пісні не знайдено",
+    "lyrics_error": "Помилка завантаження тексту"
   },
   "settings": {
     "title": "Налаштування",

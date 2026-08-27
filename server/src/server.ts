@@ -6,6 +6,12 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { exec } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
@@ -727,6 +733,44 @@ app.post('/api/favorites', authenticateToken, async (req: Request, res: Response
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка обробки улюбленого треку' });
+  }
+});
+
+// ==========================================
+// LYRICS ROUTE
+// ==========================================
+app.get('/api/lyrics', async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ error: 'Missing query parameter q' });
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'get_lyrics.py');
+    // For windows, python is usually in PATH. 
+    // In production, might need to specify exact python path or use a python virtual env.
+    exec(`python "${scriptPath}" "${query}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing python script: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to fetch lyrics' });
+      }
+      
+      try {
+        const result = JSON.parse(stdout);
+        if (result.success) {
+          res.json({ status: 'success', lyrics: result.lyrics });
+        } else {
+          res.status(404).json({ error: result.error || 'Lyrics not found' });
+        }
+      } catch (e) {
+        console.error('Failed to parse python output:', stdout);
+        res.status(500).json({ error: 'Invalid response from lyrics service' });
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error fetching lyrics' });
   }
 });
 

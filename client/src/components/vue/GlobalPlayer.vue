@@ -1,6 +1,37 @@
 <template>
-  <div v-if="isConnected" class="fixed bottom-0 left-0 right-0 bg-surface-alt border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
-    
+  <div>
+    <!-- Lyrics Overlay -->
+    <div v-if="showLyrics" class="fixed inset-0 z-40 bg-purple-100 dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-all duration-300">
+      <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div v-if="lyricsLoading" class="flex flex-col items-center justify-center h-full text-text-secondary">
+        <span class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></span>
+        <p>{{ $t('global_player.lyrics_loading') }}</p>
+      </div>
+      <div v-else-if="lyricsError" class="flex flex-col items-center justify-center h-full text-text-secondary">
+        <p class="text-xl font-bold">{{ lyricsError }}</p>
+      </div>
+      <div v-else-if="lyricsList.length > 0" class="w-full max-w-5xl h-full overflow-y-auto px-8 py-8 lyrics-container no-scrollbar" ref="lyricsContainer">
+        <div class="flex flex-col gap-8 text-center pb-64 pt-32">
+          <p v-for="(line, index) in lyricsList" :key="index"
+             :class="[
+               'text-2xl md:text-4xl font-bold transition-all duration-300 cursor-pointer px-4 break-words',
+               activeLyricIndex === index ? 'text-purple-400 drop-shadow-lg scale-105' : 'text-text-tertiary hover:text-text-secondary opacity-60 hover:opacity-100'
+             ]"
+             @click="seekToLyric(line.time, index)"
+             :ref="el => { if(el) lyricRefs[index] = el }">
+            {{ line.text }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Player Panel -->
+    <div v-if="isConnected" class="fixed bottom-0 left-0 right-0 bg-surface-alt border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
     <div class="flex items-center gap-4 w-1/3">
       <img v-if="currentTrack?.album?.images[0]?.url" :src="currentTrack.album.images[0].url" class="w-14 h-14 rounded-lg shadow-md object-cover" />
       <div v-else class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center">🎵</div>
@@ -66,7 +97,29 @@
       </div>
     </div>
     
-    <div class="flex items-center justify-end w-1/3">
+    <div class="flex items-center justify-end w-1/3 gap-4">
+      <!-- Lyrics Button -->
+      <button @click="toggleLyrics" :class="[
+        'p-2 rounded-xl transition-all duration-300 tooltip-trigger cursor-pointer flex items-center justify-center relative group',
+        showLyrics 
+          ? 'text-purple-500' 
+          : 'text-text-secondary hover:text-text-primary'
+      ]" :title="$t('global_player.lyrics')" v-if="deviceId">
+        <!-- Active (Filled) Vintage Mic -->
+        <svg v-if="showLyrics" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 transition-transform duration-300 scale-110">
+          <g fill="currentColor">
+            <rect x="8" y="2" width="8" height="13" rx="4" />
+          </g>
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 10v1a7 7 0 0 0 14 0v-1 M12 18v4 M9 22h6" />
+        </svg>
+        <!-- Inactive (Outlined) Vintage Mic -->
+        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 transition-transform duration-300 group-hover:scale-110">
+          <rect x="8" y="2" width="8" height="13" rx="4" />
+          <path d="M8 6h8 M8 10h8" />
+          <path d="M5 10v1a7 7 0 0 0 14 0v-1 M12 18v4 M9 22h6" />
+        </svg>
+      </button>
+
       <!-- Status indicator -->
       <span v-if="deviceId" class="text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center gap-2" :title="$t('global_player.spotify_connect')">
         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -78,10 +131,11 @@
       </span>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -126,6 +180,15 @@ const duration = ref(globalState.duration);
 const isSeeking = ref(false);
 let progressInterval = null;
 
+// Lyrics state
+const showLyrics = ref(false);
+const lyricsLoading = ref(false);
+const lyricsError = ref(null);
+const lyricsList = ref([]);
+const activeLyricIndex = ref(-1);
+const lyricRefs = ref([]);
+const lyricsContainer = ref(null);
+
 // Sync refs with global state so updates are preserved
 watch(isConnected, val => { if (typeof window !== 'undefined') window.__spotifyState.isConnected = val; });
 watch(token, val => { if (typeof window !== 'undefined') window.__spotifyState.token = val; });
@@ -140,13 +203,144 @@ watch(isPlaying, (newVal) => {
   else stopProgressTimer();
 });
 
+// Watch currentTrack for lyrics
+watch(currentTrack, (newTrack, oldTrack) => {
+  if (newTrack?.id !== oldTrack?.id) {
+    lyricsList.value = [];
+    activeLyricIndex.value = -1;
+    if (showLyrics.value) {
+      fetchLyrics();
+    }
+  }
+});
+
+// Variables to hold forced lyric state
+let forcedLyricIndex = -1;
+let forcedLyricTimeout = null;
+
+// Sync lyrics scroll position
+watch(position, (newPosMs) => {
+  if (!showLyrics.value || lyricsList.value.length === 0 || forcedLyricIndex !== -1) return;
+  const posSec = newPosMs / 1000;
+  
+  let newIndex = -1;
+  for (let i = 0; i < lyricsList.value.length; i++) {
+    if (lyricsList.value[i].time <= posSec + 0.5) {
+      newIndex = i;
+    } else {
+      break;
+    }
+  }
+  
+  if (newIndex !== activeLyricIndex.value) {
+    activeLyricIndex.value = newIndex;
+    scrollToActiveLyric();
+  }
+});
+
+const scrollToActiveLyric = () => {
+  if (activeLyricIndex.value >= 0 && lyricRefs.value[activeLyricIndex.value] && lyricsContainer.value) {
+    const el = lyricRefs.value[activeLyricIndex.value];
+    const container = lyricsContainer.value;
+    
+    const elTop = el.offsetTop;
+    const elHeight = el.offsetHeight;
+    const containerHeight = container.offsetHeight;
+    
+    container.scrollTo({
+      top: elTop - (containerHeight / 2) + (elHeight / 2),
+      behavior: 'smooth'
+    });
+  }
+};
+
+const seekToLyric = (timeSec, index) => {
+  const newPosMs = Math.max(0, Math.floor(timeSec * 1000) - 550);
+  position.value = newPosMs;
+  
+  forcedLyricIndex = index;
+  activeLyricIndex.value = index;
+  scrollToActiveLyric();
+  
+  clearTimeout(forcedLyricTimeout);
+  forcedLyricTimeout = setTimeout(() => {
+    forcedLyricIndex = -1;
+  }, 1500);
+
+  if (window.__spotifyState.player) {
+    window.__spotifyState.player.seek(newPosMs);
+  }
+};
+
+const toggleLyrics = async () => {
+  showLyrics.value = !showLyrics.value;
+  if (showLyrics.value && lyricsList.value.length === 0 && currentTrack.value) {
+    await fetchLyrics();
+  }
+};
+
+const parseLrc = (lrcString) => {
+  const lines = lrcString.split('\n');
+  const regex = /\[(\d{2}):(\d{2}\.\d{2,3})\](.*)/;
+  const parsed = [];
+  lines.forEach(line => {
+    const match = line.match(regex);
+    if (match) {
+      const minutes = parseInt(match[1]);
+      const seconds = parseFloat(match[2]);
+      const time = minutes * 60 + seconds;
+      const text = match[3].trim();
+      if (text) {
+         parsed.push({ time, text });
+      }
+    }
+  });
+  return parsed;
+};
+
+const fetchLyrics = async () => {
+  if (!currentTrack.value) return;
+  lyricsLoading.value = true;
+  lyricsError.value = null;
+  lyricsList.value = [];
+  activeLyricIndex.value = -1;
+
+  try {
+    const artist = currentTrack.value.artists?.[0]?.name || '';
+    const track = currentTrack.value.name || '';
+    const query = `${artist} ${track}`;
+    
+    const res = await fetch(`http://localhost:5001/api/lyrics?q=${encodeURIComponent(query)}`, {
+      cache: 'no-store'
+    });
+    const data = await res.json();
+    
+    if (res.ok && data.status === 'success' && data.lyrics) {
+      lyricsList.value = parseLrc(data.lyrics);
+      if (lyricsList.value.length === 0) {
+        lyricsError.value = t('global_player.lyrics_not_found');
+      }
+      // Wait for DOM to update refs
+      await nextTick();
+      scrollToActiveLyric();
+    } else {
+      lyricsError.value = data.error || t('global_player.lyrics_not_found');
+    }
+  } catch (e) {
+    console.error(e);
+    lyricsError.value = t('global_player.lyrics_error');
+  } finally {
+    lyricsLoading.value = false;
+  }
+};
+
 const startProgressTimer = () => {
   stopProgressTimer();
   progressInterval = setInterval(() => {
     if (isPlaying.value && !isSeeking.value && position.value < duration.value) {
-      position.value = Number(position.value) + 1000;
+      position.value = Number(position.value) + 100;
     }
-  }, 1000);
+  }, 100);
 };
 
 const stopProgressTimer = () => {
@@ -365,3 +559,13 @@ onBeforeUnmount(() => {
   // this component while we navigate. Disconnecting it would stop the music.
 });
 </script>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
