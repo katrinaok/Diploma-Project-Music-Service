@@ -100,23 +100,19 @@
     <div class="flex items-center justify-end w-1/3 gap-4">
       <!-- Lyrics Button -->
       <button @click="toggleLyrics" :class="[
-        'p-2 rounded-xl transition-all duration-300 tooltip-trigger cursor-pointer flex items-center justify-center relative group',
-        showLyrics 
-          ? 'text-purple-500' 
-          : 'text-text-secondary hover:text-text-primary'
-      ]" :title="$t('global_player.lyrics')" v-if="deviceId">
-        <!-- Active (Filled) Vintage Mic -->
-        <svg v-if="showLyrics" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 transition-transform duration-300 scale-110">
-          <g fill="currentColor">
-            <rect x="8" y="2" width="8" height="13" rx="4" />
-          </g>
-          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 10v1a7 7 0 0 0 14 0v-1 M12 18v4 M9 22h6" />
+        'p-2 rounded-xl transition-all duration-300 tooltip-trigger flex items-center justify-center relative group',
+        showLyrics ? 'text-purple-500' : 'text-text-secondary',
+        currentTrack && !showLyrics ? 'hover:text-text-primary' : '',
+        !currentTrack ? 'opacity-40 cursor-default' : 'cursor-pointer'
+      ]" :title="$t('global_player.lyrics')" v-if="deviceId" :disabled="!currentTrack">
+        <!-- Active (Filled) Mic -->
+        <svg v-if="showLyrics" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 transition-transform duration-300 scale-110">
+          <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5z" />
+          <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.583v3.167h2.25a.75.75 0 0 1 0 1.5h-6a.75.75 0 0 1 0-1.5h2.25v-3.167a6.751 6.751 0 0 1-6-6.583v-1.5a.75.75 0 0 1 .75-.75z" />
         </svg>
-        <!-- Inactive (Outlined) Vintage Mic -->
-        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 transition-transform duration-300 group-hover:scale-110">
-          <rect x="8" y="2" width="8" height="13" rx="4" />
-          <path d="M8 6h8 M8 10h8" />
-          <path d="M5 10v1a7 7 0 0 0 14 0v-1 M12 18v4 M9 22h6" />
+        <!-- Inactive (Outlined) Mic -->
+        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="['w-5 h-5 transition-transform duration-300', currentTrack ? 'group-hover:scale-110' : '']">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3z" />
         </svg>
       </button>
 
@@ -273,8 +269,9 @@ const seekToLyric = (timeSec, index) => {
 };
 
 const toggleLyrics = async () => {
+  if (!currentTrack.value) return;
   showLyrics.value = !showLyrics.value;
-  if (showLyrics.value && lyricsList.value.length === 0 && currentTrack.value) {
+  if (showLyrics.value && lyricsList.value.length === 0) {
     await fetchLyrics();
   }
 };
@@ -404,6 +401,7 @@ const initializePlayer = () => {
     script.src = 'https://sdk.scdn.co/spotify-player.js';
     script.async = true;
     document.body.appendChild(script);
+
     window.onSpotifyWebPlaybackSDKReady = () => {
       setupSpotifyPlayer();
     };
@@ -501,20 +499,35 @@ const nextTrack = () => {
 
 const previousTrack = () => {
   if (window.__spotifyState.player) {
-    window.__spotifyState.player.previousTrack();
+    // If we're past the first 2.5 seconds, just restart the current song
+    if (position.value > 2500) {
+      window.__spotifyState.player.seek(0);
+      position.value = 0;
+    } else {
+      // Otherwise, skip to the previous track
+      window.__spotifyState.player.previousTrack();
+    }
   }
 };
 
-const playTrack = async (uri) => {
+const playTrack = async (uri, allUris = null) => {
   if (!deviceId.value || !token.value) {
     alert(t('global_player.error_not_ready'));
     return;
   }
   
+  let body = { uris: [uri] };
+  if (allUris && allUris.length > 0) {
+    body = {
+      uris: allUris,
+      offset: { uri: uri }
+    };
+  }
+  
   try {
     const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
       method: 'PUT',
-      body: JSON.stringify({ uris: [uri] }),
+      body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token.value}`
@@ -544,7 +557,7 @@ onMounted(() => {
 
   window.addEventListener('play-spotify-track', (e) => {
     if (e.detail && e.detail.uri) {
-      playTrack(e.detail.uri);
+      playTrack(e.detail.uri, e.detail.uris);
     }
   });
 

@@ -1,6 +1,6 @@
 <template>
   <div class="w-full p-4 md:p-8 pb-32">
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="w-full mx-auto space-y-6">
       
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center py-20">
@@ -160,7 +160,10 @@ const togglePlay = (track) => {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
       const uri = `spotify:track:${track.spotifyId}`;
-      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: uri, id: track.spotifyId } }));
+      const allUris = tracks.value
+        .map(t => `spotify:track:${t.track.spotifyId}`)
+        .filter(u => !u.includes('undefined') && !u.includes('null'));
+      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: uri, id: track.spotifyId, uris: allUris } }));
     }
     return;
   }

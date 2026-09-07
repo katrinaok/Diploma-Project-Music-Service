@@ -1,6 +1,6 @@
 <template>
   <div class="w-full p-4 md:p-8">
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="w-full mx-auto space-y-6">
       
       <div class="bg-surface p-6 rounded-2xl shadow-sm border border-border-subtle transition-colors">
         <h1 class="text-2xl font-bold text-text-primary">{{ $t('home.title') }}</h1>
@@ -166,6 +166,13 @@ onMounted(async () => {
   const token = localStorage.getItem('token');
   if (!token) window.location.href = '/';
   
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('q');
+  if (q) {
+    searchQuery.value = q;
+    setTimeout(() => { searchTracks(); }, 100);
+  }
+
   if (token) {
     try {
       // Отримуємо плейлисти
@@ -255,13 +262,22 @@ const togglePlay = (track) => {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
       const uri = track.uri || `spotify:track:${track.spotifyId}`;
-      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri, id: trackId } }));
-      // Чекаємо підтвердження від Spotify (spotify-state-update) замість оптимістичного оновлення
+      
+      let allUris = [];
+      if (searchResults.value.some(t => (t.id || t.spotifyId) === trackId)) {
+        allUris = searchResults.value.map(t => t.uri || `spotify:track:${t.spotifyId || t.id}`);
+      } else if (recommendations.value.some(t => (t.id || t.spotifyId) === trackId)) {
+        allUris = recommendations.value.map(t => t.uri || `spotify:track:${t.spotifyId || t.id}`);
+      } else if (recentlyPlayed.value.some(t => (t.track?.id || t.track?.spotifyId || t.id || t.spotifyId) === trackId)) {
+        allUris = recentlyPlayed.value.map(t => (t.track?.uri || t.uri) || `spotify:track:${t.track?.spotifyId || t.track?.id || t.spotifyId || t.id}`);
+      }
+      allUris = allUris.filter(u => !u.includes('undefined') && !u.includes('null'));
+
+      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri, id: trackId, uris: allUris } }));
     }
     return;
   }
-
-  // Fallback до звичайного preview (якщо є)
+  
   const preview = track.preview_url || track.previewUrl;
 
   if (!preview) return;

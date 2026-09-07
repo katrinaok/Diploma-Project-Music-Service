@@ -16,7 +16,7 @@
     "@astrojs/vue": "^7.0.1",
     "@tailwindcss/vite": "^4.3.2",
     "astro": "^7.0.6",
-    "astro-vtbot": "^3.0.1",
+    "astro-vtbot": "^3.1.0",
     "tailwindcss": "^4.3.2",
     "vue": "^3.5.39",
     "vue-i18n": "^11.4.6"

@@ -1,7 +1,7 @@
 <template>
   <button 
     @click.stop="toggleLike" 
-    class="transition-transform hover:scale-110 p-2 focus:outline-none"
+    class="transition-transform hover:scale-110 p-2 focus:outline-none cursor-pointer"
     :class="{ 'text-red-500': isLiked, 'text-text-tertiary hover:text-text-primary': !isLiked }"
     :title="isLiked ? 'Видалити з улюблених' : 'Додати в улюблені'"
     :disabled="isLoading"

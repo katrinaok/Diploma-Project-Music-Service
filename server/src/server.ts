@@ -823,33 +823,42 @@ app.get('/api/spotify/test', async (req: Request, res: Response) => {
 // Роут для пошуку треків
 app.get('/api/spotify/search', async (req: Request, res: Response) => {
   try {
-    // Беремо запит з URL (наприклад: ?q=назва_гурту)
     const query = req.query.q;
     if (!query) {
       return res.status(400).json({ error: 'Введіть запит для пошуку (параметр q)' });
     }
 
-    // 1. Отримуємо наш токен
     const token = await getSpotifyAccessToken();
+    const encodedQuery = encodeURIComponent(query as string);
+    const urls = [
+      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=0`,
+      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=10`,
+      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=20`
+    ];
 
-    // 2. Робимо запит до реального API Spotify
-    // Шукаємо треки (type=track), беремо тільки 5 штук (limit=5)
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query as string)}&type=track&limit=5`, {
-      headers: {
-        'Authorization': `Bearer ${token}` // Показуємо перепустку!
+    const responses = await Promise.all(urls.map(url => fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })));
+
+    let allTracks: any[] = [];
+    for (const response of responses) {
+      if (!response.ok) {
+        console.error('Помилка при запиті до бази Spotify:', await response.text());
+        continue;
       }
-    });
-
-    if (!response.ok) {
-      throw new Error('Помилка при запиті до бази Spotify');
+      const data = await response.json();
+      if (data.tracks && data.tracks.items) {
+        allTracks = allTracks.concat(data.tracks.items);
+      }
     }
 
-    const data = await response.json();
-
-    // 3. Віддаємо масив треків на фронтенд
+    if (allTracks.length === 0) {
+      throw new Error('Не вдалося отримати треки або запит порожній');
+    }
+    
     res.json({
       status: 'success',
-      tracks: data.tracks.items
+      tracks: allTracks
     });
 
   } catch (error) {

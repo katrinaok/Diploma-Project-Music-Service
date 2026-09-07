@@ -48,7 +48,18 @@ function getPathFor(lang: string) {
         e.preventDefault();
 
         const lang = btn.getAttribute("data-lang");
-        const targetUrl = btn.getAttribute("href");
+        if (!lang) return;
+        
+        // Dynamically compute the target URL based on the current client-side path
+        const segments = window.location.pathname.split("/").filter(Boolean);
+        if (segments[0] === "uk" || segments[0] === "en") {
+          segments.shift();
+        }
+        let targetUrl = `/${lang}`;
+        if (segments.length > 0) {
+          targetUrl += `/${segments.join("/")}`;
+        }
+        
         const token = localStorage.getItem("token");
 
         // 2. Оновлюємо локальне сховище

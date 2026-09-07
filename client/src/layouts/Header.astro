@@ -1,53 +1,49 @@
 ---
 import LanguageSwitcher from '../components/astro/LanguageSwitcher.astro';
 import ThemeToggle from '../components/vue/ThemeToggle.vue';
+import HeaderProfileDropdown from '../components/vue/HeaderProfileDropdown.vue';
+import HeaderSearch from '../components/vue/HeaderSearch.vue';
+import HeaderHomeButton from '../components/vue/HeaderHomeButton.vue';
 import { useTranslations } from '../utils/i18n';
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
 const basePath = `/${lang}`;
+
+const pathname = Astro.url.pathname;
+// Check if the current path is the home page
+const isHome = pathname.endsWith('/home') || pathname === `/${lang}/home` || pathname === `/${lang}`;
 ---
 
 <header class="bg-surface border-b border-border-subtle shadow-sm sticky top-0 z-50 transition-colors relative">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-    <!-- Left: Logo -->
-    <div class="flex items-center gap-3">
-      <div
-        class="w-8 h-8 bg-purple-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-xl"
-      >
-        M
-      </div>
-      <a
-        href={`${basePath}/home`}
-        class="hidden sm:block text-xl font-extrabold text-text-primary tracking-tight hover:text-text-accent transition-colors"
-      >
-        MusicVerse
-      </a>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <!-- Left: Empty (for balance) -->
+    <div class="flex-1 hidden md:flex items-center">
+      <!-- You can add back navigation arrows here in the future if needed -->
     </div>
 
-    <!-- Center: Desktop Navigation -->
-    <nav class="hidden sm:flex items-center gap-4 sm:gap-6">
-      <a
-        href={`${basePath}/home`}
-        class="text-sm font-medium text-text-secondary hover:text-text-accent transition-colors whitespace-nowrap"
-        >{t('nav.home')}</a
-      >
-      <a
-        href={`${basePath}/profile`}
-        class="text-sm font-medium text-text-secondary hover:text-text-accent transition-colors whitespace-nowrap"
-        >{t('nav.profile')}</a
-      >
-    </nav>
-
-    <!-- Right: Controls & Mobile Toggle -->
-    <div class="flex items-center gap-1 sm:gap-2">
-      <ThemeToggle client:load />
-      <LanguageSwitcher />
+    <!-- Center: Home Icon & Search -->
+    <div class="flex-1 flex justify-center items-center gap-2 max-w-2xl px-2 sm:px-4 w-full">
+      <HeaderHomeButton client:load />
       
-      <!-- Mobile Menu Button -->
-      <button id="mobile-menu-toggle" class="sm:hidden p-2 text-text-primary hover:bg-surface-hover rounded-lg transition-colors ml-1" aria-label="Menu">
+      <div class="flex-1 w-full max-w-[400px]">
+        <HeaderSearch client:load />
+      </div>
+    </div>
+
+    <!-- Right: Controls & Profile -->
+    <div class="flex-1 flex items-center justify-end gap-2 sm:gap-4">
+      <div class="hidden sm:flex items-center gap-2">
+        <ThemeToggle client:load />
+        <LanguageSwitcher />
+      </div>
+      
+      <HeaderProfileDropdown client:load />
+      
+      <!-- Mobile Menu Button (Optional, for Theme/Lang toggle) -->
+      <button id="mobile-menu-toggle" class="sm:hidden p-2 text-text-primary hover:bg-surface-hover rounded-lg transition-colors ml-1 cursor-pointer" aria-label="Menu">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
         </svg>
       </button>
     </div>
@@ -55,12 +51,13 @@ const basePath = `/${lang}`;
 
   <!-- Mobile Navigation Menu -->
   <div id="mobile-menu" class="hidden sm:hidden absolute top-16 left-0 w-full bg-surface border-b border-border-subtle shadow-lg py-4 px-6 flex flex-col gap-4 z-50">
-    <a href={`${basePath}/home`} class="block text-base font-bold text-text-primary hover:text-text-accent transition-colors">
-      {t('nav.home')}
-    </a>
-    <a href={`${basePath}/profile`} class="block text-base font-bold text-text-primary hover:text-text-accent transition-colors">
-      {t('nav.profile')}
-    </a>
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium text-text-secondary">{t('page.settings') || 'Налаштування'}</span>
+      <div class="flex gap-2">
+        <ThemeToggle client:load />
+        <LanguageSwitcher />
+      </div>
+    </div>
   </div>
 </header>
 

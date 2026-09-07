@@ -1,7 +1,3 @@
-/**
- * Зберігає трек в історію прослуховувань користувача.
- * @param {Object} track - Об'єкт треку (з Spotify або локальний, наприклад item.track)
- */
 export const recordListeningHistory = async (track) => {
   const token = localStorage.getItem('token');
   if (!token || !track) return;
