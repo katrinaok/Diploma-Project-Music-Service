@@ -4,7 +4,7 @@ import "../styles/global.css";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 import GlobalPlayer from "../components/vue/GlobalPlayer.vue";
-import ReplacementSwap from 'astro-vtbot/components/ReplacementSwap.astro';
+import ReplacementSwap from "astro-vtbot/components/ReplacementSwap.astro";
 
 const { title = "MusicVerse" } = Astro.props;
 const lang = Astro.params.lang || "uk";
@@ -72,15 +72,22 @@ const lang = Astro.params.lang || "uk";
     <ReplacementSwap />
   </head>
   <body
-    class="bg-gray-50 dark:bg-[#0c0514] text-gray-900 dark:text-gray-100 antialiased min-h-screen flex flex-col transition-colors duration-300"
+    class="bg-gray-50 dark:bg-[#0c0514] text-gray-900 dark:text-gray-100 antialiased h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300"
   >
-    <Header />
+    <div
+      id="scroll-wrapper"
+      class="w-full h-full overflow-y-auto overflow-x-hidden relative"
+    >
+      <div class="w-screen flex flex-col min-h-full">
+        <Header />
 
-    <main class="flex-grow" data-vtbot-replace="main">
-      <slot />
-    </main>
+        <main class="flex-grow" data-vtbot-replace="main">
+          <slot />
+        </main>
 
-    <Footer />
+        <Footer />
+      </div>
+    </div>
 
     <!-- SPA Persisted Spotify Player -->
     <GlobalPlayer client:load transition:persist="player" />

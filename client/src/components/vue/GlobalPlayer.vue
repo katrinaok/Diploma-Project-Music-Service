@@ -31,7 +31,7 @@
     </div>
 
     <!-- Main Player Panel -->
-    <div v-if="isConnected" class="fixed bottom-0 left-0 right-0 bg-surface-alt border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
+    <div v-if="isConnected" class="fixed bottom-0 left-0 w-screen bg-surface border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
     <div class="flex items-center gap-4 w-1/3">
       <img v-if="currentTrack?.album?.images[0]?.url" :src="currentTrack.album.images[0].url" class="w-14 h-14 rounded-lg shadow-md object-cover" />
       <div v-else class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center">🎵</div>

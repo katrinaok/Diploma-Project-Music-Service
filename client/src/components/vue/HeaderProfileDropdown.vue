@@ -22,13 +22,13 @@
         <p class="text-sm font-bold text-text-primary truncate">{{ username || $t('profile.default_user') || 'Користувач' }}</p>
       </div>
       
-      <a :href="`/${locale}/profile`" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
+      <a :href="`/${locale}/profile`" @click="isOpen = false" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
         {{ $t('nav.profile') || 'Профіль' }}
       </a>
-      <a :href="`/${locale}/collection/tracks`" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
+      <a :href="`/${locale}/collection/tracks`" @click="isOpen = false" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
         {{ $t('nav.favorites') || 'Улюблене' }}
       </a>
-      <a :href="`/${locale}/settings`" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
+      <a :href="`/${locale}/settings`" @click="isOpen = false" class="block px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors">
         {{ $t('page.settings') || 'Налаштування' }}
       </a>
       
