@@ -21,14 +21,14 @@
         <button 
           @click="$emit('cancel')" 
           :disabled="isLoading" 
-          class="px-4 py-2 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-lg transition-colors disabled:opacity-50"
+          class="px-4 py-2 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
         >
           {{ cancelText || $t('settings.cancel') }}
         </button>
         <button 
           @click="$emit('confirm')" 
           :disabled="isLoading" 
-          class="px-4 py-2 font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          class="px-4 py-2 font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
           :class="danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'"
         >
           <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

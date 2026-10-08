@@ -160,6 +160,14 @@
     "error_no_token": "No authorization token",
     "error_no_track_id": "Track ID is missing",
     "error_save": "Error {status}: Failed to save tag",
-    "error_network": "Network error while saving tag"
+    "error_network": "Network error while saving tag",
+    "custom_color": "Custom color",
+    "hue": "Hue",
+    "saturation": "Saturation",
+    "lightness": "Lightness",
+    "add": "Add",
+    "cancel": "Cancel",
+    "delete_color": "Delete color",
+    "add_custom_color": "Add custom color"
   }
 }

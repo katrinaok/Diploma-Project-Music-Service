@@ -3,7 +3,7 @@
     <div class="bg-surface border border-border-subtle rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-bold text-text-primary">{{ isCreating ? $t('tag_modal.new_tag') : $t('tag_modal.add_tag') }}</h3>
-        <button @click="close" class="text-text-tertiary hover:text-text-primary">
+        <button @click="close" class="text-text-tertiary hover:text-text-primary cursor-pointer">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -24,7 +24,7 @@
       <div v-else-if="!isCreating">
         <div v-if="tags.length === 0" class="text-center py-6">
           <p class="text-text-secondary mb-4">{{ $t('tag_modal.no_tags') }}</p>
-          <button @click="isCreating = true" class="px-4 py-2 bg-accent-subtle text-text-accent hover:bg-accent-hover rounded-xl font-medium transition-colors w-full">
+          <button @click="isCreating = true" class="px-4 py-2 bg-accent-subtle text-text-accent hover:bg-accent-hover rounded-xl font-medium transition-colors w-full cursor-pointer">
             {{ $t('tag_modal.create_tag') }}
           </button>
         </div>
@@ -36,17 +36,17 @@
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all hover:brightness-110 border"
               :style="{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }"
             >
-              <button @click="addExistingTag(tag)">
+              <button @click="addExistingTag(tag)" class="cursor-pointer">
                 #{{ tag.name }}
               </button>
-              <button @click.stop="triggerDeleteTag(tag.id)" class="opacity-50 hover:opacity-100 transition-all hover:text-red-500 hover:scale-110 flex items-center justify-center p-0.5 rounded-full" :title="$t('tag_modal.delete_tag') || 'Видалити тег'">
+              <button @click.stop="triggerDeleteTag(tag.id)" class="opacity-50 hover:opacity-100 transition-all hover:text-red-500 hover:scale-110 flex items-center justify-center p-0.5 rounded-full cursor-pointer" :title="$t('tag_modal.delete_tag') || 'Видалити тег'">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
-          <button @click="isCreating = true" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover border border-border-subtle text-text-primary rounded-xl font-medium transition-colors w-full">
+          <button @click="isCreating = true" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover border border-border-subtle text-text-primary rounded-xl font-medium transition-colors w-full cursor-pointer">
             {{ $t('tag_modal.create_new_tag') }}
           </button>
         </div>
@@ -69,26 +69,91 @@
         
         <div>
           <label class="block text-sm font-medium text-text-secondary mb-2">{{ $t('tag_modal.color') }}</label>
-          <div class="flex gap-3 justify-center">
-            <button 
+          <div class="flex flex-wrap gap-3 justify-center">
+            <div 
               v-for="c in colors" 
               :key="c"
-              @click="newTagColor = c"
-              class="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110"
-              :class="newTagColor === c ? 'border-text-primary scale-110' : 'border-transparent'"
-              :style="{ backgroundColor: c }"
-            ></button>
+              class="relative group"
+            >
+              <button 
+                @click="newTagColor = c"
+                class="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer flex-shrink-0 block"
+                :class="newTagColor === c ? 'border-text-primary scale-110' : 'border-transparent'"
+                :style="{ backgroundColor: c }"
+              ></button>
+              
+              <button 
+                @click.stop="deleteColor(c)"
+                class="absolute -top-1 -right-1 w-4 h-4 bg-surface text-text-primary border border-border-subtle rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white hover:border-red-500 cursor-pointer text-[10px]"
+                :title="$t('tag_modal.delete_color')"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <button 
+              @click="isCustomColorPickerOpen = !isCustomColorPickerOpen"
+              class="relative w-8 h-8 rounded-full border-2 border-dashed border-border-strong hover:border-text-primary transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center text-text-secondary hover:text-text-primary bg-surface-alt"
+              :title="$t('tag_modal.add_custom_color')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+          
+          <div v-if="isCustomColorPickerOpen" class="mt-4 p-4 bg-surface border border-border-subtle rounded-2xl animate-fade-in-up">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 rounded-full border-2 border-border-strong flex-shrink-0" :style="{ backgroundColor: currentCustomColor }"></div>
+              <div class="flex-1">
+                <div class="font-mono text-sm font-bold text-text-primary">{{ currentCustomColor }}</div>
+                <div class="text-xs text-text-secondary mt-0.5">{{ $t('tag_modal.custom_color') }}</div>
+              </div>
+            </div>
+            
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-xs text-text-secondary mb-1.5">
+                  <span>{{ $t('tag_modal.hue') }}</span>
+                  <span class="font-mono">{{ customH }}°</span>
+                </div>
+                <input type="range" min="0" max="360" v-model="customH" class="w-full h-2 rounded-full outline-none hue-slider cursor-pointer" />
+              </div>
+              <div>
+                <div class="flex justify-between text-xs text-text-secondary mb-1.5">
+                  <span>{{ $t('tag_modal.saturation') }}</span>
+                  <span class="font-mono">{{ customS }}%</span>
+                </div>
+                <input type="range" min="0" max="100" v-model="customS" class="w-full h-2 rounded-full outline-none sat-slider cursor-pointer" :style="`--hue: ${customH}`" />
+              </div>
+              <div>
+                <div class="flex justify-between text-xs text-text-secondary mb-1.5">
+                  <span>{{ $t('tag_modal.lightness') }}</span>
+                  <span class="font-mono">{{ customL }}%</span>
+                </div>
+                <input type="range" min="0" max="100" v-model="customL" class="w-full h-2 rounded-full outline-none lit-slider cursor-pointer" :style="`--hue: ${customH}; --sat: ${customS}%`" />
+              </div>
+            </div>
+            
+            <div class="mt-5 flex gap-2">
+              <button @click="isCustomColorPickerOpen = false" class="flex-1 py-2 bg-surface-alt hover:bg-surface-hover text-text-secondary rounded-xl text-sm font-medium transition-colors cursor-pointer border border-border-subtle">
+                {{ $t('tag_modal.cancel') }}
+              </button>
+              <button @click="addCustomColorToPalette" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold transition-colors cursor-pointer">
+                {{ $t('tag_modal.add') }}
+              </button>
+            </div>
           </div>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button @click="isCreating = false" class="flex-1 px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary rounded-xl font-medium transition-colors">
+          <button @click="isCreating = false" class="flex-1 px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary rounded-xl font-medium transition-colors cursor-pointer">
             {{ $t('tag_modal.back') }}
           </button>
           <button 
             @click="createNewTag" 
             :disabled="!newTagName.trim() || isSubmitting"
-            class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-500 hover:to-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-500 hover:to-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {{ isSubmitting ? '...' : $t('tag_modal.save') }}
           </button>
@@ -109,7 +174,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ConfirmModal from './ConfirmModal.vue';
 
@@ -130,7 +195,62 @@ const errorMessage = ref('');
 
 const newTagName = ref('');
 const newTagColor = ref('#8A2BE2');
-const colors = ['#8A2BE2', '#FF4500', '#1E90FF', '#32CD32', '#FFD700', '#FF1493', '#00CED1', '#FF69B4'];
+const defaultColors = ['#8A2BE2', '#FF4500', '#1E90FF', '#32CD32', '#FFD700', '#FF1493', '#00CED1', '#FF69B4'];
+const colors = ref([...defaultColors]);
+
+onMounted(() => {
+  const saved = localStorage.getItem('tag_colors_palette');
+  if (saved) {
+    try {
+      colors.value = JSON.parse(saved);
+      if (!colors.value.includes(newTagColor.value) && colors.value.length > 0) {
+        newTagColor.value = colors.value[0];
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+});
+
+const saveColors = () => {
+  localStorage.setItem('tag_colors_palette', JSON.stringify(colors.value));
+};
+
+const isCustomColorPickerOpen = ref(false);
+const customH = ref(260);
+const customS = ref(100);
+const customL = ref(60);
+
+const hslToHex = (h, s, l) => {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+};
+
+const currentCustomColor = computed(() => hslToHex(customH.value, customS.value, customL.value));
+
+const addCustomColorToPalette = () => {
+  const color = currentCustomColor.value;
+  if (!colors.value.includes(color)) {
+    colors.value.push(color);
+    saveColors();
+  }
+  newTagColor.value = color;
+  isCustomColorPickerOpen.value = false;
+};
+
+const deleteColor = (colorToDelete) => {
+  colors.value = colors.value.filter(c => c !== colorToDelete);
+  saveColors();
+  if (newTagColor.value === colorToDelete) {
+    newTagColor.value = colors.value.length > 0 ? colors.value[0] : '#8A2BE2';
+  }
+};
 
 const fetchTags = async () => {
   const token = localStorage.getItem('token');
@@ -260,5 +380,43 @@ const attachTagToTrack = async (name, color) => {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #ddd;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #ddd;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+.hue-slider {
+  background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%) !important;
+}
+
+.sat-slider {
+  background: linear-gradient(to right, hsl(var(--hue), 0%, 50%), hsl(var(--hue), 100%, 50%)) !important;
+}
+
+.lit-slider {
+  background: linear-gradient(to right, #000, hsl(var(--hue), var(--sat), 50%), #fff) !important;
 }
 </style>

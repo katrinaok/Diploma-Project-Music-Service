@@ -60,7 +60,7 @@
               
               <button 
                 @click="togglePublicStatus"
-                class="inline-flex items-center gap-1.5 hover:bg-border-subtle transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-border-strong"
+                class="inline-flex items-center gap-1.5 hover:bg-border-subtle transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-border-strong cursor-pointer"
                 :class="playlist.isPublic ? 'text-text-success bg-success-subtle border-border-success' : 'text-text-tertiary bg-surface-hover'"
               >
                 <svg v-if="playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,7 +118,7 @@
               <div class="w-1 h-1 rounded-full bg-border-strong"></div>
               <button 
                 @click="triggerDeletePlaylist"
-                class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors"
+                class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
                 :title="$t('playlist.delete')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -129,6 +129,85 @@
             </div>
           </div>
         </div>
+
+        <!-- Recommendations Block (Moved to Top) -->
+      <div 
+        v-if="searchQuery.trim().startsWith('#') && filteredTracks.length > 0" 
+        class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6 animate-fade-in-up"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-text-primary">Рекомендації для {{ searchQuery }}</h2>
+            <p class="text-sm text-text-secondary mt-1">Схожі треки тих самих виконавців</p>
+          </div>
+          <button @click="fetchRecommendations(searchQuery.trim().slice(1))" class="flex items-center gap-1.5 text-sm font-medium text-purple-600 hover:text-text-accent-hover transition-colors cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Оновити
+          </button>
+        </div>
+        
+        <div class="flex justify-center py-8" v-if="isLoadingRecommendations">
+          <svg class="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        
+        <div v-else-if="!recommendedTracks || recommendedTracks.length === 0" class="text-center py-8 text-text-secondary border-2 border-dashed border-border-subtle rounded-2xl">
+          На жаль, не знайдено рекомендацій.
+        </div>
+        
+        <div v-else class="flex gap-4 overflow-x-auto pb-4 snap-x fancy-scrollbar">
+          <div 
+            v-for="rec in recommendedTracks" 
+            :key="rec.id" 
+            class="flex-shrink-0 w-36 sm:w-44 bg-surface-alt rounded-2xl p-3 border border-border-subtle hover:border-purple-500 transition-colors group/rec snap-start relative"
+          >
+            <!-- Add button -->
+            <button 
+              @click="addRecommendedTrack(rec)"
+              class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center opacity-0 group-hover/rec:opacity-100 transition-opacity hover:bg-purple-700 shadow-md cursor-pointer"
+              title="Додати до плейлиста і тегу"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+            </button>
+
+            <!-- Cover -->
+            <div class="relative w-full aspect-square rounded-xl overflow-hidden mb-3">
+              <img :src="rec.album?.images?.[0]?.url" class="w-full h-full object-cover" />
+              
+              <!-- Play overlay -->
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/rec:opacity-100 flex items-center justify-center transition-opacity">
+                <button 
+                  v-if="rec.preview_url || isSpotifyConnected"
+                  @click="togglePlay({ 
+                    spotifyId: rec.id, 
+                    previewUrl: rec.preview_url,
+                    title: rec.name,
+                    artistName: rec.artists?.map(a => a.name).join(', '),
+                    albumCoverUrl: rec.album?.images?.[0]?.url
+                  })"
+                  class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
+                >
+                  <svg v-if="playingTrackId === rec.id" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <h4 class="text-sm font-bold text-text-primary truncate">{{ rec.name }}</h4>
+            <p class="text-xs text-text-secondary truncate mt-0.5">{{ rec.artists?.map(a => a.name).join(', ') }}</p>
+          </div>
+        </div>
+      </div>
 
         <!-- Tracks List -->
         <div class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6">
@@ -200,8 +279,10 @@
                     <span 
                       v-for="t in item.track.tags.slice(0, 3)" 
                       :key="t.tag.id"
-                      class="group/tag flex items-center gap-0.5 text-[10px] pl-1.5 pr-1 py-0.5 rounded-full border whitespace-nowrap transition-colors leading-none"
+                      @click="searchQuery = '#' + t.tag.name"
+                      class="group/tag flex items-center gap-0.5 text-[10px] pl-1.5 pr-1 py-0.5 rounded-full border whitespace-nowrap transition-colors leading-none cursor-pointer hover:brightness-110"
                       :style="{ backgroundColor: t.tag.color + '20', color: t.tag.color, borderColor: t.tag.color + '40' }"
+                      title="Шукати за цим тегом"
                     >
                       <span>#{{ t.tag.name }}</span>
                       <button @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" :title="$t('playlist.remove_tag')">
@@ -264,6 +345,7 @@
         </div>
       </template>
 
+
     </div>
     
     <TagModal 
@@ -297,7 +379,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import TagModal from './TagModal.vue';
 import LikeButton from './LikeButton.vue';
@@ -318,6 +400,9 @@ const playlist = ref(null);
 const isLoading = ref(true);
 const error = ref(null);
 const playlistCoverUrl = ref(null);
+
+const isLoadingRecommendations = ref(false);
+const recommendedTracks = ref([]);
 
 const isEditingTitle = ref(false);
 const editTitleValue = ref('');
@@ -363,6 +448,75 @@ const filteredTracks = computed(() => {
            item.track.artistName.toLowerCase().includes(query);
   });
 });
+
+const fetchRecommendations = async (tag) => {
+  if (!tag) return;
+  isLoadingRecommendations.value = true;
+  recommendedTracks.value = [];
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5001/api/recommendations/by-tag/${encodeURIComponent(tag)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      recommendedTracks.value = data.tracks || [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch recommendations', error);
+  } finally {
+    isLoadingRecommendations.value = false;
+  }
+};
+
+watch(searchQuery, (newVal) => {
+  if (newVal.trim().startsWith('#')) {
+    const tag = newVal.trim().slice(1);
+    fetchRecommendations(tag);
+  } else {
+    recommendedTracks.value = [];
+  }
+});
+
+const addRecommendedTrack = async (rec) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const trackData = {
+    spotifyId: rec.id,
+    title: rec.name,
+    artistName: rec.artists.map(a => a.name).join(', '),
+    albumCoverUrl: rec.album?.images?.[0]?.url || '',
+    previewUrl: rec.preview_url || ''
+  };
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(trackData)
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const newTrackId = data.track.id;
+      
+      const tag = searchQuery.value.trim().slice(1);
+      if (tag) {
+        await fetch(`http://localhost:5001/api/tracks/${newTrackId}/tags`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: tag })
+        });
+      }
+      
+      // Reload page to reflect changes instantly in the simplest way
+      window.location.reload(); 
+    }
+  } catch (error) {
+    console.error('Failed to add recommended track', error);
+  }
+};
 
 const toggleMenu = (id) => {
   openMenuId.value = openMenuId.value === id ? null : id;
@@ -454,9 +608,14 @@ const togglePlay = (track) => {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
       const uri = `spotify:track:${track.spotifyId}`;
-      const allUris = playlist.value.tracks
+      let allUris = playlist.value.tracks
         .map(t => `spotify:track:${t.track.spotifyId}`)
         .filter(u => !u.includes('undefined') && !u.includes('null'));
+        
+      if (!allUris.includes(uri)) {
+        allUris.unshift(uri);
+      }
+        
       window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: uri, id: track.spotifyId, uris: allUris } }));
     }
     return;
@@ -704,3 +863,23 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+.fancy-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+.fancy-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fancy-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong, #4b5563);
+  border-radius: 20px;
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+</style>

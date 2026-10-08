@@ -868,6 +868,90 @@ app.get('/api/spotify/search', async (req: Request, res: Response) => {
 });
 
 // ==========================================
+// RECOMMENDATIONS ROUTES
+// ==========================================
+app.get('/api/recommendations/by-tag/:tagName', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const tagName = (req.params.tagName as string)?.trim();
+
+    if (!tagName) {
+      return res.status(400).json({ error: 'Відсутня назва тегу' });
+    }
+
+    const tag = await prisma.tag.findFirst({
+      where: { 
+        name: {
+          equals: tagName,
+          mode: 'insensitive'
+        }, 
+        userId 
+      }
+    });
+
+    if (!tag) {
+      return res.status(404).json({ error: 'Тег не знайдено' });
+    }
+
+    const trackTags = await prisma.trackTag.findMany({
+      where: { tagId: tag.id },
+      include: { track: true },
+      take: 30
+    });
+
+    if (trackTags.length === 0) {
+      return res.status(404).json({ error: 'Немає треків з цим тегом для генерації рекомендацій' });
+    }
+
+    const shuffled = trackTags.sort(() => 0.5 - Math.random());
+    const artists = [...new Set(shuffled.map(tt => tt.track.artistName))].filter(Boolean).slice(0, 2);
+
+    if (artists.length === 0) {
+      return res.status(400).json({ error: 'Треки не мають артистів для пошуку рекомендацій' });
+    }
+
+    const token = await getSpotifyAccessToken();
+    let recommendedTracks: any[] = [];
+
+    // Оскільки Spotify закрив API /v1/recommendations для нових додатків, 
+    // ми шукаємо інші популярні треки тих самих виконавців через Search API.
+    for (const artist of artists) {
+      // Беремо лише першого виконавця якщо їх кілька через кому
+      const mainArtist = artist.split(',')[0].trim();
+      const query = `artist:"${mainArtist}"`;
+      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tracks && data.tracks.items) {
+          // Відфільтрувати треки, які вже є в нашому тезі
+          const existingIds = new Set(trackTags.map(tt => tt.track.spotifyId));
+          const newTracks = data.tracks.items.filter((t: any) => !existingIds.has(t.id));
+          recommendedTracks.push(...newTracks);
+        }
+      } else {
+        console.error('Spotify Search API Error:', await response.text());
+      }
+    }
+
+    // Перемішуємо і беремо до 12 треків
+    recommendedTracks = recommendedTracks.sort(() => 0.5 - Math.random()).slice(0, 12);
+
+    res.json({
+      status: 'success',
+      tracks: recommendedTracks
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка генерації рекомендацій' });
+  }
+});
+
+// ==========================================
 // SPOTIFY OAUTH (USER AUTHENTICATION)
 // ==========================================
 
