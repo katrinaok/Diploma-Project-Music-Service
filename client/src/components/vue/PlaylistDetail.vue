@@ -138,7 +138,7 @@
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-xl font-bold text-text-primary">Рекомендації для {{ searchQuery }}</h2>
-            <p class="text-sm text-text-secondary mt-1">Схожі треки тих самих виконавців</p>
+            <p class="text-sm text-text-secondary mt-1">Схожі треки за жанром та виконавцями</p>
           </div>
           <button @click="fetchRecommendations(searchQuery.trim().slice(1))" class="flex items-center gap-1.5 text-sm font-medium text-purple-600 hover:text-text-accent-hover transition-colors cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,10 +168,15 @@
             <!-- Add button -->
             <button 
               @click="addRecommendedTrack(rec)"
-              class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center opacity-0 group-hover/rec:opacity-100 transition-opacity hover:bg-purple-700 shadow-md cursor-pointer"
+              :disabled="isAddingTrackId === rec.id"
+              class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center opacity-0 group-hover/rec:opacity-100 transition-all hover:bg-purple-700 shadow-md cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed hover:scale-105"
               title="Додати до плейлиста і тегу"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg v-if="isAddingTrackId === rec.id" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
               </svg>
             </button>
@@ -193,11 +198,11 @@
                   })"
                   class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
                 >
-                  <svg v-if="playingTrackId === rec.id" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  <svg v-if="playingTrackId === rec.id" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
                   </svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
                   </svg>
                 </button>
               </div>
@@ -298,13 +303,18 @@
               <button 
                 v-if="isSpotifyConnected || item.track.previewUrl" 
                 @click="togglePlay(item.track)" 
-                class="w-10 h-10 flex-shrink-0 rounded-full bg-accent-subtle hover:bg-accent-hover text-text-accent flex items-center justify-center transition-colors cursor-pointer"
+                :class="[
+                  'w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm',
+                  playingTrackId === item.track.spotifyId
+                    ? 'bg-purple-600 text-white shadow-purple-500/25 scale-105'
+                    : 'bg-accent-subtle hover:bg-accent-hover text-text-accent hover:scale-105'
+                ]"
               >
-                <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
                 </svg>
               </button>
               <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
@@ -403,6 +413,8 @@ const playlistCoverUrl = ref(null);
 
 const isLoadingRecommendations = ref(false);
 const recommendedTracks = ref([]);
+const recommendationsPool = ref([]);
+const isAddingTrackId = ref(null);
 
 const isEditingTitle = ref(false);
 const editTitleValue = ref('');
@@ -453,6 +465,7 @@ const fetchRecommendations = async (tag) => {
   if (!tag) return;
   isLoadingRecommendations.value = true;
   recommendedTracks.value = [];
+  recommendationsPool.value = [];
   try {
     const token = localStorage.getItem('token');
     const res = await fetch(`http://localhost:5001/api/recommendations/by-tag/${encodeURIComponent(tag)}`, {
@@ -460,7 +473,10 @@ const fetchRecommendations = async (tag) => {
     });
     if (res.ok) {
       const data = await res.json();
-      recommendedTracks.value = data.tracks || [];
+      const all = data.tracks || [];
+      // Відображаємо перші 10 треків, решту тримаємо в пулі
+      recommendedTracks.value = all.slice(0, 10);
+      recommendationsPool.value = all.slice(10);
     }
   } catch (error) {
     console.error('Failed to fetch recommendations', error);
@@ -475,12 +491,14 @@ watch(searchQuery, (newVal) => {
     fetchRecommendations(tag);
   } else {
     recommendedTracks.value = [];
+    recommendationsPool.value = [];
   }
 });
 
 const addRecommendedTrack = async (rec) => {
   const token = localStorage.getItem('token');
-  if (!token) return;
+  if (!token || isAddingTrackId.value === rec.id) return;
+  isAddingTrackId.value = rec.id;
 
   const trackData = {
     spotifyId: rec.id,
@@ -502,19 +520,44 @@ const addRecommendedTrack = async (rec) => {
       const newTrackId = data.track.id;
       
       const tag = searchQuery.value.trim().slice(1);
+      let createdTag = null;
       if (tag) {
-        await fetch(`http://localhost:5001/api/tracks/${newTrackId}/tags`, {
+        const tagRes = await fetch(`http://localhost:5001/api/tracks/${newTrackId}/tags`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: tag })
         });
+        if (tagRes.ok) {
+          const tagData = await tagRes.json();
+          createdTag = tagData.tag;
+        }
       }
       
-      // Reload page to reflect changes instantly in the simplest way
-      window.location.reload(); 
+      // Додаємо трек локально до списку треків плейліста
+      const newTrackItem = {
+        track: {
+          ...data.track,
+          tags: createdTag ? [{ tag: createdTag }] : []
+        }
+      };
+      if (!playlist.value.tracks) {
+        playlist.value.tracks = [];
+      }
+      playlist.value.tracks.push(newTrackItem);
+
+      // Видаляємо доданий трек з поточного списку рекомендацій
+      recommendedTracks.value = recommendedTracks.value.filter(t => t.id !== rec.id);
+
+      // Підтягуємо новий трек з пулу, щоб список залишався повним
+      if (recommendationsPool.value.length > 0) {
+        const nextTrack = recommendationsPool.value.shift();
+        recommendedTracks.value.push(nextTrack);
+      }
     }
   } catch (error) {
     console.error('Failed to add recommended track', error);
+  } finally {
+    isAddingTrackId.value = null;
   }
 };
 

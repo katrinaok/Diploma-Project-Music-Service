@@ -105,6 +105,10 @@
     "lyrics": "Lyrics",
     "lyrics_loading": "Searching for lyrics...",
     "lyrics_not_found": "Lyrics not found",
+    "lyrics_not_found_title": "Sooo saaaad, no lyrics found! 🥺",
+    "lyrics_not_found_desc": "We searched high and low, but words for this track are nowhere to be found. Time to hum along or invent your own! 🎤🎶",
+    "lyrics_retry": "Try again",
+    "lyrics_close": "Close",
     "lyrics_error": "Error loading lyrics"
   },
   "settings": {

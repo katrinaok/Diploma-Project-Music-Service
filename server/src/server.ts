@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -248,7 +248,7 @@ app.post('/api/playlists', authenticateToken, async (req: Request, res: Response
     const userId = req.user.userId;
 
     const { title, description } = req.body;
-    
+
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Назва плейлиста обов\'язкова' });
     }
@@ -739,25 +739,31 @@ app.post('/api/favorites', authenticateToken, async (req: Request, res: Response
 // ==========================================
 // LYRICS ROUTE
 // ==========================================
+const lyricsCache = new Map<string, string>();
+
 app.get('/api/lyrics', async (req: Request, res: Response) => {
   try {
-    const query = req.query.q as string;
+    const query = (req.query.q as string || '').trim();
     if (!query) {
       return res.status(400).json({ error: 'Missing query parameter q' });
     }
 
+    const cacheKey = query.toLowerCase();
+    if (lyricsCache.has(cacheKey)) {
+      return res.json({ status: 'success', lyrics: lyricsCache.get(cacheKey) });
+    }
+
     const scriptPath = path.join(__dirname, '..', 'scripts', 'get_lyrics.py');
-    // For windows, python is usually in PATH. 
-    // In production, might need to specify exact python path or use a python virtual env.
-    exec(`python "${scriptPath}" "${query}"`, (error, stdout, stderr) => {
+    execFile('python', [scriptPath, query], (error, stdout, stderr) => {
       if (error) {
         console.error(`Error executing python script: ${error.message}`);
         return res.status(500).json({ error: 'Failed to fetch lyrics' });
       }
-      
+
       try {
         const result = JSON.parse(stdout);
-        if (result.success) {
+        if (result.success && result.lyrics) {
+          lyricsCache.set(cacheKey, result.lyrics);
           res.json({ status: 'success', lyrics: result.lyrics });
         } else {
           res.status(404).json({ error: result.error || 'Lyrics not found' });
@@ -772,6 +778,14 @@ app.get('/api/lyrics', async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({ error: 'Internal server error fetching lyrics' });
   }
+});
+
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    project: 'MusicVerse API',
+    message: '🚀 Бекенд успішно працює! Япі!'
+  });
 });
 
 app.listen(PORT, () => {
@@ -855,7 +869,7 @@ app.get('/api/spotify/search', async (req: Request, res: Response) => {
     if (allTracks.length === 0) {
       throw new Error('Не вдалося отримати треки або запит порожній');
     }
-    
+
     res.json({
       status: 'success',
       tracks: allTracks
@@ -881,12 +895,12 @@ app.get('/api/recommendations/by-tag/:tagName', authenticateToken, async (req: R
     }
 
     const tag = await prisma.tag.findFirst({
-      where: { 
+      where: {
         name: {
           equals: tagName,
           mode: 'insensitive'
-        }, 
-        userId 
+        },
+        userId
       }
     });
 
@@ -897,52 +911,144 @@ app.get('/api/recommendations/by-tag/:tagName', authenticateToken, async (req: R
     const trackTags = await prisma.trackTag.findMany({
       where: { tagId: tag.id },
       include: { track: true },
-      take: 30
+      take: 50
     });
 
     if (trackTags.length === 0) {
       return res.status(404).json({ error: 'Немає треків з цим тегом для генерації рекомендацій' });
     }
 
-    const shuffled = trackTags.sort(() => 0.5 - Math.random());
-    const artists = [...new Set(shuffled.map(tt => tt.track.artistName))].filter(Boolean).slice(0, 2);
+    // Збираємо існуючі Spotify ID та назви треків, щоб не дублювати те, що вже є
+    const existingSpotifyIds = new Set(trackTags.map(tt => tt.track.spotifyId).filter(Boolean));
+    const existingTitles = new Set(trackTags.map(tt => tt.track.title.toLowerCase().trim()));
 
-    if (artists.length === 0) {
-      return res.status(400).json({ error: 'Треки не мають артистів для пошуку рекомендацій' });
-    }
+    const shuffled = trackTags.sort(() => 0.5 - Math.random());
+    const artists = [...new Set(shuffled.map(tt => tt.track.artistName))].filter(Boolean).slice(0, 3);
 
     const token = await getSpotifyAccessToken();
-    let recommendedTracks: any[] = [];
+    const headers = { 'Authorization': `Bearer ${token}` };
 
-    // Оскільки Spotify закрив API /v1/recommendations для нових додатків, 
-    // ми шукаємо інші популярні треки тих самих виконавців через Search API.
-    for (const artist of artists) {
-      // Беремо лише першого виконавця якщо їх кілька через кому
-      const mainArtist = artist.split(',')[0].trim();
-      const query = `artist:"${mainArtist}"`;
-      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tracks && data.tracks.items) {
-          // Відфільтрувати треки, які вже є в нашому тезі
-          const existingIds = new Set(trackTags.map(tt => tt.track.spotifyId));
-          const newTracks = data.tracks.items.filter((t: any) => !existingIds.has(t.id));
-          recommendedTracks.push(...newTracks);
+    const candidateTracks: any[] = [];
+
+    // 1. Динамічно дізнаємося офіційні жанри артистів зі Spotify (без жодного хардкоду)
+    const detectedGenres: string[] = [];
+
+    for (const art of artists.slice(0, 3)) {
+      const mainArtist = art.split(',')[0]?.trim() || '';
+      if (!mainArtist) continue;
+      try {
+        const aRes = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent('artist:"' + mainArtist + '"')}&type=artist&limit=1`, { headers });
+        if (aRes.ok) {
+          const aData = await aRes.json();
+          const artistItem = aData.artists?.items?.[0];
+          if (artistItem && Array.isArray(artistItem.genres) && artistItem.genres.length > 0) {
+            detectedGenres.push(...artistItem.genres);
+          }
         }
-      } else {
-        console.error('Spotify Search API Error:', await response.text());
+      } catch (e) {
+        // ignore
       }
     }
 
-    // Перемішуємо і беремо до 12 треків
-    recommendedTracks = recommendedTracks.sort(() => 0.5 - Math.random()).slice(0, 12);
+    const uniqueGenres = [...new Set(detectedGenres)].slice(0, 2);
+
+    // 2. Збираємо пошукові запити для плейлістів: за реальними жанрами Spotify та за виконавцями
+    const playlistQueries: string[] = [];
+    for (const g of uniqueGenres) {
+      playlistQueries.push(g);
+    }
+    for (const art of artists) {
+      const mainArtist = art.split(',')[0]?.trim() || '';
+      if (mainArtist) {
+        playlistQueries.push(mainArtist);
+      }
+    }
+
+    // 3. Шукаємо кураторські добірки/плейлісти Spotify для цих жанрів та артистів
+    const playlistSearchPromises = playlistQueries.slice(0, 4).map(async (query) => {
+      try {
+        const plRes = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=playlist&limit=2`, { headers });
+        if (!plRes.ok) return [];
+        const plData = await plRes.json();
+        const playlists = plData.playlists?.items || [];
+
+        const plTracksPromises = playlists.map(async (pl: any) => {
+          if (!pl || !pl.id) return [];
+          try {
+            const tRes = await fetch(`https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=10`, { headers });
+            if (!tRes.ok) return [];
+            const tData = await tRes.json();
+            return (tData.items || []).map((it: any) => it.track).filter(Boolean);
+          } catch (e) {
+            return [];
+          }
+        });
+
+        const plTracksArrays = await Promise.all(plTracksPromises);
+        return plTracksArrays.flat();
+      } catch (e) {
+        return [];
+      }
+    });
+
+    // 4. Додатково шукаємо топові треки оригінальних артистів
+    const trackSearchPromises = artists.map(async (art) => {
+      const mainArtist = art.split(',')[0]?.trim() || '';
+      if (!mainArtist) return [];
+      try {
+        const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent('artist:"' + mainArtist + '"')}&type=track&limit=8`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          return data.tracks?.items || [];
+        }
+      } catch (e) {
+        return [];
+      }
+      return [];
+    });
+
+    const [playlistTracksResults, directTracksResults] = await Promise.all([
+      Promise.all(playlistSearchPromises),
+      Promise.all(trackSearchPromises)
+    ]);
+
+    for (const items of playlistTracksResults) {
+      candidateTracks.push(...items);
+    }
+    for (const items of directTracksResults) {
+      candidateTracks.push(...items);
+    }
+
+    // 4. Відсікаємо дублікати, невалідні записи та випадкові російські треки
+    const seenSpotifyIds = new Set<string>();
+    const seenTitleArtist = new Set<string>();
+    const recommendedTracks: any[] = [];
+
+    for (const track of candidateTracks) {
+      if (!track || !track.id || !track.name) continue;
+      if (existingSpotifyIds.has(track.id)) continue;
+      if (existingTitles.has(track.name.toLowerCase().trim())) continue;
+      if (seenSpotifyIds.has(track.id)) continue;
+
+      // Відсіюємо випадкові російські треки
+      const trackName = track.name || '';
+      const artistNames = (track.artists || []).map((a: any) => a.name).join(' ');
+      if (/[ыэъёЫЭЪЁ]/.test(trackName) || /[ыэъёЫЭЪЁ]/.test(artistNames)) continue;
+
+      const normKey = `${track.name.toLowerCase().trim()}___${(track.artists?.[0]?.name || '').toLowerCase().trim()}`;
+      if (seenTitleArtist.has(normKey)) continue;
+
+      seenSpotifyIds.add(track.id);
+      seenTitleArtist.add(normKey);
+      recommendedTracks.push(track);
+    }
+
+    // Перемішуємо і повертаємо до 25 різноманітних рекомендацій
+    const finalTracks = recommendedTracks.sort(() => 0.5 - Math.random()).slice(0, 25);
 
     res.json({
       status: 'success',
-      tracks: recommendedTracks
+      tracks: finalTracks
     });
 
   } catch (error) {
@@ -961,19 +1067,19 @@ app.get('/api/spotify/auth-url', authenticateToken, (req: Request, res: Response
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const redirectUri = 'http://127.0.0.1:5001/api/spotify/callback';
   const scope = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
-  
+
   // Передаємо userId у параметрі state, щоб в callback знати, кому зберігати токен
   const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
-  
+
   const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-  
+
   res.json({ url: authUrl });
 });
 
 app.get('/api/spotify/callback', async (req: Request, res: Response) => {
   const code = req.query.code as string;
   const stateStr = req.query.state as string;
-  
+
   if (!code || !stateStr) {
     return res.status(400).send('Помилка авторизації Spotify');
   }
@@ -1105,7 +1211,7 @@ app.post('/api/spotify/disconnect', authenticateToken, async (req: Request, res:
   try {
     // @ts-ignore
     const userId = req.user.userId;
-    
+
     await prisma.userSetting.upsert({
       where: { userId },
       update: {
@@ -1120,7 +1226,7 @@ app.post('/api/spotify/disconnect', authenticateToken, async (req: Request, res:
         isPrivate: false
       }
     });
-    
+
     res.json({ status: 'success', message: 'Spotify відключено' });
   } catch (error) {
     console.error('Failed to disconnect Spotify', error);
@@ -1147,7 +1253,7 @@ app.get('/api/spotify/me', authenticateToken, async (req: Request, res: Response
       // Оновлюємо токен
       const clientId = process.env.SPOTIFY_CLIENT_ID;
       const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-      
+
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {

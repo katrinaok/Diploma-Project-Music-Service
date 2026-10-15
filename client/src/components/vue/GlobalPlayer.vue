@@ -1,31 +1,68 @@
 <template>
   <div>
     <!-- Lyrics Overlay -->
-    <div v-if="showLyrics" class="fixed inset-0 z-40 bg-purple-100 dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-all duration-300">
-      <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50">
+    <div v-if="showLyrics" class="fixed inset-0 z-40 bg-white dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-colors duration-300">
+      <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50 cursor-pointer shadow-sm">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
-      <div v-if="lyricsLoading" class="flex flex-col items-center justify-center h-full text-text-secondary">
-        <span class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></span>
-        <p>{{ $t('global_player.lyrics_loading') }}</p>
+      <!-- Loading State -->
+      <div v-if="lyricsLoading" class="flex flex-col items-center justify-center h-full text-text-secondary animate-fade-in">
+        <span class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></span>
+        <p class="font-medium text-base">{{ $t('global_player.lyrics_loading') }}</p>
       </div>
-      <div v-else-if="lyricsError" class="flex flex-col items-center justify-center h-full text-text-secondary">
-        <p class="text-xl font-bold">{{ lyricsError }}</p>
+
+      <!-- Not Found / Error State -->
+      <div v-else-if="lyricsNotFound || lyricsError" class="flex flex-col items-center justify-center h-full max-w-md mx-auto px-6 text-center animate-fade-in">
+        <div class="relative mb-5">
+          <div class="w-20 h-20 rounded-3xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+          <span class="absolute -top-1 -right-1 text-2xl select-none animate-bounce">🎶</span>
+        </div>
+
+        <h3 class="text-2xl font-extrabold text-text-primary mb-3">
+          {{ lyricsNotFound ? $t('global_player.lyrics_not_found_title') : $t('global_player.lyrics_error') }}
+        </h3>
+        
+        <p class="text-sm md:text-base text-text-secondary mb-6 leading-relaxed">
+          {{ lyricsNotFound ? $t('global_player.lyrics_not_found_desc') : lyricsError }}
+        </p>
+
+        <div class="flex items-center gap-3">
+          <button @click="fetchLyrics" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm transition-all shadow-md hover:shadow-purple-500/25 flex items-center gap-2 cursor-pointer active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ $t('global_player.lyrics_retry') }}
+          </button>
+          <button @click="showLyrics = false" class="px-4 py-2.5 rounded-xl bg-surface-alt hover:bg-surface-hover text-text-secondary hover:text-text-primary font-medium text-sm transition-colors border border-border-subtle cursor-pointer">
+            {{ $t('global_player.lyrics_close') }}
+          </button>
+        </div>
       </div>
-      <div v-else-if="lyricsList.length > 0" class="w-full max-w-5xl h-full overflow-y-auto px-8 py-8 lyrics-container no-scrollbar" ref="lyricsContainer">
-        <div class="flex flex-col gap-8 text-center pb-64 pt-32">
-          <p v-for="(line, index) in lyricsList" :key="index"
-             :class="[
-               'text-2xl md:text-4xl font-bold transition-all duration-300 cursor-pointer px-4 break-words',
-               activeLyricIndex === index ? 'text-purple-400 drop-shadow-lg scale-105' : 'text-text-tertiary hover:text-text-secondary opacity-60 hover:opacity-100'
-             ]"
-             @click="seekToLyric(line.time, index)"
-             :ref="el => { if(el) lyricRefs[index] = el }">
-            {{ line.text }}
-          </p>
+
+      <!-- Lyrics List -->
+      <div v-else-if="lyricsList.length > 0" class="w-full max-w-4xl h-full overflow-y-auto px-6 py-8 lyrics-container no-scrollbar" ref="lyricsContainer">
+        <div class="flex flex-col gap-6 md:gap-8 text-center pb-64 pt-32">
+          <div v-for="(line, index) in lyricsList" :key="index"
+               class="cursor-pointer select-none px-4 py-1"
+               @click="seekToLyric(line.time, index)"
+               :ref="el => { if(el) lyricRefs[index] = el }">
+            <span
+              :class="[
+                'inline-block text-2xl md:text-3xl lg:text-4xl font-bold break-words leading-relaxed transform-gpu origin-center transition-all duration-500 ease-out',
+                activeLyricIndex === index
+                  ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm dark:drop-shadow-[0_0_20px_rgba(192,132,252,0.45)]'
+                  : 'text-gray-400 dark:text-white/35 hover:text-gray-700 dark:hover:text-white/70 scale-100 hover:scale-[1.02]'
+              ]">
+              {{ line.text }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -49,12 +86,12 @@
           </svg>
         </button>
         
-        <button @click="togglePlay" class="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 cursor-pointer">
-          <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+        <button @click="togglePlay" class="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-md">
+          <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
           </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
           </svg>
         </button>
         
@@ -180,6 +217,7 @@ let progressInterval = null;
 const showLyrics = ref(false);
 const lyricsLoading = ref(false);
 const lyricsError = ref(null);
+const lyricsNotFound = ref(false);
 const lyricsList = ref([]);
 const activeLyricIndex = ref(-1);
 const lyricRefs = ref([]);
@@ -203,6 +241,8 @@ watch(isPlaying, (newVal) => {
 watch(currentTrack, (newTrack, oldTrack) => {
   if (newTrack?.id !== oldTrack?.id) {
     lyricsList.value = [];
+    lyricsNotFound.value = false;
+    lyricsError.value = null;
     activeLyricIndex.value = -1;
     if (showLyrics.value) {
       fetchLyrics();
@@ -299,6 +339,7 @@ const fetchLyrics = async () => {
   if (!currentTrack.value) return;
   lyricsLoading.value = true;
   lyricsError.value = null;
+  lyricsNotFound.value = false;
   lyricsList.value = [];
   activeLyricIndex.value = -1;
 
@@ -315,13 +356,16 @@ const fetchLyrics = async () => {
     if (res.ok && data.status === 'success' && data.lyrics) {
       lyricsList.value = parseLrc(data.lyrics);
       if (lyricsList.value.length === 0) {
-        lyricsError.value = t('global_player.lyrics_not_found');
+        lyricsNotFound.value = true;
+      } else {
+        // Wait for DOM to update refs
+        await nextTick();
+        scrollToActiveLyric();
       }
-      // Wait for DOM to update refs
-      await nextTick();
-      scrollToActiveLyric();
+    } else if (res.status === 404 || data?.error === 'Lyrics not found') {
+      lyricsNotFound.value = true;
     } else {
-      lyricsError.value = data.error || t('global_player.lyrics_not_found');
+      lyricsError.value = t('global_player.lyrics_error');
     }
   } catch (e) {
     console.error(e);
