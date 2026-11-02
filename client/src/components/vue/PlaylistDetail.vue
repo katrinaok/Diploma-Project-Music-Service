@@ -17,7 +17,7 @@
 
       <template v-else-if="playlist">
         <!-- Back Button -->
-        <a :href="`/${$i18n.locale}/profile`" class="inline-flex items-center gap-2 text-sm font-medium text-text-tertiary hover:text-text-accent transition-colors mb-2">
+        <a :href="isOwner ? `/${$i18n.locale}/profile` : `/${$i18n.locale}/profile?id=${playlist.userId}`" class="inline-flex items-center gap-2 text-sm font-medium text-text-tertiary hover:text-text-accent transition-colors mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -29,25 +29,27 @@
           
           <!-- Playlist Cover -->
           <div 
-            class="group relative w-40 h-40 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300 hover:scale-[1.02]"
-            @click="triggerCoverUpload"
+            class="group relative w-40 h-40 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300"
+            :class="{ 'cursor-pointer hover:scale-[1.02]': isOwner }"
+            @click="isOwner ? triggerCoverUpload() : null"
           >
-            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform duration-500" :class="{ 'group-hover:scale-110': isOwner }" />
+            <img v-else-if="playlist.tracks && playlist.tracks.length > 0 && playlist.tracks[0]?.track?.albumCoverUrl" :src="playlist.tracks[0].track.albumCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform duration-500" :class="{ 'group-hover:scale-110': isOwner }" />
             <div v-else class="w-full h-full flex items-center justify-center text-white">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
             </div>
             
-            <!-- Hover Edit Overlay -->
-            <div class="absolute inset-0 bg-purple-900/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white">
+            <!-- Hover Edit Overlay (Owner only) -->
+            <div v-if="isOwner" class="absolute inset-0 bg-purple-900/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <span class="text-xs font-semibold uppercase tracking-widest">{{ $t('profile.update_photo') }}</span>
             </div>
-            <input type="file" ref="coverInput" class="hidden" accept="image/*" @change="handleCoverUpload" />
+            <input v-if="isOwner" type="file" ref="coverInput" class="hidden" accept="image/*" @change="handleCoverUpload" />
           </div>
 
           <!-- Playlist Info -->
@@ -59,6 +61,7 @@
               </div>
               
               <button 
+                v-if="isOwner"
                 @click="togglePublicStatus"
                 class="inline-flex items-center gap-1.5 hover:bg-border-subtle transition-colors text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-border-strong cursor-pointer"
                 :class="playlist.isPublic ? 'text-text-success bg-success-subtle border-border-success' : 'text-text-tertiary bg-surface-hover'"
@@ -71,33 +74,51 @@
                 </svg>
                 {{ playlist.isPublic ? $t('playlist.public') : $t('playlist.private') }}
               </button>
+              <div 
+                v-else
+                class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest py-1 px-3 rounded-full border border-border-strong select-none"
+                :class="playlist.isPublic ? 'text-text-success bg-success-subtle border-border-success' : 'text-text-tertiary bg-surface-hover'"
+              >
+                <svg v-if="playlist.isPublic" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {{ playlist.isPublic ? $t('playlist.public') : $t('playlist.private') }}
+              </div>
             </div>
             
             <!-- Editable Title -->
             <div class="w-full relative group mb-4">
-              <h1 
-                v-if="!isEditingTitle"
-                class="text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
-                @click="startEditingTitle"
-                :title="$t('profile.edit_name')"
-              >
+              <template v-if="isOwner">
+                <h1 
+                  v-if="!isEditingTitle"
+                  class="text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
+                  @click="startEditingTitle"
+                  :title="$t('profile.edit_name')"
+                >
+                  <span class="line-clamp-2">{{ playlist.title }}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-3 mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </h1>
+                
+                <div v-else>
+                  <input 
+                    type="text" 
+                    v-model="editTitleValue" 
+                    @blur="saveTitle"
+                    @keyup.enter="saveTitle"
+                    class="text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                    autofocus
+                    ref="titleInputRef"
+                  />
+                </div>
+              </template>
+              <h1 v-else class="text-3xl md:text-5xl font-bold text-text-primary inline-flex items-center justify-center md:justify-start text-center md:text-left break-words">
                 <span class="line-clamp-2">{{ playlist.title }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-3 mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
               </h1>
-              
-              <div v-else>
-                <input 
-                  type="text" 
-                  v-model="editTitleValue" 
-                  @blur="saveTitle"
-                  @keyup.enter="saveTitle"
-                  class="text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
-                  autofocus
-                  ref="titleInputRef"
-                />
-              </div>
             </div>
             
             <p v-if="playlist.description" class="text-text-secondary mb-6 text-sm md:text-base">
@@ -113,26 +134,28 @@
               </div>
               <div class="w-1 h-1 rounded-full bg-border-strong"></div>
               <div>
-                {{ playlist.tracks.length }} {{ $t('playlist.tracks_count') }}
+                {{ playlist.tracks.length }} {{ getTracksCountText(playlist.tracks.length, locale) }}
               </div>
-              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
-              <button 
-                @click="triggerDeletePlaylist"
-                class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                :title="$t('playlist.delete')"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                {{ $t('playlist.delete') }}
-              </button>
+              <template v-if="isOwner">
+                <div class="w-1 h-1 rounded-full bg-border-strong"></div>
+                <button 
+                  @click="triggerDeletePlaylist"
+                  class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                  :title="$t('playlist.delete')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {{ $t('playlist.delete') }}
+                </button>
+              </template>
             </div>
           </div>
         </div>
 
         <!-- Recommendations Block (Moved to Top) -->
       <div 
-        v-if="searchQuery.trim().startsWith('#') && filteredTracks.length > 0" 
+        v-if="isOwner && searchQuery.trim().startsWith('#') && filteredTracks.length > 0" 
         class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6 animate-fade-in-up"
       >
         <div class="flex items-center justify-between mb-6">
@@ -232,7 +255,7 @@
                 />
               </div>
 
-              <a :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-text-accent-hover dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
+              <a v-if="isOwner" :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-text-accent-hover dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
@@ -261,7 +284,7 @@
             </div>
             <h3 class="text-lg font-bold text-text-primary mb-2">{{ $t('playlist.empty_title') }}</h3>
             <p class="text-text-tertiary mb-6 max-w-md mx-auto">{{ $t('playlist.empty_desc') }}</p>
-            <a :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-xl transition-colors">
+            <a v-if="isOwner" :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-xl transition-colors">
               {{ $t('playlist.find_music') }}
             </a>
           </div>
@@ -290,7 +313,7 @@
                       title="Шукати за цим тегом"
                     >
                       <span>#{{ t.tag.name }}</span>
-                      <button @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" :title="$t('playlist.remove_tag')">
+                      <button v-if="isOwner" @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" :title="$t('playlist.remove_tag')">
                         <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                       </button>
                     </span>
@@ -328,14 +351,14 @@
                   @unliked="onTrackUnliked"
                 />
                 
-                <button @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
+                <button v-if="isOwner" @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
                 </button>
                 
                 <!-- Dropdown -->
-                <div v-if="openMenuId === item.track.id" class="absolute right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-xl shadow-lg z-10 overflow-hidden">
+                <div v-if="isOwner && openMenuId === item.track.id" class="absolute right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-xl shadow-lg z-10 overflow-hidden">
                   <button @click="openTagModal(item.track.id)" class="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2 cursor-pointer">
                     <svg class="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -395,6 +418,7 @@ import TagModal from './TagModal.vue';
 import LikeButton from './LikeButton.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import { recordListeningHistory } from '../../utils/history.js';
+import { getTracksCountText } from '../../utils/plural';
 
 const props = defineProps({ 
   lang: String,
@@ -410,6 +434,27 @@ const playlist = ref(null);
 const isLoading = ref(true);
 const error = ref(null);
 const playlistCoverUrl = ref(null);
+const isOwnerServer = ref(false);
+
+const currentUserId = ref(null);
+if (typeof window !== 'undefined') {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.userId) currentUserId.value = payload.userId;
+    } catch (e) {
+      console.error('Failed to parse token payload', e);
+    }
+  }
+}
+
+const isOwner = computed(() => {
+  if (!playlist.value) return false;
+  if (isOwnerServer.value) return true;
+  if (currentUserId.value && playlist.value.userId === currentUserId.value) return true;
+  return false;
+});
 
 const isLoadingRecommendations = ref(false);
 const recommendedTracks = ref([]);
@@ -496,6 +541,7 @@ watch(searchQuery, (newVal) => {
 });
 
 const addRecommendedTrack = async (rec) => {
+  if (!isOwner.value) return;
   const token = localStorage.getItem('token');
   if (!token || isAddingTrackId.value === rec.id) return;
   isAddingTrackId.value = rec.id;
@@ -562,6 +608,7 @@ const addRecommendedTrack = async (rec) => {
 };
 
 const toggleMenu = (id) => {
+  if (!isOwner.value) return;
   openMenuId.value = openMenuId.value === id ? null : id;
 };
 
@@ -570,6 +617,7 @@ const closeMenu = () => {
 };
 
 const openTagModal = (trackId) => {
+  if (!isOwner.value) return;
   activeTrackIdForTag.value = trackId;
   isTagModalOpen.value = true;
   closeMenu();
@@ -697,13 +745,14 @@ const trackToRemoveId = ref(null);
 const isRemovingTrack = ref(false);
 
 const triggerRemoveTrack = (playlistTrackId) => {
+  if (!isOwner.value) return;
   trackToRemoveId.value = playlistTrackId;
   isRemoveTrackModalOpen.value = true;
   closeMenu();
 };
 
 const executeRemoveTrack = async () => {
-  if (!trackToRemoveId.value) return;
+  if (!isOwner.value || !trackToRemoveId.value) return;
   isRemovingTrack.value = true;
   const token = localStorage.getItem('token');
   if (!token) return;
@@ -726,12 +775,14 @@ const executeRemoveTrack = async () => {
 };
 
 const triggerCoverUpload = () => {
+  if (!isOwner.value) return;
   if (coverInput.value) {
     coverInput.value.click();
   }
 };
 
 const handleCoverUpload = (event) => {
+  if (!isOwner.value) return;
   const file = event.target.files[0];
   if (file) {
     const reader = new FileReader();
@@ -744,6 +795,7 @@ const handleCoverUpload = (event) => {
 };
 
 const startEditingTitle = () => {
+  if (!isOwner.value) return;
   editTitleValue.value = playlist.value.title;
   isEditingTitle.value = true;
   // Use timeout to wait for DOM update before focusing
@@ -753,6 +805,10 @@ const startEditingTitle = () => {
 };
 
 const saveTitle = async () => {
+  if (!isOwner.value) {
+    isEditingTitle.value = false;
+    return;
+  }
   if (!editTitleValue.value.trim() || editTitleValue.value.trim() === playlist.value.title) {
     isEditingTitle.value = false;
     return;
@@ -784,6 +840,7 @@ const saveTitle = async () => {
 };
 
 const togglePublicStatus = async () => {
+  if (!isOwner.value) return;
   const token = localStorage.getItem('token');
   if (!token || !playlist.value) return;
 
@@ -808,10 +865,12 @@ const togglePublicStatus = async () => {
 };
 
 const triggerDeletePlaylist = () => {
+  if (!isOwner.value) return;
   isDeletePlaylistModalOpen.value = true;
 };
 
 const executeDeletePlaylist = async () => {
+  if (!isOwner.value) return;
   isDeletingPlaylist.value = true;
   const token = localStorage.getItem('token');
   if (!token) return;
@@ -894,6 +953,9 @@ onMounted(async () => {
     if (response.ok) {
       const data = await response.json();
       playlist.value = data.playlist;
+      if (data.isOwner !== undefined) {
+        isOwnerServer.value = !!data.isOwner;
+      }
     } else {
       const errorData = await response.json();
       error.value = errorData.error || t('playlist.error_fetch');

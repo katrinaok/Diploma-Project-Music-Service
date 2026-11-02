@@ -16,23 +16,40 @@
     />
     
     <!-- Live Search Dropdown -->
-    <div v-if="showDropdown && (isSearching || searchResults.length > 0 || query.trim().length > 0)" class="absolute top-full mt-2 w-full bg-surface rounded-2xl shadow-xl border border-border-subtle overflow-hidden z-50">
+    <div v-if="showDropdown && (isSearching || searchResults.length > 0 || userResults.length > 0 || query.trim().length > 0)" class="absolute top-full mt-2 w-full bg-surface rounded-2xl shadow-xl border border-border-subtle overflow-hidden z-50">
       <div v-if="isSearching" class="p-4 text-center text-sm text-text-tertiary">
         <svg class="animate-spin h-5 w-5 text-purple-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
       </div>
-      <div v-else-if="searchResults.length === 0 && query.trim().length > 0" class="p-4 text-center text-sm text-text-tertiary">
+      <div v-else-if="searchResults.length === 0 && userResults.length === 0 && query.trim().length > 0" class="p-4 text-center text-sm text-text-tertiary">
         Нічого не знайдено
       </div>
       <div v-else class="max-h-96 overflow-y-auto custom-scrollbar">
-        <div 
-          v-for="track in searchResults" 
-          :key="track.id" 
-          @click="playTrack(track)"
-          class="flex items-center gap-3 p-3 hover:bg-surface-hover cursor-pointer transition-colors"
-        >
+        <!-- Users Section -->
+        <div v-if="userResults.length > 0" class="border-b border-border-subtle p-2">
+          <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-400">
+            {{ $t('profile.search_users_title') || 'Користувачі' }}
+          </div>
+          <div 
+            v-for="user in userResults" 
+            :key="'user-' + user.id" 
+            @click="openUserProfile(user.id)"
+            class="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-hover cursor-pointer transition-colors"
+          >
+            <div class="w-8 h-8 rounded-full overflow-hidden bg-surface-alt border border-border-strong flex items-center justify-center flex-shrink-0">
+              <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.username" class="w-full h-full object-cover" />
+              <span v-else class="text-xs font-bold text-purple-400 uppercase">{{ (user.username || 'U')[0] }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs font-semibold text-text-primary truncate">{{ user.username }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tracks Section -->
+        <div v-for="track in searchResults" :key="track.id" @click="playTrack(track)" class="flex items-center gap-3 p-3 hover:bg-surface-hover cursor-pointer transition-colors">
           <img v-if="track.album?.images?.length" :src="track.album.images[track.album.images.length - 1].url" alt="Cover" class="w-10 h-10 rounded-md object-cover shadow-sm" />
           <div v-else class="w-10 h-10 bg-border-subtle rounded-md flex items-center justify-center text-xs">🎵</div>
           
@@ -53,6 +70,7 @@ import { useI18n } from 'vue-i18n';
 const { locale } = useI18n();
 const query = ref('');
 const searchResults = ref([]);
+const userResults = ref([]);
 const isSearching = ref(false);
 const showDropdown = ref(false);
 const searchContainer = ref(null);
@@ -81,6 +99,7 @@ const handleInput = () => {
   showDropdown.value = true;
   if (!query.value.trim()) {
     searchResults.value = [];
+    userResults.value = [];
     return;
   }
   
@@ -89,17 +108,34 @@ const handleInput = () => {
   searchTimeout = setTimeout(async () => {
     isSearching.value = true;
     try {
-      const res = await fetch(`http://localhost:5001/api/spotify/search?q=${encodeURIComponent(query.value.trim())}`);
-      const data = await res.json();
-      if (data.status === 'success') {
-        searchResults.value = data.tracks; // Show all results
+      const q = encodeURIComponent(query.value.trim());
+      const [tracksRes, usersRes] = await Promise.all([
+        fetch(`http://localhost:5001/api/spotify/search?q=${q}`).then(r => r.json()).catch(() => ({ status: 'error' })),
+        fetch(`http://localhost:5001/api/users/search?q=${q}`).then(r => r.json()).catch(() => ({ status: 'error' }))
+      ]);
+
+      if (tracksRes && tracksRes.status === 'success') {
+        searchResults.value = tracksRes.tracks || [];
+      } else {
+        searchResults.value = [];
+      }
+
+      if (usersRes && usersRes.status === 'success') {
+        userResults.value = usersRes.users || [];
+      } else {
+        userResults.value = [];
       }
     } catch (e) {
       console.error(e);
     } finally {
       isSearching.value = false;
     }
-  }, 400); // 400ms debounce
+  }, 350); // 350ms debounce
+};
+
+const openUserProfile = (userId) => {
+  showDropdown.value = false;
+  window.location.href = `/${locale.value}/profile?id=${userId}`;
 };
 
 const playTrack = (track) => {

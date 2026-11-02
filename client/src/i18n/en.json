@@ -32,8 +32,8 @@
     "msg_login_manual": "Please log in manually"
   },
   "home": {
-    "title": "Main Feed 🎵",
-    "subtitle": "Find your favorite tracks, listen to previews and explore new music",
+    "title": "Main Feed",
+    "subtitle": "Fresh tracks, personalized recommendations and your favorite hits",
     "search_title": "Search Music",
     "search_placeholder": "E.g.: Falling in Reverse...",
     "search_btn": "Search",
@@ -42,11 +42,26 @@
     "add_to_playlist": "Add to playlist",
     "select_playlist": "Select a playlist",
     "no_playlists": "You don't have any playlists yet.",
-    "recently_played": "Recently Played"
+    "recently_played": "Recently Played",
+    "recommended_title": "Recommended for You",
+    "recommended_subtitle": "Tracks curated specifically to match your musical taste",
+    "trending_title": "Trending Hits Right Now",
+    "trending_subtitle": "Hottest releases and global charts",
+    "explore_moods": "Explore by Mood and Genre",
+    "search_results_title": "Search results for",
+    "clear_search": "Back to discover feed",
+    "genre_all": "All Hits",
+    "genre_ukrainian": "Ukrainian Hits",
+    "genre_rock": "Rock & Alternative",
+    "genre_pop": "Pop & Dance",
+    "genre_chill": "Chill & Lo-Fi",
+    "genre_hiphop": "Hip-Hop & R&B",
+    "loading_music": "Loading music...",
+    "play": "Play"
   },
   "profile": {
     "title": "My Profile",
-    "hello": "Hello, {name}! 👋",
+    "hello": "Hello, {name}!",
     "default_user": "User",
     "subtitle": "Your personal music space",
     "playlists": "My playlists",
@@ -59,7 +74,17 @@
     "playlist_desc_placeholder": "What is this playlist about?",
     "btn_cancel": "Cancel",
     "btn_save": "Save",
-    "favorites_desc": "Your saved tracks"
+    "favorites_desc": "Your saved tracks",
+    "followers": "Followers",
+    "following": "Following",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "followers_modal_title": "Followers",
+    "following_modal_title": "Following",
+    "no_followers": "No followers yet",
+    "no_following": "Not following anyone yet",
+    "no_public_playlists": "This user does not have any public playlists yet",
+    "search_users_title": "Users"
   },
   "favorites": {
     "system_playlist": "System Playlist",

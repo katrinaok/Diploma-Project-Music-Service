@@ -1,0 +1,14 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Profile from "../../../components/vue/Profile.vue";
+import "../../../styles/global.css";
+import { useTranslations } from "../../../utils/i18n";
+
+const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
+const { id } = Astro.params;
+const t = useTranslations(lang);
+---
+
+<Layout title={`MusicVerse - ${t('page.profile')}`}>
+    <Profile lang={lang} targetUserId={id} client:load />
+</Layout>

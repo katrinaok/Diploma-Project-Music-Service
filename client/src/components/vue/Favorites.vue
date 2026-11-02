@@ -45,7 +45,7 @@
             
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-medium text-text-tertiary mt-auto">
               <div>
-                {{ tracks.length }} {{ $t('playlist.tracks_count') }}
+                {{ tracks.length }} {{ getTracksCountText(tracks.length, locale) }}
               </div>
             </div>
           </div>
@@ -120,6 +120,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LikeButton from './LikeButton.vue';
 import { recordListeningHistory } from '../../utils/history.js';
+import { getTracksCountText } from '../../utils/plural';
 
 const props = defineProps({ lang: String });
 const { t, locale } = useI18n();

@@ -6,9 +6,11 @@ import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
-const username = Astro.cookies.get('username')?.value || '';
+const queryUserId = Astro.url.searchParams.get('id');
+// Only pass current user's cookie username if viewing one's own profile without ?id=...
+const username = !queryUserId ? (Astro.cookies.get('username')?.value || '') : '';
 ---
 
 <Layout title={`MusicVerse - ${t('page.profile')}`}>
-    <Profile lang={lang} initialUsername={username} client:load />
+    <Profile lang={lang} initialUsername={username} targetUserId={queryUserId} client:load />
 </Layout>

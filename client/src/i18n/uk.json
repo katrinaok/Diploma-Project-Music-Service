@@ -32,8 +32,8 @@
     "msg_login_manual": "Будь ласка, увійдіть вручну"
   },
   "home": {
-    "title": "Головна стрічка 🎵",
-    "subtitle": "Знайди свої улюблені треки, слухай прев'ю та досліджуй нову музику",
+    "title": "Головна стрічка",
+    "subtitle": "Свіжі треки, персональні рекомендації та ваші улюблені хіти",
     "search_title": "Знайти музику",
     "search_placeholder": "Наприклад: Falling in Reverse...",
     "search_btn": "Шукати",
@@ -42,11 +42,26 @@
     "add_to_playlist": "Додати в плейлист",
     "select_playlist": "Оберіть плейлист",
     "no_playlists": "У вас ще немає плейлистів.",
-    "recently_played": "Нещодавно прослухано"
+    "recently_played": "Нещодавно прослухано",
+    "recommended_title": "Рекомендовано для вас",
+    "recommended_subtitle": "Треки, підібрані спеціально за вашим музичним смаком",
+    "trending_title": "Популярні хіти зараз",
+    "trending_subtitle": "Найгарячіші треки та світові чарти",
+    "explore_moods": "Досліджуйте за настроєм та жанрами",
+    "search_results_title": "Результати пошуку для",
+    "clear_search": "Повернутися до стрічки",
+    "genre_all": "Всі хіти",
+    "genre_ukrainian": "Українські хіти",
+    "genre_rock": "Рок & Альтернатива",
+    "genre_pop": "Поп & Денс",
+    "genre_chill": "Релакс & Chill",
+    "genre_hiphop": "Хіп-хоп & R&B",
+    "loading_music": "Завантажуємо музику...",
+    "play": "Слухати"
   },
   "profile": {
     "title": "Мій Профіль",
-    "hello": "Привіт, {name}! 👋",
+    "hello": "Привіт, {name}!",
     "default_user": "Користувачу",
     "subtitle": "Твій особистий музичний простір",
     "playlists": "Мої плейлисти",
@@ -59,7 +74,17 @@
     "playlist_desc_placeholder": "Про що цей плейлист?",
     "btn_cancel": "Скасувати",
     "btn_save": "Зберегти",
-    "favorites_desc": "Ваші збережені треки"
+    "favorites_desc": "Ваші збережені треки",
+    "followers": "Підписники",
+    "following": "Підписки",
+    "follow": "Підписатися",
+    "unfollow": "Відписатися",
+    "followers_modal_title": "Підписники",
+    "following_modal_title": "Підписки",
+    "no_followers": "Ще немає підписників",
+    "no_following": "Ще немає підписок",
+    "no_public_playlists": "У цього користувача ще немає публічних плейлистів",
+    "search_users_title": "Користувачі"
   },
   "favorites": {
     "system_playlist": "Системний плейлист",

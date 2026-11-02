@@ -23,7 +23,8 @@ const prisma = new PrismaClient({ adapter });
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
@@ -223,6 +224,24 @@ const authenticateToken = (req: Request, res: Response, next: express.NextFuncti
   }
 };
 
+// Middleware для опціональної перевірки токену (публічний доступ з персоніфікацією)
+const optionalAuthenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return next();
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+    // @ts-ignore
+    req.user = decoded;
+  } catch (error) {
+    // Невалідний токен не блокує публічний доступ
+  }
+  next();
+};
+
 // Отримати всі плейлисти поточного користувача
 app.get('/api/playlists', authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -415,7 +434,11 @@ app.get('/api/playlists/:id', authenticateToken, async (req: Request, res: Respo
       return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
     }
 
-    res.json({ status: 'success', playlist });
+    res.json({
+      status: 'success',
+      playlist,
+      isOwner: playlist.userId === userId
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка отримання плейлиста' });
@@ -492,6 +515,358 @@ app.delete('/api/playlists/:id', authenticateToken, async (req: Request, res: Re
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка видалення плейлиста' });
+  }
+});
+
+// ==========================================
+// USERS, FOLLOWERS & PROFILE PRIVACY ROUTES
+// ==========================================
+
+// 1. Пошук користувачів на платформі (оператор ilike / Prisma mode: 'insensitive')
+app.get('/api/users/search', async (req: Request, res: Response) => {
+  try {
+    const q = req.query.q as string;
+
+    if (!q || !q.trim()) {
+      return res.json({ status: 'success', users: [] });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        username: {
+          contains: q.trim(),
+          mode: 'insensitive' // аналог PostgreSQL ILIKE
+        }
+      },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true
+      },
+      take: 20
+    });
+
+    res.json({ status: 'success', users });
+  } catch (error) {
+    console.error('Помилка пошуку користувачів:', error);
+    res.status(500).json({ error: 'Помилка пошуку користувачів' });
+  }
+});
+
+// Отримання поточного авторизованого користувача
+app.get('/api/users/me', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Користувача не знайдено' });
+    }
+
+    res.json({ status: 'success', user });
+  } catch (error) {
+    console.error('Помилка отримання поточного користувача:', error);
+    res.status(500).json({ error: 'Помилка отримання профілю' });
+  }
+});
+
+// 2. Отримання публічного профілю користувача та статистики
+app.get('/api/users/:id', optionalAuthenticateToken, async (req: Request, res: Response) => {
+  try {
+    const targetUserId = parseInt(req.params.id as string, 10);
+    if (isNaN(targetUserId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    // @ts-ignore
+    const currentUserId = req.user?.userId;
+    const isSelf = currentUserId === targetUserId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true,
+        createdAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            playlists: isSelf ? true : { where: { isPublic: true } }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Користувача не знайдено' });
+    }
+
+    let isFollowing = false;
+    if (currentUserId && !isSelf) {
+      const followCheck = await prisma.follower.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: targetUserId
+          }
+        }
+      });
+      isFollowing = !!followCheck;
+    }
+
+    res.json({
+      status: 'success',
+      user: {
+        id: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+        followersCount: user._count.followers,
+        followingCount: user._count.following,
+        playlistsCount: user._count.playlists,
+        isFollowing,
+        isSelf
+      }
+    });
+  } catch (error) {
+    console.error('Помилка отримання профілю:', error);
+    res.status(500).json({ error: 'Помилка отримання профілю' });
+  }
+});
+
+// 3. Підписка на користувача (POST /api/users/:id/follow)
+app.post('/api/users/:id/follow', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const followerId = req.user.userId;
+    const followingId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(followingId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    if (followerId === followingId) {
+      return res.status(400).json({ error: 'Ви не можете підписатися на самого себе' });
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: followingId }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Користувача не знайдено' });
+    }
+
+    const existingFollow = await prisma.follower.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId
+        }
+      }
+    });
+
+    if (existingFollow) {
+      return res.status(400).json({ error: 'Ви вже підписані на цього користувача' });
+    }
+
+    await prisma.follower.create({
+      data: {
+        followerId,
+        followingId
+      }
+    });
+
+    res.status(201).json({ status: 'success', message: 'Ви успішно підписалися' });
+  } catch (error) {
+    console.error('Помилка підписки:', error);
+    res.status(500).json({ error: 'Помилка підписки на користувача' });
+  }
+});
+
+// 4. Скасування підписки (DELETE /api/users/:id/unfollow)
+app.delete('/api/users/:id/unfollow', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const followerId = req.user.userId;
+    const followingId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(followingId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    const deleted = await prisma.follower.deleteMany({
+      where: {
+        followerId,
+        followingId
+      }
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: 'Підписку не знайдено' });
+    }
+
+    res.json({ status: 'success', message: 'Ви успішно відписалися' });
+  } catch (error) {
+    console.error('Помилка відписки:', error);
+    res.status(500).json({ error: 'Помилка скасування підписки' });
+  }
+});
+
+// 5. Отримання списку підписників (GET /api/users/:id/followers)
+app.get('/api/users/:id/followers', async (req: Request, res: Response) => {
+  try {
+    const followingId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(followingId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    const records = await prisma.follower.findMany({
+      where: { followingId },
+      select: {
+        createdAt: true,
+        follower: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const followers = records.map(r => ({
+      ...r.follower,
+      followedAt: r.createdAt
+    }));
+
+    res.json({ status: 'success', followers, count: followers.length });
+  } catch (error) {
+    console.error('Помилка отримання підписників:', error);
+    res.status(500).json({ error: 'Помилка отримання підписників' });
+  }
+});
+
+// 6. Отримання списку підписок (GET /api/users/:id/following)
+app.get('/api/users/:id/following', async (req: Request, res: Response) => {
+  try {
+    const followerId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(followerId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    const records = await prisma.follower.findMany({
+      where: { followerId },
+      select: {
+        createdAt: true,
+        following: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const following = records.map(r => ({
+      ...r.following,
+      followedAt: r.createdAt
+    }));
+
+    res.json({ status: 'success', following, count: following.length });
+  } catch (error) {
+    console.error('Помилка отримання підписок:', error);
+    res.status(500).json({ error: 'Помилка отримання підписок' });
+  }
+});
+
+// 7. Отримання плейлистів профілю з жорсткою фільтрацією приватності (GET /api/users/:id/playlists)
+app.get('/api/users/:id/playlists', optionalAuthenticateToken, async (req: Request, res: Response) => {
+  try {
+    const targetUserId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(targetUserId)) {
+      return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    // @ts-ignore
+    const currentUserId = req.user?.userId;
+    const isOwner = currentUserId && currentUserId === targetUserId;
+
+    // Якщо це інша людина (або гість), бекенд повертає лише ті плейлисти, які є публічними
+    const playlists = await prisma.playlist.findMany({
+      where: {
+        userId: targetUserId,
+        ...(isOwner ? {} : { isPublic: true })
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      status: 'success',
+      isOwner: !!isOwner,
+      playlists
+    });
+  } catch (error) {
+    console.error('Помилка отримання плейлистів користувача:', error);
+    res.status(500).json({ error: 'Помилка отримання плейлистів' });
+  }
+});
+
+// 8. Оновлення аватара поточного користувача (PUT /api/users/avatar)
+app.put('/api/users/avatar', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const { avatarUrl } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl }
+    });
+
+    res.json({ status: 'success', message: 'Аватар успішно оновлено', avatarUrl: updatedUser.avatarUrl });
+  } catch (error) {
+    console.error('Помилка оновлення аватара:', error);
+    res.status(500).json({ error: 'Помилка оновлення аватара' });
+  }
+});
+
+// 9. Оновлення нікнейму поточного користувача (PUT /api/users/username)
+app.put('/api/users/username', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const { username } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: 'Нікнейм не може бути порожнім' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { username: username.trim() }
+    });
+
+    res.json({ status: 'success', message: 'Нікнейм успішно оновлено', username: updatedUser.username });
+  } catch (error) {
+    console.error('Помилка оновлення нікнейму:', error);
+    res.status(500).json({ error: 'Помилка оновлення нікнейму' });
   }
 });
 
@@ -878,6 +1253,115 @@ app.get('/api/spotify/search', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка пошуку треків' });
+  }
+});
+
+// ==========================================
+// HOME FEED & GENRE DISCOVERY
+// ==========================================
+async function fetchSpotifyTracks(query: string, count: number = 10): Promise<any[]> {
+  try {
+    const token = await getSpotifyAccessToken();
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const encoded = encodeURIComponent(query);
+    const urls = [
+      `https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=10&offset=0`
+    ];
+    if (count > 10) {
+      urls.push(`https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=10&offset=10`);
+    }
+
+    const responses = await Promise.all(urls.map(url => fetch(url, { headers })));
+    let allTracks: any[] = [];
+    for (const r of responses) {
+      if (r.ok) {
+        const d = await r.json();
+        if (d.tracks?.items) {
+          allTracks = allTracks.concat(d.tracks.items);
+        }
+      }
+    }
+
+    const seen = new Set<string>();
+    return allTracks.filter((t: any) => {
+      if (!t || !t.id || !t.name) return false;
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      const name = t.name || '';
+      const artists = (t.artists || []).map((a: any) => a.name).join(' ');
+      return !(/[ыэъёЫЭЪЁ]/.test(name) || /[ыэъёЫЭЪЁ]/.test(artists));
+    });
+  } catch (e) {
+    console.error('Error fetching spotify tracks helper:', e);
+    return [];
+  }
+}
+
+app.get('/api/home/feed', optionalAuthenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user?.userId;
+
+    let seedArtists: string[] = [];
+    if (userId) {
+      const recentHistory = await prisma.listeningHistory.findMany({
+        where: { userId },
+        include: { track: true },
+        orderBy: { listenedAt: 'desc' },
+        take: 10
+      });
+      const recentFavs = await prisma.favorite.findMany({
+        where: { userId },
+        include: { track: true },
+        orderBy: { addedAt: 'desc' },
+        take: 5
+      });
+      const allTracks: any[] = [...recentHistory.map(h => h.track), ...recentFavs.map(f => f.track)].filter(Boolean);
+      seedArtists = [...new Set(allTracks.map(t => {
+        const art = t?.artistName ? String(t.artistName) : '';
+        const parts = art.split(',');
+        return (parts[0] || '').trim();
+      }))].filter(Boolean);
+    }
+
+    let recommendedTracks: any[] = [];
+    if (seedArtists.length > 0) {
+      const topArtist = seedArtists[Math.floor(Math.random() * seedArtists.length)];
+      if (topArtist) {
+        recommendedTracks = await fetchSpotifyTracks('artist:"' + topArtist + '"', 10);
+      }
+    }
+
+    if (recommendedTracks.length < 6) {
+      const fallbackTracks = await fetchSpotifyTracks('top hits', 10);
+      for (const it of fallbackTracks) {
+        if (!recommendedTracks.some(r => r.id === it.id)) {
+          recommendedTracks.push(it);
+        }
+      }
+    }
+
+    const trendingTracks = await fetchSpotifyTracks('top hits', 20);
+
+    res.json({
+      status: 'success',
+      recommended: recommendedTracks.slice(0, 10),
+      trending: trendingTracks.slice(0, 12),
+      basedOnArtist: seedArtists[0] || null
+    });
+  } catch (error) {
+    console.error('Помилка завантаження стрічки:', error);
+    res.status(500).json({ error: 'Помилка завантаження стрічки' });
+  }
+});
+
+app.get('/api/home/genre', async (req: Request, res: Response) => {
+  try {
+    const q = (req.query.q as string) || 'top hits';
+    const tracks = await fetchSpotifyTracks(q, 20);
+    res.json({ status: 'success', tracks });
+  } catch (error) {
+    res.status(500).json({ error: 'Помилка' });
   }
 });
 

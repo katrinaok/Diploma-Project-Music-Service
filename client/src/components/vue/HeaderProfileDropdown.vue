@@ -58,13 +58,15 @@ const handleClickOutside = (event) => {
   }
 };
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  
-  const savedAvatar = localStorage.getItem('userAvatarUrl');
-  if (savedAvatar) {
-    avatarUrl.value = savedAvatar;
+const handleAvatarUpdate = (event) => {
+  if (event.detail && event.detail.avatarUrl !== undefined) {
+    avatarUrl.value = event.detail.avatarUrl;
   }
+};
+
+onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('avatar-updated', handleAvatarUpdate);
   
   const token = localStorage.getItem('token');
   if (token) {
@@ -72,6 +74,34 @@ onMounted(() => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.username) {
         username.value = payload.username;
+      }
+      if (payload.userId) {
+        // Read user-scoped cached avatar (not unkeyed)
+        const cached = localStorage.getItem(`userAvatar_${payload.userId}`);
+        if (cached) {
+          avatarUrl.value = cached;
+        }
+
+        // Fetch fresh profile from backend
+        try {
+          const res = await fetch('http://localhost:5001/api/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) {
+              if (data.user.username) username.value = data.user.username;
+              avatarUrl.value = data.user.avatarUrl || null;
+              if (data.user.avatarUrl) {
+                localStorage.setItem(`userAvatar_${payload.userId}`, data.user.avatarUrl);
+              } else {
+                localStorage.removeItem(`userAvatar_${payload.userId}`);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching header user data:', e);
+        }
       }
     } catch (e) {
       // ignore
@@ -81,10 +111,21 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('avatar-updated', handleAvatarUpdate);
 });
 
 const logout = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.userId) {
+        localStorage.removeItem(`userAvatar_${payload.userId}`);
+      }
+    } catch (e) {}
+  }
   localStorage.removeItem('token');
+  localStorage.removeItem('userAvatarUrl');
   window.location.href = `/${locale.value}/`;
 };
 </script>
