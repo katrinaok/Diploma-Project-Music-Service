@@ -38,7 +38,7 @@
           <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-1 min-w-0">
             <div class="flex items-center justify-center md:justify-start mb-2">
               <span class="inline-flex items-center gap-1.5 bg-surface-alt text-text-secondary text-xs font-semibold uppercase tracking-wider py-1 px-3 rounded-full border border-border-subtle">
-                {{ isSelf ? ($t('profile.title') || 'Мій Профіль') : ($t('page.profile') || 'Профіль') }}
+                {{ isSelf ? ($t('profile.title') || 'Мій Профіль') : ($t('profile.user_profile') || 'Профіль користувача') }}
               </span>
             </div>
             
@@ -158,22 +158,47 @@
 
       <!-- Playlists Section -->
       <div class="bg-surface p-6 md:p-8 rounded-3xl shadow-sm border border-border-subtle transition-colors">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 class="text-xl font-bold text-text-primary flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
             {{ isSelf ? $t('profile.playlists') : ($t('playlist.type') || 'Плейлисти') }}
           </h2>
-          <span v-if="!isSelf" class="text-xs text-text-tertiary">
-            {{ $t('playlist.public') }}
-          </span>
+
+          <!-- Filter Tabs for Profile Owner -->
+          <div v-if="isSelf" class="inline-flex p-1 bg-surface-alt rounded-2xl border border-border-subtle self-start sm:self-auto">
+            <button 
+              type="button"
+              @click="playlistTab = 'all'"
+              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              :class="playlistTab === 'all' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
+            >
+              {{ $t('profile.tab_all') || 'Всі' }} ({{ playlists.length + savedPlaylists.length }})
+            </button>
+            <button 
+              type="button"
+              @click="playlistTab = 'created'"
+              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              :class="playlistTab === 'created' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
+            >
+              {{ $t('profile.tab_created') || 'Створені' }} ({{ playlists.length }})
+            </button>
+            <button 
+              type="button"
+              @click="playlistTab = 'saved'"
+              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              :class="playlistTab === 'saved' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
+            >
+              {{ $t('profile.tab_saved') || 'Збережені' }} ({{ savedPlaylists.length }})
+            </button>
+          </div>
         </div>
         
         <div class="grid gap-4 md:gap-6" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
-          <!-- Create Playlist Card (Only shown to profile owner) -->
+          <!-- Create Playlist Card (Only shown to profile owner when on all or created tabs) -->
           <div 
-            v-if="isSelf" 
+            v-if="isSelf && playlistTab !== 'saved'" 
             @click="openPlaylistModal" 
             class="group border-2 border-dashed border-border-strong rounded-2xl p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-4 sm:gap-0 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-surface-hover/50 cursor-pointer transition-all duration-300 sm:min-h-[160px]"
           >
@@ -185,9 +210,9 @@
             <p class="text-base sm:text-sm font-semibold text-text-secondary group-hover:text-text-accent-hover">{{ $t('profile.create_playlist') }}</p>
           </div>
           
-          <!-- Favorites Card (Only shown to profile owner) -->
+          <!-- Favorites Card (Only shown to profile owner when on all or created tabs) -->
           <div 
-            v-if="isSelf" 
+            v-if="isSelf && playlistTab !== 'saved'" 
             @click="goToFavorites" 
             class="bg-surface-hover/50 rounded-2xl p-4 flex flex-row sm:flex-col items-center sm:items-stretch gap-4 sm:gap-0 hover:bg-surface-hover transition-colors border border-border-subtle group sm:min-h-[160px] cursor-pointer"
           >
@@ -206,11 +231,26 @@
           
           <!-- Fetched Playlists -->
           <div 
-            v-for="playlist in playlists" 
+            v-for="playlist in displayedPlaylists" 
             :key="playlist.id" 
             @click="goToPlaylist(playlist.id)" 
-            class="bg-surface-hover/50 rounded-2xl p-4 flex flex-row sm:flex-col items-center sm:items-stretch gap-4 sm:gap-0 hover:bg-surface-hover transition-colors border border-border-subtle group cursor-pointer sm:min-h-[160px]"
+            class="bg-surface-hover/50 rounded-2xl p-4 flex flex-row sm:flex-col items-center sm:items-stretch gap-4 sm:gap-0 hover:bg-surface-hover transition-colors border border-border-subtle group cursor-pointer sm:min-h-[160px] relative"
           >
+             <!-- Quick Save/Unsave Button for playlists from other users -->
+             <button 
+               v-if="currentLoggedInUserId && playlist.userId !== currentLoggedInUserId"
+               @click.stop="toggleSavePlaylist(playlist, $event)"
+               class="absolute top-3 right-3 p-2 rounded-full bg-surface/80 hover:bg-surface border border-border-subtle hover:border-purple-500/50 text-text-tertiary hover:text-purple-400 transition-all shadow-sm z-10 cursor-pointer"
+               :title="playlist.isSaved ? $t('playlist.remove_from_library') : $t('playlist.save_to_library')"
+             >
+               <svg v-if="playlist.isSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-500 fill-current" viewBox="0 0 24 24">
+                 <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+               </svg>
+               <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+               </svg>
+             </button>
+
              <!-- Playlist Cover -->
              <div class="w-16 h-16 sm:w-full sm:h-auto sm:aspect-square flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center overflow-hidden shadow-sm sm:mb-4">
                 <img v-if="playlist.coverUrl" :src="playlist.coverUrl" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -226,9 +266,22 @@
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                  </svg>
                </div>
-               <p v-if="playlist.description" class="text-xs text-text-tertiary line-clamp-1 sm:line-clamp-2 mb-1 sm:mb-2 flex-grow">{{ playlist.description }}</p>
-               <div class="text-[10px] uppercase font-bold tracking-wider text-text-muted sm:mt-auto sm:pt-2">
-                 {{ new Date(playlist.createdAt).toLocaleDateString() }}
+               <p v-if="playlist.description" class="text-xs text-text-tertiary line-clamp-1 sm:line-clamp-2 mb-2 flex-grow">{{ playlist.description }}</p>
+               
+               <!-- Author and saves count row -->
+               <div class="flex items-center justify-between text-[11px] text-text-tertiary sm:mt-auto sm:pt-2 border-t border-border-subtle/50 gap-2">
+                 <span class="truncate">
+                   <span class="text-text-muted">{{ $t('profile.author_prefix') || 'Автор:' }}</span>
+                   <span class="font-semibold text-text-secondary ml-1">
+                     {{ (currentLoggedInUserId && playlist.userId === currentLoggedInUserId) ? ($t('profile.author_you') || 'Ви') : (playlist.user?.username || $t('profile.default_user')) }}
+                   </span>
+                 </span>
+                 <span class="flex items-center gap-1 font-medium text-text-tertiary flex-shrink-0" :title="$t('playlist.saves_count')">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                     <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                   </svg>
+                   {{ playlist.savesCount || 0 }}
+                 </span>
                </div>
              </div>
           </div>
@@ -240,6 +293,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
           <p class="text-sm font-medium">{{ $t('profile.no_public_playlists') || 'У цього користувача ще немає публічних плейлистів' }}</p>
+        </div>
+
+        <!-- Empty state for saved tab -->
+        <div v-if="isSelf && playlistTab === 'saved' && savedPlaylists.length === 0" class="py-12 text-center text-text-tertiary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+          <p class="text-sm font-medium">{{ $t('profile.no_saved_playlists') || 'У вас ще немає збережених плейлистів' }}</p>
         </div>
       </div>
 
@@ -385,7 +446,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue';
+import { onMounted, ref, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { navigate } from 'astro:transitions/client';
 
@@ -449,6 +510,24 @@ const newPlaylistTitle = ref('');
 const newPlaylistDescription = ref('');
 const isCreatingPlaylist = ref(false);
 const playlists = ref([]);
+const savedPlaylists = ref([]);
+const playlistTab = ref('all'); // 'all' | 'created' | 'saved'
+
+const displayedPlaylists = computed(() => {
+  if (!isSelf.value) {
+    return playlists.value;
+  }
+  if (playlistTab.value === 'created') {
+    return playlists.value;
+  }
+  if (playlistTab.value === 'saved') {
+    return savedPlaylists.value;
+  }
+  // 'all': merge created and saved, without duplicates
+  const createdIds = new Set(playlists.value.map(p => p.id));
+  const uniqueSaved = savedPlaylists.value.filter(p => !createdIds.has(p.id));
+  return [...playlists.value, ...uniqueSaved];
+});
 
 // Followers/Following Modal
 const isUsersModalOpen = ref(false);
@@ -828,9 +907,45 @@ const fetchPlaylists = async () => {
         ...p,
         coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null
       }));
+      savedPlaylists.value = (data.savedPlaylists || []).map(p => ({
+        ...p,
+        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null
+      }));
     }
   } catch (error) {
     console.error('Failed to fetch playlists:', error);
+  }
+};
+
+const toggleSavePlaylist = async (playlist, event) => {
+  if (event) event.stopPropagation();
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = `/${locale.value}/`;
+    return;
+  }
+
+  const prevSaved = !!playlist.isSaved;
+  playlist.isSaved = !prevSaved;
+  playlist.savesCount = Math.max(0, (playlist.savesCount || 0) + (prevSaved ? -1 : 1));
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${playlist.id}/save`, {
+      method: prevSaved ? 'DELETE' : 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      playlist.isSaved = prevSaved;
+      playlist.savesCount = Math.max(0, (playlist.savesCount || 0) + (prevSaved ? 1 : -1));
+    } else {
+      // If we are on our own profile and removed from saved, update savedPlaylists
+      if (isSelf.value && prevSaved) {
+        savedPlaylists.value = savedPlaylists.value.filter(p => p.id !== playlist.id);
+      }
+    }
+  } catch (err) {
+    playlist.isSaved = prevSaved;
+    playlist.savesCount = Math.max(0, (playlist.savesCount || 0) + (prevSaved ? 1 : -1));
   }
 };
 

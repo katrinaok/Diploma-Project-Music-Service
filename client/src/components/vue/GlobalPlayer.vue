@@ -22,7 +22,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
           </div>
-          <span class="absolute -top-1 -right-1 text-2xl select-none animate-bounce">🎶</span>
         </div>
 
         <h3 class="text-2xl font-extrabold text-text-primary mb-3">
@@ -149,7 +148,11 @@
                 alt="Cover" 
                 class="w-full h-full object-cover" 
               />
-              <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary">🎵</div>
+              <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
+              </div>
             </div>
 
             <div class="flex-1 min-w-0">
@@ -177,7 +180,11 @@
 
           <!-- Empty Queue State -->
           <div v-if="upcomingQueue.length === 0" class="text-center py-8 px-4 text-text-tertiary bg-surface-hover/30 rounded-2xl border border-dashed border-border-subtle">
-            <div class="text-2xl mb-1">🎶</div>
+            <div class="w-10 h-10 mx-auto mb-2 rounded-2xl bg-surface-alt flex items-center justify-center text-text-tertiary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
             <p class="text-xs font-semibold text-text-secondary">{{ $t('global_player.queue_empty') }}</p>
             <p class="text-[11px] text-text-tertiary mt-1">{{ $t('global_player.queue_empty_desc') }}</p>
           </div>
@@ -209,7 +216,11 @@
                   class="w-full h-full object-cover" 
                   loading="lazy"
                 />
-                <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-[10px]">🎵</div>
+                <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                  </svg>
+                </div>
 
                 <!-- Hover Play icon -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -284,7 +295,11 @@
         @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
         class="w-14 h-14 rounded-lg shadow-md object-cover" 
       />
-      <div :style="currentTrack?.album?.images[0]?.url ? 'display: none;' : ''" class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center">🎵</div>
+      <div :style="currentTrack?.album?.images[0]?.url ? 'display: none;' : ''" class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center text-text-tertiary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+        </svg>
+      </div>
       <div class="min-w-0">
         <h4 class="text-sm font-bold text-text-primary truncate">{{ currentTrack?.name || $t('global_player.default_title') }}</h4>
         <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}</p>

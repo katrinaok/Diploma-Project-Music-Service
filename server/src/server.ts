@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import express, { type Request, type Response } from 'express';
@@ -47,6 +48,103 @@ app.get('/api/db-check', async (req: Request, res: Response) => {
   }
 });
 
+// ==========================================
+// Middleware для перевірки JWT токенів
+// ==========================================
+const authenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
+  const authHeader = req.headers?.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+    // @ts-ignore
+    req.user = decoded; // Додаємо дані користувача в об'єкт req
+    next();
+  } catch (error) {
+    console.error('Помилка валідації токену:', error);
+    return res.status(401).json({ error: 'Токен недійсний або його термін дії минув' });
+  }
+};
+
+// Middleware для опціональної перевірки токену (публічний доступ з персоніфікацією)
+const optionalAuthenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
+  const authHeader = req.headers?.authorization;
+  if (!authHeader) return next();
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
+    // @ts-ignore
+    req.user = decoded;
+  } catch (error) {
+    // Невалідний токен не блокує публічний доступ
+  }
+  next();
+};
+
+// ==========================================
+// Утиліти для сесій та відстеження пристроїв
+// ==========================================
+function getClientIp(req: Request): string {
+  const headers = req.headers;
+  const forwarded = headers ? headers['x-forwarded-for'] : undefined;
+  if (typeof forwarded === 'string') {
+    const firstIp = forwarded.split(',')[0];
+    const clean = (firstIp || forwarded).trim().replace('::ffff:', '');
+    return clean === '::1' ? '127.0.0.1' : clean;
+  }
+  const rawIp = req.socket?.remoteAddress || req.ip || '127.0.0.1';
+  const cleanIp = rawIp ? rawIp.replace('::ffff:', '').trim() : '127.0.0.1';
+  return cleanIp === '::1' ? '127.0.0.1' : cleanIp;
+}
+
+function parseDevice(userAgent?: string): string {
+  if (!userAgent) return 'Невідомий пристрій';
+
+  let os = 'Невідома ОС';
+  if (/windows nt 10/i.test(userAgent)) os = 'Windows 10/11';
+  else if (/windows nt/i.test(userAgent)) os = 'Windows';
+  else if (/macintosh|mac os x/i.test(userAgent)) os = 'macOS';
+  else if (/iphone/i.test(userAgent)) os = 'iPhone';
+  else if (/ipad/i.test(userAgent)) os = 'iPad';
+  else if (/android/i.test(userAgent)) os = 'Android';
+  else if (/linux/i.test(userAgent)) os = 'Linux';
+
+  let browser = 'Браузер';
+  if (/edg\//i.test(userAgent)) browser = 'Microsoft Edge';
+  else if (/opr\/|opera/i.test(userAgent)) browser = 'Opera';
+  else if (/chrome|crios/i.test(userAgent)) browser = 'Google Chrome';
+  else if (/firefox|fxios/i.test(userAgent)) browser = 'Mozilla Firefox';
+  else if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) browser = 'Safari';
+
+  return `${browser} (${os})`;
+}
+
+async function createSession(userId: number, req: Request) {
+  const refreshToken = crypto.randomBytes(40).toString('hex');
+  const device = parseDevice(req.headers['user-agent']);
+  const ipAddress = getClientIp(req);
+  // 30 днів термін дії сесії
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  const session = await prisma.session.create({
+    data: {
+      userId,
+      refreshToken,
+      device,
+      ipAddress,
+      expiresAt
+    }
+  });
+
+  return { session, refreshToken };
+}
+
 // Роут реєстрації
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
@@ -67,34 +165,268 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ message: 'Користувач успішно створений!', userId: user.id });
+    const accessToken = jwt.sign(
+      { userId: user.id, username: user.username },
+      process.env.JWT_SECRET || 'supersecret',
+      { expiresIn: '15m' }
+    );
+    const { refreshToken } = await createSession(user.id, req);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Користувач успішно створений!',
+      userId: user.id,
+      token: accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: 'Помилка реєстрації (можливо, емейл вже зайнятий)' });
   }
 });
 
-// Роут логіну
+// Роут логіну з видачею пари Access + Refresh токенів та збереженням сесії
 app.post('/api/auth/login', async (req: Request, res: Response) => {
-  const { login, password, email } = req.body;
-  const identifier = login || email;
+  try {
+    const { login, password, email } = req.body;
+    const identifier = login || email;
 
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email: identifier },
-        { username: identifier }
-      ]
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier }
+        ]
+      }
+    });
+    if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Невірний пароль' });
+
+    // Короткостроковий AccessToken (15 хвилин)
+    const token = jwt.sign(
+      { userId: user.id, username: user.username },
+      process.env.JWT_SECRET || 'supersecret',
+      { expiresIn: '15m' }
+    );
+
+    // Довгострокова сесія з RefreshToken (30 днів)
+    const { refreshToken } = await createSession(user.id, req);
+
+    res.json({
+      status: 'success',
+      message: 'Вхід успішний!',
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Помилка авторизації:', error);
+    res.status(500).json({ error: 'Помилка сервера під час входу' });
+  }
+});
+
+// Роут оновлення Access Token (Refresh)
+app.post('/api/auth/refresh', async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+    if (!refreshToken || typeof refreshToken !== 'string') {
+      return res.status(400).json({ error: 'Відсутній Refresh Token' });
     }
-  });
-  if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(401).json({ error: 'Невірний пароль' });
+    const session = await prisma.session.findUnique({
+      where: { refreshToken },
+      include: {
+        user: {
+          select: { id: true, username: true, email: true, role: true }
+        }
+      }
+    });
 
-  const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET || 'supersecret', { expiresIn: '1h' });
+    if (!session) {
+      return res.status(401).json({ error: 'Сесія недійсна або була завершена' });
+    }
 
-  res.json({ message: 'Вхід успішний!', token });
+    if (new Date() > session.expiresAt) {
+      await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+      return res.status(401).json({ error: 'Термін дії сесії вичерпано. Увійдіть знову' });
+    }
+
+    // Генеруємо новий AccessToken на 15 хвилин
+    const accessToken = jwt.sign(
+      { userId: session.user.id, username: session.user.username },
+      process.env.JWT_SECRET || 'supersecret',
+      { expiresIn: '15m' }
+    );
+
+    // Оновлюємо IP якщо пристрій підключився з іншої мережі
+    const currentIp = getClientIp(req);
+    if (session.ipAddress !== currentIp) {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { ipAddress: currentIp }
+      }).catch(() => {});
+    }
+
+    res.json({
+      status: 'success',
+      token: accessToken,
+      refreshToken: session.refreshToken,
+      user: session.user
+    });
+  } catch (error) {
+    console.error('Помилка оновлення токена:', error);
+    res.status(500).json({ error: 'Помилка оновлення сесії' });
+  }
+});
+
+// Отримати список активних сесій поточного користувача
+app.get('/api/auth/sessions', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const currentRefreshToken = (req.headers['x-refresh-token'] as string) || (req.query.currentRefreshToken as string);
+
+    const sessions = await prisma.session.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = sessions.map(s => ({
+      id: s.id,
+      device: s.device || 'Невідомий пристрій',
+      ipAddress: s.ipAddress || '127.0.0.1',
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
+      isCurrent: currentRefreshToken ? s.refreshToken === currentRefreshToken : false
+    }));
+
+    if (!formatted.some(f => f.isCurrent) && formatted.length > 0) {
+      const currentIp = getClientIp(req);
+      const currentDevice = parseDevice(req.headers['user-agent']);
+      const match = formatted.find(f => f.ipAddress === currentIp && f.device === currentDevice) || formatted[0];
+      if (match) match.isCurrent = true;
+    }
+
+    res.json({
+      status: 'success',
+      sessions: formatted,
+      total: formatted.length
+    });
+  } catch (error) {
+    console.error('Помилка отримання сесій:', error);
+    res.status(500).json({ error: 'Помилка отримання списку сесій' });
+  }
+});
+
+// Завершити всі інші сесії окрім поточної
+app.delete('/api/auth/sessions/other', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const currentRefreshToken = (req.body?.currentRefreshToken as string) || (req.headers['x-refresh-token'] as string);
+
+    let deletedCount = 0;
+    if (currentRefreshToken) {
+      const result = await prisma.session.deleteMany({
+        where: {
+          userId,
+          NOT: { refreshToken: currentRefreshToken }
+        }
+      });
+      deletedCount = result.count;
+    } else {
+      const latestSession = await prisma.session.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (latestSession) {
+        const result = await prisma.session.deleteMany({
+          where: {
+            userId,
+            NOT: { id: latestSession.id }
+          }
+        });
+        deletedCount = result.count;
+      }
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Усі інші сесії успішно завершено',
+      deletedCount
+    });
+  } catch (error) {
+    console.error('Помилка завершення інших сесій:', error);
+    res.status(500).json({ error: 'Помилка завершення інших сесій' });
+  }
+});
+
+// Завершити конкретну сесію
+app.delete('/api/auth/sessions/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const sessionId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(sessionId)) {
+      return res.status(400).json({ error: 'Некоректний ID сесії' });
+    }
+
+    const deleted = await prisma.session.deleteMany({
+      where: {
+        id: sessionId,
+        userId
+      }
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: 'Сесію не знайдено або вже видалено' });
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Сесію успішно завершено'
+    });
+  } catch (error) {
+    console.error('Помилка видалення сесії:', error);
+    res.status(500).json({ error: 'Помилка завершення сесії' });
+  }
+});
+
+// Роут виходу (Logout) - видаляє сесію з бази
+app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+    if (refreshToken && typeof refreshToken === 'string') {
+      await prisma.session.deleteMany({
+        where: { refreshToken }
+      });
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Вихід успішний'
+    });
+  } catch (error) {
+    console.error('Помилка під час виходу:', error);
+    res.status(500).json({ error: 'Помилка під час виходу' });
+  }
 });
 
 // Роут видалення акаунту
@@ -205,55 +537,68 @@ app.put('/api/settings', async (req: Request, res: Response) => {
 // PLAYLIST ROUTES
 // ==========================================
 
-// Middleware для перевірки JWT токену
-const authenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Немає токену' });
-
-  const token = authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Некоректний формат токену' });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
-    // @ts-ignore
-    req.user = decoded; // Додаємо дані користувача в об'єкт req
-    next();
-  } catch (error) {
-    console.error('Помилка валідації токену:', error);
-    return res.status(401).json({ error: 'Токен недійсний або його термін дії минув' });
-  }
-};
-
-// Middleware для опціональної перевірки токену (публічний доступ з персоніфікацією)
-const optionalAuthenticateToken = (req: Request, res: Response, next: express.NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return next();
-
-  const token = authHeader.split(' ')[1];
-  if (!token) return next();
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string || 'supersecret') as unknown as { userId: number };
-    // @ts-ignore
-    req.user = decoded;
-  } catch (error) {
-    // Невалідний токен не блокує публічний доступ
-  }
-  next();
-};
-
-// Отримати всі плейлисти поточного користувача
+// Отримати всі плейлисти поточного користувача (створені та збережені)
 app.get('/api/playlists', authenticateToken, async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const userId = req.user.userId;
 
-    const playlists = await prisma.playlist.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' }
-    });
+    const [createdPlaylists, savedRecords] = await Promise.all([
+      prisma.playlist.findMany({
+        where: { userId },
+        include: {
+          user: {
+            select: { id: true, username: true, avatarUrl: true }
+          },
+          _count: {
+            select: { savedBy: true, tracks: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.savedPlaylist.findMany({
+        where: { userId },
+        include: {
+          playlist: {
+            include: {
+              user: {
+                select: { id: true, username: true, avatarUrl: true }
+              },
+              _count: {
+                select: { savedBy: true, tracks: true }
+              }
+            }
+          }
+        },
+        orderBy: { savedAt: 'desc' }
+      })
+    ]);
 
-    res.json({ status: 'success', playlists });
+    const formattedCreated = createdPlaylists.map(p => ({
+      ...p,
+      isOwner: true,
+      isSaved: false,
+      savesCount: p._count.savedBy,
+      tracksCount: p._count.tracks
+    }));
+
+    const formattedSaved = savedRecords
+      .filter(s => s.playlist.isPublic || s.playlist.userId === userId)
+      .map(s => ({
+        ...s.playlist,
+        isOwner: s.playlist.userId === userId,
+        isSaved: true,
+        savesCount: s.playlist._count.savedBy,
+        tracksCount: s.playlist._count.tracks,
+        savedAt: s.savedAt
+      }));
+
+    res.json({
+      status: 'success',
+      playlists: formattedCreated,
+      savedPlaylists: formattedSaved,
+      allPlaylists: [...formattedCreated, ...formattedSaved]
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка отримання плейлистів' });
@@ -395,10 +740,10 @@ app.delete('/api/playlists/:id/tracks/:trackId', authenticateToken, async (req: 
 });
 
 // Отримати плейлист за ID
-app.get('/api/playlists/:id', authenticateToken, async (req: Request, res: Response) => {
+app.get('/api/playlists/:id', optionalAuthenticateToken, async (req: Request, res: Response) => {
   try {
     // @ts-ignore
-    const userId = req.user.userId;
+    const currentUserId = req.user?.userId;
     const playlistId = parseInt(req.params.id as string, 10);
 
     if (isNaN(playlistId)) {
@@ -408,6 +753,12 @@ app.get('/api/playlists/:id', authenticateToken, async (req: Request, res: Respo
     const playlist = await prisma.playlist.findUnique({
       where: { id: playlistId },
       include: {
+        user: {
+          select: { id: true, username: true, avatarUrl: true }
+        },
+        _count: {
+          select: { savedBy: true, tracks: true }
+        },
         tracks: {
           include: {
             track: {
@@ -430,18 +781,162 @@ app.get('/api/playlists/:id', authenticateToken, async (req: Request, res: Respo
     }
 
     // Якщо плейлист приватний і не належить користувачу
-    if (!playlist.isPublic && playlist.userId !== userId) {
+    if (!playlist.isPublic && (!currentUserId || playlist.userId !== currentUserId)) {
       return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
     }
 
+    const savedRecord = currentUserId
+      ? await prisma.savedPlaylist.findUnique({
+          where: { userId_playlistId: { userId: currentUserId, playlistId } }
+        })
+      : null;
+
+    const isOwner = !!currentUserId && playlist.userId === currentUserId;
+    const isSaved = !!savedRecord;
+    const savesCount = playlist._count.savedBy;
+
     res.json({
       status: 'success',
-      playlist,
-      isOwner: playlist.userId === userId
+      playlist: {
+        ...playlist,
+        isOwner,
+        isSaved,
+        savesCount
+      },
+      isOwner,
+      isSaved,
+      savesCount
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка отримання плейлиста' });
+  }
+});
+
+// Зберегти плейліст до медіатеки (Save playlist)
+app.post('/api/playlists/:id/save', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    if (!playlist.isPublic && playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Неможливо зберегти приватний плейлист' });
+    }
+
+    await prisma.savedPlaylist.upsert({
+      where: {
+        userId_playlistId: { userId, playlistId }
+      },
+      create: { userId, playlistId },
+      update: {}
+    });
+
+    const savesCount = await prisma.savedPlaylist.count({
+      where: { playlistId }
+    });
+
+    res.json({
+      status: 'success',
+      isSaved: true,
+      savesCount,
+      message: 'Плейліст збережено до вашої медіатеки'
+    });
+  } catch (error) {
+    console.error('Помилка збереження плейлиста:', error);
+    res.status(500).json({ error: 'Помилка збереження плейлиста' });
+  }
+});
+
+// Видалити плейліст зі збережених (Unsave playlist)
+app.delete('/api/playlists/:id/save', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    await prisma.savedPlaylist.deleteMany({
+      where: { userId, playlistId }
+    });
+
+    const savesCount = await prisma.savedPlaylist.count({
+      where: { playlistId }
+    });
+
+    res.json({
+      status: 'success',
+      isSaved: false,
+      savesCount,
+      message: 'Плейліст вилучено зі збережених'
+    });
+  } catch (error) {
+    console.error('Помилка вилучення плейлиста:', error);
+    res.status(500).json({ error: 'Помилка вилучення плейлиста' });
+  }
+});
+
+// Отримати список користувачів, які зберегли цей плейліст
+app.get('/api/playlists/:id/saved-users', optionalAuthenticateToken, async (req: Request, res: Response) => {
+  try {
+    const playlistId = parseInt(req.params.id as string, 10);
+
+    if (isNaN(playlistId)) {
+      return res.status(400).json({ error: 'Некоректний ID плейлиста' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    const savedRecords = await prisma.savedPlaylist.findMany({
+      where: { playlistId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true
+          }
+        }
+      },
+      orderBy: { savedAt: 'desc' }
+    });
+
+    const users = savedRecords.map(s => ({
+      id: s.user.id,
+      username: s.user.username,
+      avatarUrl: s.user.avatarUrl,
+      savedAt: s.savedAt
+    }));
+
+    res.json({
+      status: 'success',
+      users,
+      count: users.length
+    });
+  } catch (error) {
+    console.error('Помилка отримання списку користувачів, що зберегли плейлист:', error);
+    res.status(500).json({ error: 'Помилка отримання списку користувачів' });
   }
 });
 
@@ -808,19 +1303,81 @@ app.get('/api/users/:id/playlists', optionalAuthenticateToken, async (req: Reque
     const currentUserId = req.user?.userId;
     const isOwner = currentUserId && currentUserId === targetUserId;
 
-    // Якщо це інша людина (або гість), бекенд повертає лише ті плейлисти, які є публічними
-    const playlists = await prisma.playlist.findMany({
+    // Власні плейлисти користувача
+    const createdPlaylists = await prisma.playlist.findMany({
       where: {
         userId: targetUserId,
         ...(isOwner ? {} : { isPublic: true })
       },
+      include: {
+        user: {
+          select: { id: true, username: true, avatarUrl: true }
+        },
+        _count: {
+          select: { savedBy: true, tracks: true }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
+
+    // Збережені користувачем плейлисти інших авторів (відображаються на власному профілі)
+    let savedPlaylists: any[] = [];
+    if (isOwner) {
+      const savedRecords = await prisma.savedPlaylist.findMany({
+        where: { userId: targetUserId },
+        include: {
+          playlist: {
+            include: {
+              user: {
+                select: { id: true, username: true, avatarUrl: true }
+              },
+              _count: {
+                select: { savedBy: true, tracks: true }
+              }
+            }
+          }
+        },
+        orderBy: { savedAt: 'desc' }
+      });
+
+      savedPlaylists = savedRecords
+        .filter(s => s.playlist.isPublic || s.playlist.userId === currentUserId)
+        .map(s => ({
+          ...s.playlist,
+          isOwner: s.playlist.userId === currentUserId,
+          isSaved: true,
+          savesCount: s.playlist._count.savedBy,
+          tracksCount: s.playlist._count.tracks,
+          savedAt: s.savedAt
+        }));
+    }
+
+    // Перевіряємо, які з createdPlaylists збережені поточним авторизованим користувачем
+    let savedIdsSet = new Set<number>();
+    if (currentUserId) {
+      const userSaved = await prisma.savedPlaylist.findMany({
+        where: {
+          userId: currentUserId,
+          playlistId: { in: createdPlaylists.map(p => p.id) }
+        },
+        select: { playlistId: true }
+      });
+      savedIdsSet = new Set(userSaved.map(s => s.playlistId));
+    }
+
+    const formattedCreated = createdPlaylists.map(p => ({
+      ...p,
+      isOwner: currentUserId ? p.userId === currentUserId : false,
+      isSaved: savedIdsSet.has(p.id),
+      savesCount: p._count.savedBy,
+      tracksCount: p._count.tracks
+    }));
 
     res.json({
       status: 'success',
       isOwner: !!isOwner,
-      playlists
+      playlists: formattedCreated,
+      savedPlaylists
     });
   } catch (error) {
     console.error('Помилка отримання плейлистів користувача:', error);

@@ -22,6 +22,99 @@ const lang = Astro.params.lang || "uk";
         console.error("Global error caught:", e.message);
       });
 
+      // 0.1 Automatic Seamless JWT Refresh Token Interceptor
+      (() => {
+        if (typeof window === "undefined") return;
+        if (window.__authInterceptorInstalled) return;
+        window.__authInterceptorInstalled = true;
+
+        const originalFetch = window.fetch;
+        let isRefreshing = false;
+        let refreshSubscribers = [];
+
+        const onTokenRefreshed = (newToken) => {
+          refreshSubscribers.forEach((cb) => cb(newToken));
+          refreshSubscribers = [];
+        };
+
+        const addRefreshSubscriber = (cb) => {
+          refreshSubscribers.push(cb);
+        };
+
+        window.fetch = async function (...args) {
+          let [resource, config] = args;
+          config = config ? { ...config } : {};
+
+          // Execute original request
+          let response = await originalFetch(resource, config);
+
+          // If 401 Unauthorized, and this is NOT a refresh or login request itself
+          const urlStr = typeof resource === "string" ? resource : resource?.url || "";
+          const isAuthEndpoint =
+            urlStr.includes("/api/auth/login") ||
+            urlStr.includes("/api/auth/refresh") ||
+            urlStr.includes("/api/auth/register");
+
+          if (response.status === 401 && !isAuthEndpoint) {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (!refreshToken) {
+              return response;
+            }
+
+            if (!isRefreshing) {
+              isRefreshing = true;
+              try {
+                const refreshRes = await originalFetch("http://localhost:5001/api/auth/refresh", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ refreshToken }),
+                });
+
+                if (refreshRes.ok) {
+                  const data = await refreshRes.json();
+                  if (data.token) {
+                    localStorage.setItem("token", data.token);
+                    if (data.refreshToken) {
+                      localStorage.setItem("refreshToken", data.refreshToken);
+                    }
+                    onTokenRefreshed(data.token);
+                    isRefreshing = false;
+
+                    // Retry original request with new token
+                    const headers = new Headers(config.headers || {});
+                    headers.set("Authorization", `Bearer ${data.token}`);
+                    config.headers = headers;
+                    return originalFetch(resource, config);
+                  }
+                } else {
+                  // Refresh token expired or revoked
+                  isRefreshing = false;
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("refreshToken");
+                  window.dispatchEvent(new CustomEvent("session-expired"));
+                  return response;
+                }
+              } catch (err) {
+                isRefreshing = false;
+                return response;
+              }
+            } else {
+              // Wait for in-flight refresh to finish and retry
+              return new Promise((resolve) => {
+                addRefreshSubscriber((newToken) => {
+                  const headers = new Headers(config.headers || {});
+                  headers.set("Authorization", `Bearer ${newToken}`);
+                  config.headers = headers;
+                  resolve(originalFetch(resource, config));
+                });
+              });
+            }
+          }
+
+          return response;
+        };
+      })();
+
       // 1. Theme handling
       const applyTheme = () => {
         const theme = (() => {

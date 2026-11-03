@@ -59,7 +59,11 @@
             @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
             class="w-10 h-10 rounded-md object-cover shadow-sm" 
           />
-          <div :style="track.album?.images?.length ? 'display: none;' : ''" class="w-10 h-10 bg-border-subtle rounded-md flex items-center justify-center text-xs">🎵</div>
+          <div :style="track.album?.images?.length ? 'display: none;' : ''" class="w-10 h-10 bg-border-subtle rounded-md flex items-center justify-center text-text-tertiary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+            </svg>
+          </div>
           
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-semibold text-text-primary truncate">{{ track.name }}</h4>

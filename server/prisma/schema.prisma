@@ -32,6 +32,7 @@ model User {
   setting   UserSetting?
   sessions  Session[]
   playlists Playlist[]
+  savedPlaylists SavedPlaylist[]
   favorites Favorite[]
   history   ListeningHistory[]
   
@@ -97,6 +98,19 @@ model Playlist {
 
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks      PlaylistTrack[]
+  savedBy     SavedPlaylist[]
+}
+
+model SavedPlaylist {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  playlistId Int
+  savedAt    DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, playlistId])
 }
 
 model PlaylistTrack {

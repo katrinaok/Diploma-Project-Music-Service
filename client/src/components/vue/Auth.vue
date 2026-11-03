@@ -152,6 +152,9 @@ const handleSubmit = async () => {
     if (isLogin.value && data.token) {
       const storage = rememberMe.value ? localStorage : sessionStorage;
       storage.setItem('token', data.token);
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
       
       if (rememberMe.value) {
         localStorage.setItem('savedLogin', form.login);
@@ -179,6 +182,9 @@ const handleSubmit = async () => {
 
       if (loginResponse.ok && loginData.token) {
         localStorage.setItem('token', loginData.token);
+        if (loginData.refreshToken) {
+          localStorage.setItem('refreshToken', loginData.refreshToken);
+        }
         try {
           const payload = JSON.parse(atob(loginData.token.split('.')[1]));
           if (payload.username) document.cookie = `username=${encodeURIComponent(payload.username)}; path=/; max-age=31536000`;

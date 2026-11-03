@@ -45,6 +45,110 @@
           </div>
         </div>
 
+        <!-- Active Sessions Section -->
+        <div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-purple-600 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {{ $t('settings.active_sessions') || 'Активні сесії' }}
+              </h2>
+              <p class="text-xs text-text-tertiary mt-0.5">
+                {{ $t('settings.active_sessions_desc') || 'Пристрої, з яких виконано вхід до вашого акаунту' }}
+              </p>
+            </div>
+
+            <button 
+              v-if="otherSessionsCount > 0"
+              @click="terminateOtherSessions"
+              :disabled="isTerminatingOthers"
+              class="px-3.5 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              <svg v-if="isTerminatingOthers" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {{ $t('settings.terminate_other_sessions') || 'Завершити інші сесії' }}
+            </button>
+          </div>
+
+          <!-- Sessions List -->
+          <div class="space-y-3">
+            <div v-if="isLoadingSessions" class="p-8 text-center text-text-tertiary">
+              <div class="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p class="text-xs">{{ $t('settings.loading_sessions') || 'Завантаження активних сесій...' }}</p>
+            </div>
+
+            <div 
+              v-else 
+              v-for="session in sessions" 
+              :key="session.id"
+              class="p-4 bg-surface rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+              :class="session.isCurrent ? 'border-purple-500/40 bg-purple-950/10' : 'border-border-subtle hover:border-border-strong'"
+            >
+              <div class="flex items-center gap-3.5 min-w-0">
+                <!-- Device Icon (Desktop / Mobile / Tablet / Browser) -->
+                <div 
+                  class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  :class="session.isCurrent ? 'bg-purple-600/20 text-purple-400' : 'bg-surface-alt text-text-tertiary'"
+                >
+                  <!-- Phone / Mobile -->
+                  <svg v-if="isMobileDevice(session.device)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <!-- Laptop / Desktop -->
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-bold text-text-primary truncate">
+                      {{ session.device }}
+                    </h4>
+                    <span 
+                      v-if="session.isCurrent" 
+                      class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/15 text-green-400 border border-green-500/30 flex-shrink-0"
+                    >
+                      {{ $t('settings.current_device') || 'Поточний пристрій' }}
+                    </span>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-text-tertiary mt-0.5">
+                    <span class="font-mono text-[11px]">{{ session.ipAddress === '::1' || session.ipAddress === '127.0.0.1' ? '127.0.0.1 (Localhost)' : session.ipAddress }}</span>
+                    <span>•</span>
+                    <span>{{ formatSessionDate(session.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Terminate Single Session Button -->
+              <div v-if="!session.isCurrent" class="self-end sm:self-auto flex-shrink-0">
+                <button 
+                  @click="terminateSession(session.id)"
+                  :disabled="terminatingSessionId === session.id"
+                  class="p-2 text-text-tertiary hover:text-red-500 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer"
+                  :title="$t('settings.terminate_session') || 'Завершити цю сесію'"
+                >
+                  <svg v-if="terminatingSessionId === session.id" class="animate-spin h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div>
           <h2 class="text-lg font-bold text-purple-600 mb-4">{{ $t('settings.appearance') }}</h2>
           <div class="flex flex-col gap-4">
@@ -153,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { isDark, toggleTheme, initTheme } from '../../store/theme';
 import ConfirmModal from './ConfirmModal.vue';
@@ -174,6 +278,15 @@ const passwordError = ref(false);
 
 const isPrivate = ref(false);
 const isUpdatingPrivacy = ref(false);
+
+const sessions = ref([]);
+const isLoadingSessions = ref(false);
+const isTerminatingOthers = ref(false);
+const terminatingSessionId = ref(null);
+
+const otherSessionsCount = computed(() => {
+  return sessions.value.filter(s => !s.isCurrent).length;
+});
 
 const updatePassword = async () => {
   if (!newPassword.value || newPassword.value.length < 6) {
@@ -304,6 +417,7 @@ onMounted(async () => {
 
   // Fetch initial settings and status
   if (token) {
+    fetchSessions();
     try {
       const res = await fetch('http://localhost:5001/api/settings', {
         headers: { 'Authorization': `Bearer ${token}` },
@@ -323,6 +437,92 @@ onMounted(async () => {
     }
   }
 });
+
+const fetchSessions = async () => {
+  const token = localStorage.getItem('token');
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!token) return;
+
+  isLoadingSessions.value = true;
+  try {
+    const res = await fetch('http://localhost:5001/api/auth/sessions', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-refresh-token': refreshToken || ''
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      sessions.value = data.sessions || [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch sessions:', err);
+  } finally {
+    isLoadingSessions.value = false;
+  }
+};
+
+const terminateSession = async (sessionId) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  terminatingSessionId.value = sessionId;
+  try {
+    const res = await fetch(`http://localhost:5001/api/auth/sessions/${sessionId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      sessions.value = sessions.value.filter(s => s.id !== sessionId);
+    }
+  } catch (err) {
+    console.error('Failed to terminate session:', err);
+  } finally {
+    terminatingSessionId.value = null;
+  }
+};
+
+const terminateOtherSessions = async () => {
+  const token = localStorage.getItem('token');
+  const currentRefreshToken = localStorage.getItem('refreshToken');
+  if (!token) return;
+
+  isTerminatingOthers.value = true;
+  try {
+    const res = await fetch('http://localhost:5001/api/auth/sessions/other', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ currentRefreshToken })
+    });
+    if (res.ok) {
+      sessions.value = sessions.value.filter(s => s.isCurrent);
+    }
+  } catch (err) {
+    console.error('Failed to terminate other sessions:', err);
+  } finally {
+    isTerminatingOthers.value = false;
+  }
+};
+
+const isMobileDevice = (device) => {
+  if (!device) return false;
+  return /iPhone|iPad|Android|iOS/i.test(device);
+};
+
+const formatSessionDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(locale.value, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 const handleThemeToggle = async () => {
   toggleTheme();
@@ -399,9 +599,20 @@ const executeDelete = async () => {
   }
 };
 
-const logout = () => {
+const logout = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (refreshToken) {
+    try {
+      await fetch('http://localhost:5001/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      });
+    } catch (e) {}
+  }
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
   document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  window.location.href = '/';
+  window.location.href = `/${locale.value}/`;
 };
 </script>

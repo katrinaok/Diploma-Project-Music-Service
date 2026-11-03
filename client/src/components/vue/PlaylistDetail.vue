@@ -125,17 +125,58 @@
               {{ playlist.description }}
             </p>
             
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-medium text-text-tertiary mt-6">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 text-sm font-medium text-text-tertiary mt-6">
+              <!-- Creator Info -->
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-400 flex-shrink-0">
+                  <img v-if="playlist.user?.avatarUrl" :src="playlist.user.avatarUrl" alt="" class="w-full h-full object-cover" />
+                  <span v-else>{{ (playlist.user?.username || 'U')[0].toUpperCase() }}</span>
+                </div>
+                <a 
+                  v-if="!isOwner && playlist.user?.id" 
+                  :href="`/${locale}/profile?id=${playlist.user.id}`" 
+                  class="text-text-primary hover:text-purple-400 font-semibold transition-colors"
+                >
+                  {{ playlist.user.username }}
+                </a>
+                <span v-else class="text-text-primary font-semibold">
+                  {{ isOwner ? $t('playlist.created_by_you') : (playlist.user?.username || $t('profile.default_user')) }}
+                </span>
+              </div>
+
+              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
+
+              <!-- Creation Date -->
               <div class="flex items-center gap-1.5">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 {{ new Date(playlist.createdAt).toLocaleDateString() }}
               </div>
+
               <div class="w-1 h-1 rounded-full bg-border-strong"></div>
+
+              <!-- Tracks Count -->
               <div>
                 {{ playlist.tracks.length }} {{ getTracksCountText(playlist.tracks.length, locale) }}
               </div>
+
+              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
+
+              <!-- Saves Count (Clickable modal for creator/visitors to see who saved it) -->
+              <button 
+                type="button" 
+                @click="openSavesModal"
+                class="flex items-center gap-1.5 text-text-secondary hover:text-purple-400 transition-colors cursor-pointer group"
+                :title="$t('playlist.saves_modal_title')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <span class="font-bold text-text-primary group-hover:text-purple-400 transition-colors">{{ savesCount }}</span>
+                <span>{{ $t('playlist.saves_count') }}</span>
+              </button>
+
               <template v-if="isOwner">
                 <div class="w-1 h-1 rounded-full bg-border-strong"></div>
                 <button 
@@ -149,6 +190,25 @@
                   {{ $t('playlist.delete') }}
                 </button>
               </template>
+            </div>
+
+            <!-- Visitor Actions Row (Save to library button like Spotify) -->
+            <div v-if="!isOwner" class="mt-5 flex items-center justify-center md:justify-start gap-3">
+              <button 
+                @click="toggleSavePlaylist"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm border"
+                :class="isSaved 
+                  ? 'bg-purple-600/15 text-purple-400 border-purple-500/40 hover:bg-purple-600/25' 
+                  : 'bg-surface-alt hover:bg-surface-hover text-text-primary border-border-strong hover:border-purple-500/50'"
+              >
+                <svg v-if="isSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400 fill-current" viewBox="0 0 24 24">
+                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <span>{{ isSaved ? $t('playlist.saved_in_library') : $t('playlist.save_to_library') }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -305,7 +365,11 @@
                 @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
                 class="w-12 h-12 rounded-lg shadow-sm object-cover" 
               />
-              <div :style="item.track.albumCoverUrl ? 'display: none;' : ''" class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">🎵</div>
+              <div :style="item.track.albumCoverUrl ? 'display: none;' : ''" class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
+              </div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
                 <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
@@ -416,6 +480,67 @@
       @confirm="executeRemoveTrack"
       @cancel="isRemoveTrackModalOpen = false"
     />
+
+    <!-- Saves Modal (Who saved this playlist) -->
+    <div 
+      v-if="isSavesModalOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity"
+      @click.self="closeSavesModal"
+    >
+      <div class="bg-surface border border-border-strong rounded-3xl max-w-md w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+        <div class="flex items-center justify-between pb-4 border-b border-border-subtle">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <h3 class="text-lg font-bold text-text-primary">{{ $t('playlist.saves_modal_title') }}</h3>
+          </div>
+          <button 
+            @click="closeSavesModal" 
+            class="text-text-tertiary hover:text-text-primary p-1.5 rounded-full hover:bg-surface-hover transition-colors cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Users List -->
+        <div class="overflow-y-auto py-2 divide-y divide-border-subtle flex-1 min-h-[140px]">
+          <div v-if="isSavesLoading" class="py-12 flex justify-center items-center">
+            <div class="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div v-else-if="savedUsersList.length === 0" class="py-10 text-center text-text-tertiary text-sm">
+            <p>{{ $t('playlist.no_saves_yet') }}</p>
+          </div>
+          <div 
+            v-else 
+            v-for="u in savedUsersList" 
+            :key="u.id" 
+            class="flex items-center justify-between py-3 px-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer group"
+            @click="navigateToUserProfile(u.id)"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-full overflow-hidden bg-purple-500/20 flex items-center justify-center text-sm font-bold text-purple-400 flex-shrink-0">
+                <img v-if="u.avatarUrl" :src="u.avatarUrl" alt="" class="w-full h-full object-cover" />
+                <span v-else>{{ (u.username || 'U')[0].toUpperCase() }}</span>
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-sm font-bold text-text-primary group-hover:text-purple-400 transition-colors truncate">
+                  {{ u.username }}
+                </h4>
+                <p v-if="u.savedAt" class="text-[11px] text-text-tertiary">
+                  {{ new Date(u.savedAt).toLocaleDateString() }}
+                </p>
+              </div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-tertiary group-hover:text-purple-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -443,6 +568,13 @@ const isLoading = ref(true);
 const error = ref(null);
 const playlistCoverUrl = ref(null);
 const isOwnerServer = ref(false);
+const isSaved = ref(false);
+const savesCount = ref(0);
+const isSaving = ref(false);
+
+const isSavesModalOpen = ref(false);
+const isSavesLoading = ref(false);
+const savedUsersList = ref([]);
 
 const currentUserId = ref(null);
 if (typeof window !== 'undefined') {
@@ -923,6 +1055,65 @@ const executeDeletePlaylist = async () => {
   }
 };
 
+const toggleSavePlaylist = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = `/${locale.value}/`;
+    return;
+  }
+  if (isSaving.value) return;
+  isSaving.value = true;
+
+  const previousState = isSaved.value;
+  const previousCount = savesCount.value;
+
+  // Optimistic update
+  isSaved.value = !previousState;
+  savesCount.value = Math.max(0, previousCount + (previousState ? -1 : 1));
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/save`, {
+      method: previousState ? 'DELETE' : 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      isSaved.value = previousState;
+      savesCount.value = previousCount;
+    }
+  } catch (err) {
+    isSaved.value = previousState;
+    savesCount.value = previousCount;
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const openSavesModal = async () => {
+  isSavesModalOpen.value = true;
+  isSavesLoading.value = true;
+  savedUsersList.value = [];
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/saved-users`);
+    if (res.ok) {
+      const data = await res.json();
+      savedUsersList.value = data.users || [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch users who saved this playlist:', err);
+  } finally {
+    isSavesLoading.value = false;
+  }
+};
+
+const closeSavesModal = () => {
+  isSavesModalOpen.value = false;
+};
+
+const navigateToUserProfile = (userId) => {
+  closeSavesModal();
+  window.location.href = `/${locale.value}/profile?id=${userId}`;
+};
+
 onMounted(async () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -983,6 +1174,8 @@ onMounted(async () => {
       if (data.isOwner !== undefined) {
         isOwnerServer.value = !!data.isOwner;
       }
+      isSaved.value = !!(data.playlist.isSaved ?? data.isSaved);
+      savesCount.value = data.playlist.savesCount ?? data.savesCount ?? 0;
     } else {
       const errorData = await response.json();
       error.value = errorData.error || t('playlist.error_fetch');
