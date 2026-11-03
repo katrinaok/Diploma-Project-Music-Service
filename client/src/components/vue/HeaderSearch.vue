@@ -50,8 +50,16 @@
 
         <!-- Tracks Section -->
         <div v-for="track in searchResults" :key="track.id" @click="playTrack(track)" class="flex items-center gap-3 p-3 hover:bg-surface-hover cursor-pointer transition-colors">
-          <img v-if="track.album?.images?.length" :src="track.album.images[track.album.images.length - 1].url" alt="Cover" class="w-10 h-10 rounded-md object-cover shadow-sm" />
-          <div v-else class="w-10 h-10 bg-border-subtle rounded-md flex items-center justify-center text-xs">🎵</div>
+          <img 
+            v-if="track.album?.images?.length" 
+            :src="track.album.images[0]?.url || track.album.images[track.album.images.length - 1]?.url" 
+            alt="Cover" 
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
+            class="w-10 h-10 rounded-md object-cover shadow-sm" 
+          />
+          <div :style="track.album?.images?.length ? 'display: none;' : ''" class="w-10 h-10 bg-border-subtle rounded-md flex items-center justify-center text-xs">🎵</div>
           
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-semibold text-text-primary truncate">{{ track.name }}</h4>
@@ -143,7 +151,13 @@ const playTrack = (track) => {
   const allUris = searchResults.value.map(t => t.uri || `spotify:track:${t.id}`);
   
   window.dispatchEvent(new CustomEvent('play-spotify-track', { 
-    detail: { uri, id: track.id, uris: allUris } 
+    detail: { 
+      uri, 
+      id: track.id, 
+      uris: allUris,
+      tracks: searchResults.value,
+      contextName: query.value ? `Пошук: "${query.value}"` : 'Швидкий пошук'
+    } 
   }));
   
   showDropdown.value = false;

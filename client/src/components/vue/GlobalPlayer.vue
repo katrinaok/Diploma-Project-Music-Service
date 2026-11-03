@@ -67,11 +67,224 @@
       </div>
     </div>
 
+    <!-- PLAYBACK QUEUE DRAWER -->
+    <div 
+      v-if="showQueue && isConnected" 
+      class="fixed right-3 sm:right-6 bottom-24 w-96 max-w-[calc(100vw-1.5rem)] max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border border-purple-500/25 rounded-3xl shadow-2xl z-40 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+    >
+      <!-- Queue Header -->
+      <div class="p-4 border-b border-border-subtle/80 flex items-center justify-between gap-2 bg-surface-alt/40">
+        <div class="min-w-0 flex items-center gap-2">
+          <h3 class="text-base font-bold text-text-primary tracking-tight">
+            {{ $t('global_player.queue_title') }}
+          </h3>
+          <span 
+            v-if="queueContextName" 
+            class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 truncate max-w-[140px]"
+            :title="queueContextName"
+          >
+            {{ queueContextName }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <!-- Shuffle Queue Button -->
+          <button 
+            v-if="upcomingQueue.length > 1" 
+            @click="shuffleQueue"
+            class="p-1.5 text-text-tertiary hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+            :title="$t('global_player.queue_shuffle_btn')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 3 21 3 21 8" />
+              <line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" />
+              <line x1="15" y1="15" x2="21" y2="21" />
+              <line x1="4" y1="4" x2="9" y2="9" />
+            </svg>
+          </button>
+
+          <!-- Clear Queue Button -->
+          <button 
+            v-if="upcomingQueue.length > 0" 
+            @click="clearQueue"
+            class="p-1.5 text-text-tertiary hover:text-red-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+            :title="$t('global_player.queue_clear_btn')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+
+          <!-- Close Button -->
+          <button 
+            @click="showQueue = false" 
+            class="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue Content List -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+        
+        <!-- Now Playing Card -->
+        <div v-if="currentTrack">
+          <div class="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+            <span>{{ $t('global_player.queue_now_playing') }}</span>
+            <span v-if="isPlaying" class="inline-flex items-center gap-1 text-purple-400 text-[10px]">
+              <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping"></span>
+              Грає зараз
+            </span>
+          </div>
+
+          <div class="bg-purple-950/20 dark:bg-purple-900/25 border border-purple-500/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-sm">
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-border-subtle flex-shrink-0 shadow-sm">
+              <img 
+                v-if="currentTrack?.album?.images?.[0]?.url" 
+                :src="currentTrack.album.images[0].url" 
+                alt="Cover" 
+                class="w-full h-full object-cover" 
+              />
+              <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary">🎵</div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-semibold text-purple-300 truncate">{{ currentTrack?.name }}</h4>
+              <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') }}</p>
+            </div>
+
+            <!-- Playing Sound Wave Indicator -->
+            <div v-if="isPlaying" class="flex items-end gap-0.5 h-4 px-1">
+              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_100ms] h-3"></span>
+              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_300ms] h-4"></span>
+              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_200ms] h-2"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next in Queue Section -->
+        <div>
+          <div class="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+            <span>{{ $t('global_player.queue_next_up') }}</span>
+            <span v-if="upcomingQueue.length > 0" class="text-[11px] text-text-tertiary">
+              {{ upcomingQueue.length }} {{ $t('global_player.queue_tracks_count') }}
+            </span>
+          </div>
+
+          <!-- Empty Queue State -->
+          <div v-if="upcomingQueue.length === 0" class="text-center py-8 px-4 text-text-tertiary bg-surface-hover/30 rounded-2xl border border-dashed border-border-subtle">
+            <div class="text-2xl mb-1">🎶</div>
+            <p class="text-xs font-semibold text-text-secondary">{{ $t('global_player.queue_empty') }}</p>
+            <p class="text-[11px] text-text-tertiary mt-1">{{ $t('global_player.queue_empty_desc') }}</p>
+          </div>
+
+          <!-- Upcoming Tracks List -->
+          <div v-else class="space-y-1">
+            <div 
+              v-for="(track, index) in upcomingQueue" 
+              :key="getQueueTrackId(track) + '-' + index"
+              draggable="true"
+              @dragstart="onDragStart(index, $event)"
+              @dragover="onDragOver($event)"
+              @drop="onDrop(index)"
+              class="group flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface-hover border border-transparent hover:border-purple-500/20 transition-all cursor-pointer relative"
+              @click="playFromQueue(track, index)"
+            >
+              <!-- Index / Drag Handle -->
+              <span class="w-5 text-center text-xs font-semibold text-text-tertiary group-hover:text-purple-400 flex-shrink-0 cursor-grab active:cursor-grabbing" :title="$t('global_player.queue_move_up')">
+                <span class="group-hover:hidden">{{ index + 1 }}</span>
+                <span class="hidden group-hover:inline-block">⠿</span>
+              </span>
+
+              <!-- Cover -->
+              <div class="w-9 h-9 rounded-lg overflow-hidden bg-border-subtle flex-shrink-0 relative">
+                <img 
+                  v-if="getQueueTrackCover(track)" 
+                  :src="getQueueTrackCover(track)" 
+                  alt="Cover" 
+                  class="w-full h-full object-cover" 
+                  loading="lazy"
+                />
+                <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-[10px]">🎵</div>
+
+                <!-- Hover Play icon -->
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Title & Artist -->
+              <div class="flex-1 min-w-0">
+                <h5 class="text-xs font-semibold text-text-primary group-hover:text-purple-300 truncate">
+                  {{ getQueueTrackTitle(track) }}
+                </h5>
+                <p class="text-[11px] text-text-tertiary truncate">
+                  {{ getQueueTrackArtist(track) }}
+                </p>
+              </div>
+
+              <!-- Reorder & Remove Actions -->
+              <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+                <!-- Move Up -->
+                <button 
+                  v-if="index > 0" 
+                  @click="moveQueueItemUp(index)" 
+                  class="p-1 text-text-tertiary hover:text-purple-400 hover:bg-surface-alt rounded cursor-pointer"
+                  :title="$t('global_player.queue_move_up')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+
+                <!-- Move Down -->
+                <button 
+                  v-if="index < upcomingQueue.length - 1" 
+                  @click="moveQueueItemDown(index)" 
+                  class="p-1 text-text-tertiary hover:text-purple-400 hover:bg-surface-alt rounded cursor-pointer"
+                  :title="$t('global_player.queue_move_down')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+
+                <!-- Remove -->
+                <button 
+                  @click="removeQueueItem(index)" 
+                  class="p-1 text-text-tertiary hover:text-red-400 hover:bg-surface-alt rounded cursor-pointer ml-0.5"
+                  :title="$t('global_player.queue_remove')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Player Panel -->
     <div v-if="isConnected" class="fixed bottom-0 left-0 w-screen bg-surface border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
     <div class="flex items-center gap-4 w-1/3">
-      <img v-if="currentTrack?.album?.images[0]?.url" :src="currentTrack.album.images[0].url" class="w-14 h-14 rounded-lg shadow-md object-cover" />
-      <div v-else class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center">🎵</div>
+      <img 
+        v-if="currentTrack?.album?.images[0]?.url" 
+        :src="currentTrack.album.images[0].url" 
+        alt="Cover"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
+        class="w-14 h-14 rounded-lg shadow-md object-cover" 
+      />
+      <div :style="currentTrack?.album?.images[0]?.url ? 'display: none;' : ''" class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center">🎵</div>
       <div class="min-w-0">
         <h4 class="text-sm font-bold text-text-primary truncate">{{ currentTrack?.name || $t('global_player.default_title') }}</h4>
         <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}</p>
@@ -79,14 +292,35 @@
     </div>
 
     <div class="flex flex-col items-center justify-center w-1/3 w-full max-w-lg">
-      <div class="flex items-center gap-6 mb-2">
-        <button @click="previousTrack" class="text-text-secondary hover:text-text-primary transition-colors cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+      <div class="flex items-center gap-3 sm:gap-5 mb-2">
+        <!-- Shuffle Button -->
+        <button 
+          @click="toggleShuffle" 
+          :class="[
+            'p-2 rounded-full transition-all cursor-pointer relative flex items-center justify-center',
+            isShuffle ? 'text-purple-500 dark:text-purple-400 hover:text-purple-400' : 'text-text-tertiary hover:text-text-primary'
+          ]" 
+          :title="isShuffle ? $t('global_player.shuffle_on') : $t('global_player.shuffle_off')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8" />
+            <line x1="4" y1="20" x2="21" y2="3" />
+            <polyline points="21 16 21 21 16 21" />
+            <line x1="15" y1="15" x2="21" y2="21" />
+            <line x1="4" y1="4" x2="9" y2="9" />
+          </svg>
+          <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-500 dark:bg-purple-400"></span>
+        </button>
+
+        <!-- Previous Button -->
+        <button @click="previousTrack" class="text-text-secondary hover:text-text-primary transition-colors cursor-pointer p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 20 20" fill="currentColor">
             <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
           </svg>
         </button>
         
-        <button @click="togglePlay" class="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-md">
+        <!-- Play/Pause Button -->
+        <button @click="togglePlay" class="w-11 h-11 sm:w-12 sm:h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-md">
           <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
           </svg>
@@ -95,10 +329,30 @@
           </svg>
         </button>
         
-        <button @click="nextTrack" class="text-text-secondary hover:text-text-primary transition-colors cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+        <!-- Next Button -->
+        <button @click="nextTrack" class="text-text-secondary hover:text-text-primary transition-colors cursor-pointer p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 20 20" fill="currentColor">
             <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
           </svg>
+        </button>
+
+        <!-- Repeat Button -->
+        <button 
+          @click="toggleRepeat" 
+          :class="[
+            'p-2 rounded-full transition-all cursor-pointer relative flex items-center justify-center',
+            repeatMode !== 'off' ? 'text-purple-500 dark:text-purple-400 hover:text-purple-400' : 'text-text-tertiary hover:text-text-primary'
+          ]" 
+          :title="repeatMode === 'off' ? $t('global_player.repeat_off') : repeatMode === 'context' ? $t('global_player.repeat_all') : $t('global_player.repeat_one')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <polyline points="7 23 3 19 7 15" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+          <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[9px] font-black pointer-events-none pb-0.5">1</span>
+          <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-500 dark:bg-purple-400"></span>
         </button>
       </div>
 
@@ -134,12 +388,12 @@
       </div>
     </div>
     
-    <div class="flex items-center justify-end w-1/3 gap-4">
+    <div class="flex items-center justify-end w-1/3 gap-2.5 sm:gap-4">
       <!-- Lyrics Button -->
       <button @click="toggleLyrics" :class="[
         'p-2 rounded-xl transition-all duration-300 tooltip-trigger flex items-center justify-center relative group',
-        showLyrics ? 'text-purple-500' : 'text-text-secondary',
-        currentTrack && !showLyrics ? 'hover:text-text-primary' : '',
+        showLyrics ? 'text-purple-500 bg-purple-500/10' : 'text-text-secondary',
+        currentTrack && !showLyrics ? 'hover:text-text-primary hover:bg-surface-hover' : '',
         !currentTrack ? 'opacity-40 cursor-default' : 'cursor-pointer'
       ]" :title="$t('global_player.lyrics')" v-if="deviceId" :disabled="!currentTrack">
         <!-- Active (Filled) Mic -->
@@ -153,14 +407,35 @@
         </svg>
       </button>
 
+      <!-- Queue Button -->
+      <button 
+        @click="toggleQueue" 
+        :class="[
+          'p-2 rounded-xl transition-all duration-300 flex items-center justify-center relative cursor-pointer',
+          showQueue ? 'text-purple-500 bg-purple-500/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+        ]" 
+        :title="$t('global_player.queue')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 13v6m0 0l-2-2m2 2l2-2" />
+        </svg>
+        <span 
+          v-if="upcomingQueue.length > 0" 
+          class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm"
+        >
+          {{ upcomingQueue.length }}
+        </span>
+      </button>
+
       <!-- Status indicator -->
       <span v-if="deviceId" class="text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center gap-2" :title="$t('global_player.spotify_connect')">
         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        {{ $t('global_player.spotify_connect') }}
+        <span class="hidden sm:inline">{{ $t('global_player.spotify_connect') }}</span>
       </span>
       <span v-else class="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center gap-2" :title="$t('global_player.initializing')">
         <span class="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-        {{ $t('global_player.loading_player') }}
+        <span class="hidden sm:inline">{{ $t('global_player.loading_player') }}</span>
       </span>
     </div>
   </div>
@@ -168,7 +443,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -212,6 +487,172 @@ const position = ref(globalState.position);
 const duration = ref(globalState.duration);
 const isSeeking = ref(false);
 let progressInterval = null;
+
+// Shuffle & Repeat State
+const isShuffle = ref(false);
+const repeatMode = ref('off'); // 'off' | 'context' | 'track'
+
+// Queue State
+const showQueue = ref(false);
+const queueTracks = ref([]);
+const queueContextName = ref('');
+const draggedIndex = ref(null);
+
+const getQueueTrackId = (t) => t?.spotifyId || t?.id || '';
+const getQueueTrackTitle = (t) => t?.title || t?.name || 'Unknown Track';
+const getQueueTrackArtist = (t) => {
+  if (!t) return 'Unknown Artist';
+  if (t.artistName) return t.artistName;
+  if (Array.isArray(t.artists)) return t.artists.map(a => a.name).join(', ');
+  return 'Unknown Artist';
+};
+const getQueueTrackCover = (t) => {
+  if (!t) return null;
+  if (t.albumCoverUrl) return t.albumCoverUrl;
+  if (t.album?.images?.length) return t.album.images[0]?.url || t.album.images[1]?.url || null;
+  return null;
+};
+const getQueueTrackUri = (t) => {
+  if (!t) return null;
+  if (t.uri && t.uri.startsWith('spotify:')) return t.uri;
+  const sid = t.spotifyId || t.id;
+  return sid ? `spotify:track:${sid}` : null;
+};
+
+const currentTrackIndexInQueue = computed(() => {
+  if (!currentTrack.value || queueTracks.value.length === 0) return -1;
+  const currId = currentTrack.value.id;
+  const currUri = currentTrack.value.uri;
+  return queueTracks.value.findIndex(t => {
+    const sid = getQueueTrackId(t);
+    const suri = getQueueTrackUri(t);
+    return (sid && sid === currId) || (suri && suri === currUri);
+  });
+});
+
+const upcomingQueue = computed(() => {
+  if (queueTracks.value.length === 0) return [];
+  const idx = currentTrackIndexInQueue.value;
+  if (idx === -1) return queueTracks.value;
+  return queueTracks.value.slice(idx + 1);
+});
+
+const toggleQueue = () => {
+  showQueue.value = !showQueue.value;
+};
+
+const toggleShuffle = async () => {
+  isShuffle.value = !isShuffle.value;
+  if (token.value && deviceId.value) {
+    try {
+      await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${isShuffle.value}&device_id=${deviceId.value}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token.value}` }
+      });
+    } catch (e) {
+      console.warn('Failed to set Spotify shuffle state:', e);
+    }
+  }
+};
+
+const toggleRepeat = async () => {
+  const nextMode = repeatMode.value === 'off' ? 'context' : repeatMode.value === 'context' ? 'track' : 'off';
+  repeatMode.value = nextMode;
+  if (token.value && deviceId.value) {
+    try {
+      await fetch(`https://api.spotify.com/v1/me/player/repeat?state=${nextMode}&device_id=${deviceId.value}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token.value}` }
+      });
+    } catch (e) {
+      console.warn('Failed to set Spotify repeat mode:', e);
+    }
+  }
+};
+
+const shuffleQueue = () => {
+  if (upcomingQueue.value.length <= 1) return;
+  const idx = currentTrackIndexInQueue.value;
+  const before = idx >= 0 ? queueTracks.value.slice(0, idx + 1) : [];
+  const upcoming = idx >= 0 ? queueTracks.value.slice(idx + 1) : [...queueTracks.value];
+  
+  for (let i = upcoming.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [upcoming[i], upcoming[j]] = [upcoming[j], upcoming[i]];
+  }
+  
+  queueTracks.value = [...before, ...upcoming];
+};
+
+const clearQueue = () => {
+  const idx = currentTrackIndexInQueue.value;
+  if (idx >= 0) {
+    queueTracks.value = queueTracks.value.slice(0, idx + 1);
+  } else {
+    queueTracks.value = [];
+  }
+};
+
+const moveQueueItemUp = (upcomingIdx) => {
+  if (upcomingIdx <= 0) return;
+  const idx = currentTrackIndexInQueue.value;
+  const fullFrom = (idx >= 0 ? idx + 1 : 0) + upcomingIdx;
+  const fullTo = fullFrom - 1;
+  const items = [...queueTracks.value];
+  const [moved] = items.splice(fullFrom, 1);
+  items.splice(fullTo, 0, moved);
+  queueTracks.value = items;
+};
+
+const moveQueueItemDown = (upcomingIdx) => {
+  if (upcomingIdx >= upcomingQueue.value.length - 1) return;
+  const idx = currentTrackIndexInQueue.value;
+  const fullFrom = (idx >= 0 ? idx + 1 : 0) + upcomingIdx;
+  const fullTo = fullFrom + 1;
+  const items = [...queueTracks.value];
+  const [moved] = items.splice(fullFrom, 1);
+  items.splice(fullTo, 0, moved);
+  queueTracks.value = items;
+};
+
+const removeQueueItem = (upcomingIdx) => {
+  const idx = currentTrackIndexInQueue.value;
+  const fullIdx = (idx >= 0 ? idx + 1 : 0) + upcomingIdx;
+  const items = [...queueTracks.value];
+  items.splice(fullIdx, 1);
+  queueTracks.value = items;
+};
+
+const onDragStart = (upcomingIdx, event) => {
+  draggedIndex.value = upcomingIdx;
+  event.dataTransfer.effectAllowed = 'move';
+};
+
+const onDragOver = (event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+};
+
+const onDrop = (targetUpcomingIdx) => {
+  if (draggedIndex.value === null || draggedIndex.value === targetUpcomingIdx) return;
+  const idx = currentTrackIndexInQueue.value;
+  const fullFrom = (idx >= 0 ? idx + 1 : 0) + draggedIndex.value;
+  const fullTo = (idx >= 0 ? idx + 1 : 0) + targetUpcomingIdx;
+  const items = [...queueTracks.value];
+  const [moved] = items.splice(fullFrom, 1);
+  items.splice(fullTo, 0, moved);
+  queueTracks.value = items;
+  draggedIndex.value = null;
+};
+
+const playFromQueue = (track, upcomingIdx) => {
+  const uri = getQueueTrackUri(track);
+  if (!uri) return;
+  const idx = currentTrackIndexInQueue.value;
+  const fullIdx = (idx >= 0 ? idx + 1 : 0) + upcomingIdx;
+  const allUris = queueTracks.value.slice(fullIdx).map(t => getQueueTrackUri(t)).filter(Boolean);
+  playTrack(uri, allUris);
+};
 
 // Lyrics state
 const showLyrics = ref(false);
@@ -513,6 +954,21 @@ const setupSpotifyPlayer = () => {
     isPlaying.value = !state.paused;
     currentTrack.value = state.track_window.current_track;
     
+    // Sync shuffle & repeat from Spotify if available
+    if (typeof state.shuffle !== 'undefined') {
+      isShuffle.value = state.shuffle;
+    }
+    if (typeof state.repeat_mode !== 'undefined') {
+      repeatMode.value = state.repeat_mode === 2 ? 'track' : state.repeat_mode === 1 ? 'context' : 'off';
+    }
+
+    if (queueTracks.value.length === 0 && state.track_window.current_track) {
+      queueTracks.value = [
+        state.track_window.current_track,
+        ...(state.track_window.next_tracks || [])
+      ];
+    }
+
     if (!isSeeking.value) {
       position.value = state.position;
     }
@@ -536,6 +992,21 @@ const togglePlay = () => {
 };
 
 const nextTrack = () => {
+  if (repeatMode.value === 'track') {
+    if (window.__spotifyState.player) {
+      window.__spotifyState.player.seek(0);
+      position.value = 0;
+      return;
+    }
+  }
+
+  if (isShuffle.value && upcomingQueue.value.length > 0) {
+    const randomUpcomingIdx = Math.floor(Math.random() * upcomingQueue.value.length);
+    const chosenTrack = upcomingQueue.value[randomUpcomingIdx];
+    playFromQueue(chosenTrack, randomUpcomingIdx);
+    return;
+  }
+
   if (window.__spotifyState.player) {
     window.__spotifyState.player.nextTrack();
   }
@@ -601,6 +1072,12 @@ onMounted(() => {
 
   window.addEventListener('play-spotify-track', (e) => {
     if (e.detail && e.detail.uri) {
+      if (e.detail.tracks && Array.isArray(e.detail.tracks)) {
+        queueTracks.value = [...e.detail.tracks];
+      }
+      if (e.detail.contextName) {
+        queueContextName.value = e.detail.contextName;
+      }
       playTrack(e.detail.uri, e.detail.uris);
     }
   });

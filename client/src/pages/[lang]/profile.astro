@@ -6,8 +6,7 @@ import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
-const queryUserId = Astro.url.searchParams.get('id');
-// Only pass current user's cookie username if viewing one's own profile without ?id=...
+const queryUserId = Astro.url.searchParams.get('id') ?? undefined;
 const username = !queryUserId ? (Astro.cookies.get('username')?.value || '') : '';
 ---
 

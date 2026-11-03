@@ -69,8 +69,16 @@
           <div v-else class="space-y-3">
             <div v-for="item in tracks" :key="item.track.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-hover border border-transparent hover:border-border-strong transition-all group">
               
-              <img v-if="item.track.albumCoverUrl" :src="item.track.albumCoverUrl" alt="Cover" class="w-12 h-12 rounded-lg shadow-sm object-cover" />
-              <div v-else class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">🎵</div>
+              <img 
+                v-if="item.track.albumCoverUrl" 
+                :src="item.track.albumCoverUrl" 
+                alt="Cover" 
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
+                class="w-12 h-12 rounded-lg shadow-sm object-cover" 
+              />
+              <div :style="item.track.albumCoverUrl ? 'display: none;' : ''" class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">🎵</div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
                 <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
@@ -166,10 +174,19 @@ const togglePlay = (track) => {
       window.dispatchEvent(new CustomEvent('toggle-spotify-playback'));
     } else {
       const uri = `spotify:track:${track.spotifyId}`;
-      const allUris = tracks.value
-        .map(t => `spotify:track:${t.track.spotifyId}`)
+      const sourceList = tracks.value.map(t => t.track);
+      const allUris = sourceList
+        .map(t => `spotify:track:${t.spotifyId}`)
         .filter(u => !u.includes('undefined') && !u.includes('null'));
-      window.dispatchEvent(new CustomEvent('play-spotify-track', { detail: { uri: uri, id: track.spotifyId, uris: allUris } }));
+      window.dispatchEvent(new CustomEvent('play-spotify-track', { 
+        detail: { 
+          uri: uri, 
+          id: track.spotifyId, 
+          uris: allUris,
+          tracks: sourceList,
+          contextName: 'Улюблені треки'
+        } 
+      }));
     }
     return;
   }

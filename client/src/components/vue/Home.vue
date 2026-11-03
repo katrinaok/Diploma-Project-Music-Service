@@ -68,7 +68,15 @@
             </span>
 
             <div class="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden bg-border-subtle shadow-sm">
-              <img v-if="getTrackCover(track)" :src="getTrackCover(track)" alt="Cover" class="w-full h-full object-cover" />
+              <img 
+                v-if="getTrackCover(track) && !failedCovers.has(getTrackId(track))" 
+                :src="getTrackCover(track)" 
+                alt="Cover" 
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @error="onCoverError(track)"
+                class="w-full h-full object-cover" 
+              />
               <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
@@ -180,7 +188,15 @@
                 class="relative aspect-square rounded-xl overflow-hidden mb-3 bg-border-subtle cursor-pointer shadow-sm group-hover:shadow-md"
                 @click="togglePlay(track)"
               >
-                <img v-if="getTrackCover(track)" :src="getTrackCover(track)" :alt="getTrackTitle(track)" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img 
+                  v-if="getTrackCover(track) && !failedCovers.has(getTrackId(track))" 
+                  :src="getTrackCover(track)" 
+                  :alt="getTrackTitle(track)" 
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  @error="onCoverError(track)"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                />
                 <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
@@ -250,7 +266,15 @@
               <div 
                 class="relative w-full aspect-square rounded-2xl overflow-hidden shadow-sm mb-2.5 bg-border-subtle group-hover:shadow-md transition-shadow"
               >
-                <img v-if="getTrackCover(item.track)" :src="getTrackCover(item.track)" alt="Cover" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img 
+                  v-if="getTrackCover(item.track) && !failedCovers.has(getTrackId(item.track))" 
+                  :src="getTrackCover(item.track)" 
+                  alt="Cover" 
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  @error="onCoverError(item.track)"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                />
                 <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
@@ -312,7 +336,15 @@
                 class="relative aspect-square rounded-xl overflow-hidden mb-3 bg-border-subtle cursor-pointer shadow-sm group-hover:shadow-md"
                 @click="togglePlay(track)"
               >
-                <img v-if="getTrackCover(track)" :src="getTrackCover(track)" :alt="getTrackTitle(track)" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img 
+                  v-if="getTrackCover(track) && !failedCovers.has(getTrackId(track))" 
+                  :src="getTrackCover(track)" 
+                  :alt="getTrackTitle(track)" 
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  @error="onCoverError(track)"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                />
                 <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
@@ -394,7 +426,15 @@
 
               <!-- Cover with overlay -->
               <div class="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden bg-border-subtle shadow-sm">
-                <img v-if="getTrackCover(track)" :src="getTrackCover(track)" alt="Cover" class="w-full h-full object-cover" />
+                <img 
+                  v-if="getTrackCover(track) && !failedCovers.has(getTrackId(track))" 
+                  :src="getTrackCover(track)" 
+                  alt="Cover" 
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  @error="onCoverError(track)"
+                  class="w-full h-full object-cover" 
+                />
                 <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
@@ -566,11 +606,20 @@ const getTrackArtist = (t) => {
   return 'Unknown Artist';
 };
 
+const failedCovers = ref(new Set());
+
+const onCoverError = (t) => {
+  const id = getTrackId(t);
+  if (id) {
+    failedCovers.value.add(id);
+  }
+};
+
 const getTrackCover = (t) => {
   if (!t) return null;
   if (t.albumCoverUrl) return t.albumCoverUrl;
   if (t.album && Array.isArray(t.album.images) && t.album.images.length > 0) {
-    return t.album.images[1]?.url || t.album.images[0]?.url || t.album.images[2]?.url || null;
+    return t.album.images[0]?.url || t.album.images[1]?.url || t.album.images[2]?.url || null;
   }
   return null;
 };
@@ -783,16 +832,23 @@ const togglePlay = (track) => {
       
       // Collect queue context based on active view
       let sourceList = [];
+      let contextName = '';
+
       if (searchQuery.value && tracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = tracks.value;
+        contextName = `Результати пошуку: "${searchQuery.value}"`;
       } else if (selectedGenre.value !== 'all' && genreTracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = genreTracks.value;
+        contextName = currentGenreLabel.value || 'Жанрова добірка';
       } else if (recommendedTracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = recommendedTracks.value;
+        contextName = 'Рекомендовано для вас';
       } else if (trendingTracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = trendingTracks.value;
+        contextName = 'Популярні хіти зараз';
       } else if (historyTracks.value.some(h => getTrackId(h.track) === trackId)) {
         sourceList = historyTracks.value.map(h => h.track);
+        contextName = 'Нещодавно прослухано';
       }
 
       let allUris = sourceList.map(t => getTrackUri(t)).filter(u => u && !u.includes('undefined') && !u.includes('null'));
@@ -801,7 +857,13 @@ const togglePlay = (track) => {
       }
 
       window.dispatchEvent(new CustomEvent('play-spotify-track', { 
-        detail: { uri, id: trackId, uris: allUris } 
+        detail: { 
+          uri, 
+          id: trackId, 
+          uris: allUris,
+          tracks: sourceList,
+          contextName
+        } 
       }));
     }
     return;

@@ -1259,6 +1259,32 @@ app.get('/api/spotify/search', async (req: Request, res: Response) => {
 // ==========================================
 // HOME FEED & GENRE DISCOVERY
 // ==========================================
+
+// Перевірка на пошуковий спам / штучно створені треки для накрутки пошуку
+function isSpamTrack(t: any): boolean {
+  if (!t || !t.id || !t.name) return true;
+  const name = (t.name || '').toLowerCase().trim();
+  const artists = (t.artists || []).map((a: any) => (a.name || '').toLowerCase()).join(' ');
+
+  // Відсіюємо випадкові російські треки
+  if (/[ыэъёЫЭЪЁ]/.test(t.name) || /[ыэъёЫЭЪЁ]/.test(artists)) return true;
+
+  // Відсіюємо треки-спам на кшталт "Top Hits" від "Popular Songs, Best Music Hits"
+  if (/^top hits\b/i.test(name) || /^best hits\b/i.test(name) || /^best music hits\b/i.test(name)) return true;
+  if (artists.includes('popular songs') || artists.includes('todays top hits') || artists.includes('top hits today') || artists.includes('best music hits')) return true;
+
+  return false;
+}
+
+function normalizeTitle(title: string): string {
+  return (title || '')
+    .toLowerCase()
+    .replace(/\s*\(.*?\)/g, '')
+    .replace(/\s*\[.*?\]/g, '')
+    .replace(/\s*-\s*(single|remastered|deluxe|bonus|version|edit|radio edit|feat\..*|explicit).*/gi, '')
+    .trim();
+}
+
 async function fetchSpotifyTracks(query: string, count: number = 10): Promise<any[]> {
   try {
     const token = await getSpotifyAccessToken();
@@ -1282,14 +1308,22 @@ async function fetchSpotifyTracks(query: string, count: number = 10): Promise<an
       }
     }
 
-    const seen = new Set<string>();
+    const seenIds = new Set<string>();
+    const seenTitleArtist = new Set<string>();
+
     return allTracks.filter((t: any) => {
-      if (!t || !t.id || !t.name) return false;
-      if (seen.has(t.id)) return false;
-      seen.add(t.id);
-      const name = t.name || '';
-      const artists = (t.artists || []).map((a: any) => a.name).join(' ');
-      return !(/[ыэъёЫЭЪЁ]/.test(name) || /[ыэъёЫЭЪЁ]/.test(artists));
+      if (isSpamTrack(t)) return false;
+      if (seenIds.has(t.id)) return false;
+
+      const normTitle = normalizeTitle(t.name);
+      const mainArtist = (t.artists?.[0]?.name || '').toLowerCase().trim();
+      const trackKey = `${normTitle}___${mainArtist}`;
+
+      if (seenTitleArtist.has(trackKey)) return false;
+
+      seenIds.add(t.id);
+      seenTitleArtist.add(trackKey);
+      return true;
     });
   } catch (e) {
     console.error('Error fetching spotify tracks helper:', e);
@@ -1297,56 +1331,189 @@ async function fetchSpotifyTracks(query: string, count: number = 10): Promise<an
   }
 }
 
+// Актуальний пул світових суперхітів (реальні треки, що очолюють чарти Billboard & Spotify Global)
+const WORLD_HITS_QUERIES = [
+  'Die With A Smile Lady Gaga Bruno Mars',
+  'BIRDS OF A FEATHER Billie Eilish',
+  'Espresso Sabrina Carpenter',
+  'Taste Sabrina Carpenter',
+  'Beautiful Things Benson Boone',
+  'Good Luck Babe Chappell Roan',
+  'Lose Control Teddy Swims',
+  'A Bar Song Tipsy Shaboozey',
+  'Timeless The Weeknd Playboi Carti',
+  'Too Sweet Hozier',
+  'Not Like Us Kendrick Lamar',
+  'Cruel Summer Taylor Swift',
+  'Houdini Dua Lipa',
+  'greedy Tate McRae',
+  'Flowers Miley Cyrus',
+  'As It Was Harry Styles',
+  'Fortnight Taylor Swift Post Malone',
+  'Please Please Please Sabrina Carpenter',
+  'LUNCH Billie Eilish',
+  'I Had Some Help Post Malone Morgan Wallen'
+];
+
+let cachedWorldHits: { tracks: any[]; expiresAt: number } = { tracks: [], expiresAt: 0 };
+
+async function getWorldTrendingHits(count = 12) {
+  const now = Date.now();
+  if (cachedWorldHits.tracks.length >= count && cachedWorldHits.expiresAt > now) {
+    return cachedWorldHits.tracks.slice(0, count);
+  }
+
+  try {
+    const token = await getSpotifyAccessToken();
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    const results = await Promise.all(
+      WORLD_HITS_QUERIES.map(async (q) => {
+        try {
+          const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=1`, { headers });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data.tracks?.items?.[0] || null;
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const validTracks = results.filter((t) => t && t.id && t.name && !isSpamTrack(t));
+    if (validTracks.length > 0) {
+      cachedWorldHits = {
+        tracks: validTracks,
+        expiresAt: now + 60 * 60 * 1000 // Кешуємо на 1 годину
+      };
+      return validTracks.slice(0, count);
+    }
+  } catch (e) {
+    console.error('Помилка завантаження світових хітів:', e);
+  }
+
+  return cachedWorldHits.tracks.slice(0, count);
+}
+
 app.get('/api/home/feed', optionalAuthenticateToken, async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const userId = req.user?.userId;
 
+    const alreadyHeardIds = new Set<string>();
+    const alreadyHeardTitles = new Set<string>();
     let seedArtists: string[] = [];
+
     if (userId) {
       const recentHistory = await prisma.listeningHistory.findMany({
         where: { userId },
         include: { track: true },
         orderBy: { listenedAt: 'desc' },
-        take: 10
+        take: 20
       });
       const recentFavs = await prisma.favorite.findMany({
         where: { userId },
         include: { track: true },
         orderBy: { addedAt: 'desc' },
-        take: 5
+        take: 20
       });
-      const allTracks: any[] = [...recentHistory.map(h => h.track), ...recentFavs.map(f => f.track)].filter(Boolean);
-      seedArtists = [...new Set(allTracks.map(t => {
+
+      const allUserTracks: any[] = [...recentHistory.map(h => h.track), ...recentFavs.map(f => f.track)].filter(Boolean);
+
+      for (const tr of allUserTracks) {
+        if (tr.spotifyId) alreadyHeardIds.add(tr.spotifyId);
+        if (tr.title) {
+          const norm = normalizeTitle(tr.title);
+          if (norm) alreadyHeardTitles.add(norm);
+        }
+      }
+
+      const spamArtistKeywords = ['popular songs', 'todays top hits', 'top hits', 'best hits', 'various artists', 'unknown', 'various', 'top hits today'];
+      seedArtists = [...new Set(allUserTracks.map(t => {
         const art = t?.artistName ? String(t.artistName) : '';
         const parts = art.split(',');
         return (parts[0] || '').trim();
-      }))].filter(Boolean);
+      }))].filter(art => {
+        if (!art || art.length < 2) return false;
+        const lower = art.toLowerCase();
+        return !spamArtistKeywords.some(sp => lower.includes(sp));
+      });
     }
 
-    let recommendedTracks: any[] = [];
-    if (seedArtists.length > 0) {
-      const topArtist = seedArtists[Math.floor(Math.random() * seedArtists.length)];
-      if (topArtist) {
-        recommendedTracks = await fetchSpotifyTracks('artist:"' + topArtist + '"', 10);
+    const recommendedTracks: any[] = [];
+    const seenTrackIds = new Set<string>();
+    const seenTrackKeys = new Set<string>();
+
+    const addTrackIfValid = (t: any): boolean => {
+      if (!t || !t.id || !t.name) return false;
+      if (isSpamTrack(t)) return false;
+      if (seenTrackIds.has(t.id)) return false;
+
+      const normTitle = normalizeTitle(t.name);
+      const mainArtist = (t.artists?.[0]?.name || '').toLowerCase().trim();
+      const trackKey = `${normTitle}___${mainArtist}`;
+
+      if (seenTrackKeys.has(trackKey)) return false;
+      // Якщо користувач вже слухав цей трек, не повторюємо його в рекомендаціях
+      if (alreadyHeardTitles.has(normTitle) || alreadyHeardIds.has(t.id)) {
+        return false;
       }
-    }
 
-    if (recommendedTracks.length < 6) {
-      const fallbackTracks = await fetchSpotifyTracks('top hits', 10);
-      for (const it of fallbackTracks) {
-        if (!recommendedTracks.some(r => r.id === it.id)) {
-          recommendedTracks.push(it);
+      seenTrackIds.add(t.id);
+      seenTrackKeys.add(trackKey);
+      recommendedTracks.push(t);
+      return true;
+    };
+
+    // 1. Формуємо рекомендації на основі смаку (кількох артистів з історії)
+    if (seedArtists.length > 0) {
+      // Беремо до 4 різних артистів з історії/улюблених для різноманітності
+      const pickedArtists = [...seedArtists].sort(() => 0.5 - Math.random()).slice(0, 4);
+
+      const artistResults = await Promise.all(
+        pickedArtists.map(async (art) => {
+          return fetchSpotifyTracks(`artist:"${art}"`, 6);
+        })
+      );
+
+      // Чергуємо треки від різних артистів (замість того, щоб показувати всі треки одного автора підряд)
+      const maxTracks = Math.max(...artistResults.map(r => r.length), 0);
+      for (let i = 0; i < maxTracks; i++) {
+        for (const list of artistResults) {
+          if (list[i]) {
+            addTrackIfValid(list[i]);
+          }
         }
       }
     }
 
-    const trendingTracks = await fetchSpotifyTracks('top hits', 20);
+    // 2. Отримуємо світові суперхіти
+    const worldHits = await getWorldTrendingHits(16);
+
+    // Якщо рекомендацій менше 10 (новий користувач або мало історії), додаємо світові хіти, яких він ще не чув
+    if (recommendedTracks.length < 10) {
+      for (const hit of worldHits) {
+        if (recommendedTracks.length >= 10) break;
+        addTrackIfValid(hit);
+      }
+    }
+
+    // Якщо все ще менше 10, додаємо популярні українські треки
+    if (recommendedTracks.length < 10) {
+      const ukrHits = await fetchSpotifyTracks('ukrainian hits', 10);
+      for (const t of ukrHits) {
+        if (recommendedTracks.length >= 10) break;
+        addTrackIfValid(t);
+      }
+    }
+
+    // Популярні хіти зараз: топ 12 світових чарт-топерів
+    const trendingTracks = worldHits.slice(0, 12);
 
     res.json({
       status: 'success',
       recommended: recommendedTracks.slice(0, 10),
-      trending: trendingTracks.slice(0, 12),
+      trending: trendingTracks,
       basedOnArtist: seedArtists[0] || null
     });
   } catch (error) {
@@ -1357,7 +1524,11 @@ app.get('/api/home/feed', optionalAuthenticateToken, async (req: Request, res: R
 
 app.get('/api/home/genre', async (req: Request, res: Response) => {
   try {
-    const q = (req.query.q as string) || 'top hits';
+    const q = (req.query.q as string) || '';
+    if (!q || q === 'all' || q === 'top hits') {
+      const tracks = await getWorldTrendingHits(20);
+      return res.json({ status: 'success', tracks });
+    }
     const tracks = await fetchSpotifyTracks(q, 20);
     res.json({ status: 'success', tracks });
   } catch (error) {
