@@ -1,13 +1,62 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Auth from "../../components/vue/Auth.vue";
+import ThemeToggle from "../../components/vue/ThemeToggle.vue";
+import LanguageSwitcher from "../../components/astro/LanguageSwitcher.astro";
 import "../../styles/global.css";
 import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
+const year = new Date().getFullYear();
+
+// Server-side redirect if username cookie is present
+const username = Astro.cookies.get('username')?.value;
+if (username) {
+  return Astro.redirect(`/${lang}/home`);
+}
 ---
 
-<Layout title={`MusicVerse - ${t('page.login')}`}>
-	<Auth lang={lang} client:load />
+<script is:inline define:vars={{ lang }}>
+  // Fast client-side check: if JWT token exists in localStorage, redirect immediately to home
+  if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+    window.location.replace('/' + lang + '/home');
+  }
+</script>
+
+<Layout title={`${lang === 'uk' ? 'Хвиля' : 'Khvylia'} - ${t('page.login')}`} hideNav={true}>
+  <div class="min-h-full flex flex-col justify-between py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Minimalist Auth Top Bar -->
+    <header class="w-full max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <rect x="2" y="9" width="2.5" height="6" rx="1.25" />
+            <rect x="6.5" y="5" width="2.5" height="14" rx="1.25" />
+            <rect x="11" y="2" width="2.5" height="20" rx="1.25" />
+            <rect x="15.5" y="6" width="2.5" height="12" rx="1.25" />
+            <rect x="20" y="10" width="2.5" height="4" rx="1.25" />
+          </svg>
+        </div>
+        <span class="font-black text-2xl tracking-tight text-text-primary">
+          {lang === 'uk' ? 'Хвиля' : 'Khvylia'}
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <ThemeToggle client:load />
+        <LanguageSwitcher />
+      </div>
+    </header>
+
+    <!-- Center: Clean Auth Form -->
+    <div class="flex-1 flex items-center justify-center my-6">
+      <Auth lang={lang} client:load />
+    </div>
+
+    <!-- Minimalist Bottom Footer -->
+    <footer class="w-full max-w-5xl mx-auto text-center text-xs text-text-tertiary py-2">
+      <p>&copy; {year} {lang === 'uk' ? 'Хвиля' : 'Khvylia'}. {t("footer.rights")} <span class="mx-1.5">•</span> {t("footer.project")}</p>
+    </footer>
+  </div>
 </Layout>

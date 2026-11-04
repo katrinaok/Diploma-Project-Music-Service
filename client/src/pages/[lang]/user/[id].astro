@@ -7,8 +7,9 @@ import { useTranslations } from "../../../utils/i18n";
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const { id } = Astro.params;
 const t = useTranslations(lang);
+const brand = lang === 'uk' ? 'Хвиля' : 'Khvylia';
 ---
 
-<Layout title={`MusicVerse - ${t('page.profile')}`}>
+<Layout title={`${brand} - ${t('page.profile')}`}>
     <Profile lang={lang} targetUserId={id} client:load />
 </Layout>

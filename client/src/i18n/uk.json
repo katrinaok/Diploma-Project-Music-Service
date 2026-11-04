@@ -1,5 +1,6 @@
 {
   "nav": {
+    "app_name": "Хвиля",
     "home": "Домівка",
     "profile": "Мій Профіль",
     "favorites": "Улюблене"
@@ -14,7 +15,7 @@
   "auth": {
     "login_title": "З поверненням!",
     "register_title": "Створити акаунт",
-    "subtitle": "MusicVerse чекає на тебе",
+    "subtitle": "«Хвиля» чекає на тебе",
     "username": "Ім'я користувача",
     "email": "Email адреса",
     "login_identifier": "Email або Ім'я користувача",
@@ -127,7 +128,27 @@
     "add_tag": "Додати тег",
     "remove_from_playlist": "Видалити з плейлиста",
     "confirm_remove_track": "Ти дійсно хочеш видалити цей трек з плейлиста?",
-    "error_remove_tag": "Помилка видалення тегу"
+    "error_remove_tag": "Помилка видалення тегу",
+    "add_tracks_title": "Додати треки до плейліста",
+    "search_tracks_placeholder": "Пошук треків або виконавців...",
+    "searching_tracks": "Шукаємо треки...",
+    "no_tracks_found": "Нічого не знайдено за вашим запитом",
+    "try_another_query": "Спробуйте іншу назву або ім’я виконавця",
+    "recommended_for_you": "Рекомендовані треки",
+    "search_results": "Результати пошуку",
+    "added": "Додано",
+    "add": "Додати",
+    "done": "Готово",
+    "sort_custom": "Власний порядок",
+    "sort_by": "Сортування треків",
+    "sort_order": "Порядок сортування",
+    "sort_newest": "Спочатку нові",
+    "sort_oldest": "Спочатку старі",
+    "sort_title": "За назвою (А-Я)",
+    "sort_artist": "За виконавцем",
+    "move_up": "Перемістити вище",
+    "move_down": "Перемістити нижче",
+    "drag_to_reorder": "Потягніть для зміни порядку"
   },
   "global_player": {
     "default_title": "Spotify Плеєр",
@@ -174,7 +195,7 @@
   },
   "settings": {
     "title": "Налаштування",
-    "subtitle": "Керування акаунтом та виглядом MusicVerse",
+    "subtitle": "Керування акаунтом та виглядом сервісу «Хвиля»",
     "to_profile": "До профілю",
     "security": "Безпека та акаунт",
     "change_password": "Змінити пароль",

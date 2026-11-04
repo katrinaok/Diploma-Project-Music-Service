@@ -128,14 +128,14 @@
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 text-sm font-medium text-text-tertiary mt-6">
               <!-- Creator Info -->
               <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-400 flex-shrink-0">
+                <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
                   <img v-if="playlist.user?.avatarUrl" :src="playlist.user.avatarUrl" alt="" class="w-full h-full object-cover" />
                   <span v-else>{{ (playlist.user?.username || 'U')[0].toUpperCase() }}</span>
                 </div>
                 <a 
                   v-if="!isOwner && playlist.user?.id" 
                   :href="`/${locale}/profile?id=${playlist.user.id}`" 
-                  class="text-text-primary hover:text-purple-400 font-semibold transition-colors"
+                  class="text-text-primary hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors"
                 >
                   {{ playlist.user.username }}
                 </a>
@@ -167,13 +167,13 @@
               <button 
                 type="button" 
                 @click="openSavesModal"
-                class="flex items-center gap-1.5 text-text-secondary hover:text-purple-400 transition-colors cursor-pointer group"
+                class="flex items-center gap-1.5 text-text-secondary hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer group"
                 :title="$t('playlist.saves_modal_title')"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
                 </svg>
-                <span class="font-bold text-text-primary group-hover:text-purple-400 transition-colors">{{ savesCount }}</span>
+                <span class="font-bold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{{ savesCount }}</span>
                 <span>{{ $t('playlist.saves_count') }}</span>
               </button>
 
@@ -198,10 +198,10 @@
                 @click="toggleSavePlaylist"
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm border"
                 :class="isSaved 
-                  ? 'bg-purple-600/15 text-purple-400 border-purple-500/40 hover:bg-purple-600/25' 
+                  ? 'bg-purple-100 dark:bg-purple-600/15 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-500/40 hover:bg-purple-200/70 dark:hover:bg-purple-600/25' 
                   : 'bg-surface-alt hover:bg-surface-hover text-text-primary border-border-strong hover:border-purple-500/50'"
               >
-                <svg v-if="isSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400 fill-current" viewBox="0 0 24 24">
+                <svg v-if="isSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400 fill-current" viewBox="0 0 24 24">
                   <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
                 </svg>
                 <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -301,9 +301,9 @@
         <div class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-text-primary">{{ $t('playlist.tracks') }}</h2>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
               <!-- Smart Search -->
-              <div class="relative w-48 md:w-64 hidden sm:block">
+              <div class="relative w-40 md:w-56 hidden sm:block">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -315,25 +315,117 @@
                 />
               </div>
 
-              <a v-if="isOwner" :href="`/${$i18n.locale}/home`" class="text-sm font-medium text-purple-600 hover:text-text-accent-hover dark:hover:text-purple-300 flex items-center gap-1 transition-colors">
+              <!-- Custom Sort Dropdown (Desktop) -->
+              <div 
+                v-if="playlist && playlist.tracks && playlist.tracks.length > 1" 
+                class="relative hidden sm:block" 
+                ref="sortDropdownRef"
+              >
+                <button 
+                  type="button"
+                  @click="isSortDropdownOpen = !isSortDropdownOpen"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-alt hover:bg-surface-hover border border-border-subtle hover:border-purple-500/40 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-xs active:scale-95"
+                  :title="$t('playlist.sort_order') || 'Порядок сортування'"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <span class="truncate max-w-[120px]">{{ currentSortLabel }}</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="w-3.5 h-3.5 text-text-tertiary transition-transform duration-200"
+                    :class="{ 'rotate-180 text-purple-500': isSortDropdownOpen }"
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div 
+                  v-if="isSortDropdownOpen"
+                  class="absolute right-0 mt-2 w-52 bg-surface/95 dark:bg-[#1f0e33]/95 backdrop-blur-xl border border-border-subtle rounded-2xl shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
+                >
+                  <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-subtle mb-1">
+                    {{ $t('playlist.sort_by') || 'Сортування треків' }}
+                  </div>
+                  <button
+                    v-for="opt in sortOptions"
+                    :key="opt.value"
+                    @click="selectSort(opt.value)"
+                    class="w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all cursor-pointer text-left"
+                    :class="currentSort === opt.value ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold' : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover font-medium'"
+                  >
+                    <span>{{ opt.label }}</span>
+                    <svg v-if="currentSort === opt.value" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <button 
+                v-if="isOwner" 
+                @click="openAddTracksModal" 
+                class="text-sm font-semibold text-purple-600 hover:text-purple-500 dark:hover:text-purple-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-surface-hover transition-all cursor-pointer flex-shrink-0"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
                 {{ $t('playlist.add_tracks') }}
-              </a>
+              </button>
             </div>
           </div>
           
-          <div class="mb-4 sm:hidden relative w-full">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              class="w-full bg-surface-alt border border-border-subtle rounded-full py-2 pl-9 pr-4 text-sm text-text-primary focus:outline-none focus:border-purple-500 transition-colors"
-              :placeholder="$t('playlist.search_placeholder')"
-            />
+          <div class="mb-4 sm:hidden flex items-center gap-2 w-full">
+            <div class="relative flex-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                class="w-full bg-surface-alt border border-border-subtle rounded-full py-2 pl-9 pr-4 text-sm text-text-primary focus:outline-none focus:border-purple-500 transition-colors"
+                :placeholder="$t('playlist.search_placeholder')"
+              />
+            </div>
+            <!-- Custom Sort Button for Mobile -->
+            <div v-if="playlist && playlist.tracks && playlist.tracks.length > 1" class="relative" ref="mobileSortDropdownRef">
+              <button 
+                type="button"
+                @click="isSortDropdownOpen = !isSortDropdownOpen"
+                class="p-2.5 rounded-xl bg-surface-alt hover:bg-surface-hover border border-border-subtle text-text-primary transition-colors cursor-pointer"
+                :title="$t('playlist.sort_order') || 'Сортування'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu for Mobile -->
+              <div 
+                v-if="isSortDropdownOpen"
+                class="absolute right-0 mt-2 w-52 bg-surface/95 dark:bg-[#1f0e33]/95 backdrop-blur-xl border border-border-subtle rounded-2xl shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
+              >
+                <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-subtle mb-1">
+                  {{ $t('playlist.sort_by') || 'Сортування треків' }}
+                </div>
+                <button
+                  v-for="opt in sortOptions"
+                  :key="'mobile-' + opt.value"
+                  @click="selectSort(opt.value)"
+                  class="w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all cursor-pointer text-left"
+                  :class="currentSort === opt.value ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold' : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover font-medium'"
+                >
+                  <span>{{ opt.label }}</span>
+                  <svg v-if="currentSort === opt.value" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-if="playlist.tracks.length === 0" class="text-center py-12 border-2 border-dashed border-border-subtle rounded-2xl">
@@ -344,9 +436,16 @@
             </div>
             <h3 class="text-lg font-bold text-text-primary mb-2">{{ $t('playlist.empty_title') }}</h3>
             <p class="text-text-tertiary mb-6 max-w-md mx-auto">{{ $t('playlist.empty_desc') }}</p>
-            <a v-if="isOwner" :href="`/${$i18n.locale}/home`" class="inline-block px-6 py-2.5 bg-surface-alt hover:bg-border-subtle text-text-primary font-medium rounded-xl transition-colors">
+            <button 
+              v-if="isOwner" 
+              @click="openAddTracksModal" 
+              class="inline-flex items-center gap-2 px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-all shadow-md shadow-purple-600/20 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
               {{ $t('playlist.find_music') }}
-            </a>
+            </button>
           </div>
           
           <div v-else class="space-y-3">
@@ -354,7 +453,53 @@
               {{ $t('playlist.search_empty') }}
             </div>
             
-            <div v-for="item in filteredTracks" :key="item.track.id" class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-hover border border-transparent hover:border-border-strong transition-all group">
+            <div 
+              v-for="(item, index) in filteredTracks" 
+              :key="item.track.id"
+              :draggable="isOwner && !searchQuery"
+              @dragstart="onTrackDragStart(index)"
+              @dragover.prevent
+              @drop="onTrackDrop(index)"
+              class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group relative"
+            >
+              <!-- Index / Drag Handle (for Owner) -->
+              <div v-if="isOwner && !searchQuery" class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 select-none">
+                <!-- Up / Down buttons on hover -->
+                <div class="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    v-if="index > 0"
+                    @click.stop="moveTrackUp(index)"
+                    class="text-text-tertiary hover:text-purple-500 p-0.5 rounded cursor-pointer transition-colors"
+                    :title="$t('playlist.move_up')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                  <button 
+                    v-if="index < playlist.tracks.length - 1"
+                    @click.stop="moveTrackDown(index)"
+                    class="text-text-tertiary hover:text-purple-500 p-0.5 rounded cursor-pointer transition-colors"
+                    :title="$t('playlist.move_down')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Drag handle or index number -->
+                <div 
+                  class="w-5 sm:w-6 text-center text-xs font-semibold text-text-tertiary cursor-grab active:cursor-grabbing group-hover:text-purple-600 dark:group-hover:text-purple-400"
+                  :title="$t('playlist.drag_to_reorder')"
+                >
+                  <span class="group-hover:hidden">{{ index + 1 }}</span>
+                  <span class="hidden group-hover:inline-block">⠿</span>
+                </div>
+              </div>
+              <div v-else class="w-5 sm:w-6 text-center text-xs font-semibold text-text-tertiary flex-shrink-0">
+                {{ index + 1 }}
+              </div>
               
               <img 
                 v-if="item.track.albumCoverUrl" 
@@ -484,10 +629,10 @@
     <!-- Saves Modal (Who saved this playlist) -->
     <div 
       v-if="isSavesModalOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 pb-24 sm:pb-28 bg-black/60 backdrop-blur-xs transition-opacity"
       @click.self="closeSavesModal"
     >
-      <div class="bg-surface border border-border-strong rounded-3xl max-w-md w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="bg-surface border border-border-strong rounded-3xl max-w-md w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[75vh]">
         <div class="flex items-center justify-between pb-4 border-b border-border-subtle">
           <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
@@ -521,12 +666,12 @@
             @click="navigateToUserProfile(u.id)"
           >
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-full overflow-hidden bg-purple-500/20 flex items-center justify-center text-sm font-bold text-purple-400 flex-shrink-0">
+              <div class="w-10 h-10 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-sm font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
                 <img v-if="u.avatarUrl" :src="u.avatarUrl" alt="" class="w-full h-full object-cover" />
                 <span v-else>{{ (u.username || 'U')[0].toUpperCase() }}</span>
               </div>
               <div class="min-w-0">
-                <h4 class="text-sm font-bold text-text-primary group-hover:text-purple-400 transition-colors truncate">
+                <h4 class="text-sm font-bold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
                   {{ u.username }}
                 </h4>
                 <p v-if="u.savedAt" class="text-[11px] text-text-tertiary">
@@ -534,11 +679,177 @@
                 </p>
               </div>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-tertiary group-hover:text-purple-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add Tracks to Playlist (Spotify-like in-playlist search & add) -->
+    <div 
+      v-if="isAddTracksModalOpen" 
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 pb-24 sm:pb-28 bg-black/60 backdrop-blur-sm transition-opacity"
+      @click.self="closeAddTracksModal"
+    >
+      <div class="bg-surface border border-border-strong rounded-3xl max-w-2xl w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[75vh] animate-in fade-in zoom-in-95 duration-200">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-border-subtle">
+          <div>
+            <h3 class="text-xl font-extrabold text-text-primary flex items-center gap-2">
+              <span>{{ $t('playlist.add_tracks_title') || 'Додати треки до плейліста' }}</span>
+            </h3>
+            <p class="text-xs text-text-tertiary mt-0.5">
+              {{ playlist.title }}
+            </p>
+          </div>
+          <button 
+            @click="closeAddTracksModal" 
+            class="text-text-tertiary hover:text-text-primary p-2 rounded-full hover:bg-surface-hover transition-colors cursor-pointer"
+            title="Закрити (Esc)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Search Bar Inside Modal -->
+        <div class="pt-4 pb-2">
+          <div class="relative w-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input 
+              type="text" 
+              v-model="addTrackSearchQuery"
+              @input="onAddTrackSearchInput"
+              class="w-full bg-surface-alt border border-border-subtle rounded-2xl py-3 pl-11 pr-10 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all shadow-inner"
+              :placeholder="$t('playlist.search_tracks_placeholder') || 'Пошук треків або виконавців...'"
+              autofocus
+            />
+            <button 
+              v-if="addTrackSearchQuery" 
+              @click="clearAddTrackSearch"
+              class="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary p-1 rounded-full cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Track List / Results -->
+        <div class="overflow-y-auto py-3 space-y-2 flex-1 fancy-scrollbar pr-1">
+          <!-- Loading State -->
+          <div v-if="isAddTrackSearching" class="py-12 flex flex-col justify-center items-center gap-3 text-text-tertiary">
+            <div class="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-xs">{{ $t('playlist.searching_tracks') || 'Пошук треків...' }}</span>
+          </div>
+
+          <!-- Empty Search State -->
+          <div v-else-if="addTrackSearchQuery && modalSearchResults.length === 0" class="py-12 text-center text-text-tertiary">
+            <p class="text-sm font-medium">{{ $t('playlist.no_tracks_found') || 'Нічого не знайдено за вашим запитом' }}</p>
+            <p class="text-xs text-text-muted mt-1">{{ $t('playlist.try_another_query') || 'Спробуйте іншу назву або ім’я виконавця' }}</p>
+          </div>
+
+          <!-- Section Label: Suggestions vs Search Results -->
+          <div v-if="!isAddTrackSearching && modalDisplayedTracks.length > 0" class="px-1 pb-1">
+            <span class="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+              {{ addTrackSearchQuery ? ($t('playlist.search_results') || 'Результати пошуку') : ($t('playlist.recommended_for_you') || 'Рекомендовані треки') }}
+            </span>
+          </div>
+
+          <!-- Track items -->
+          <div 
+            v-for="track in modalDisplayedTracks" 
+            :key="track.id || track.spotifyId"
+            class="flex items-center justify-between p-2.5 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group"
+          >
+            <!-- Left: Play button + Cover + Info -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <!-- Cover with Play overlay -->
+              <div class="relative w-11 h-11 rounded-xl overflow-hidden bg-border-subtle flex-shrink-0">
+                <img 
+                  v-if="getModalTrackCover(track)" 
+                  :src="getModalTrackCover(track)" 
+                  alt="Cover" 
+                  class="w-full h-full object-cover" 
+                  loading="lazy" 
+                />
+                <div v-else class="w-full h-full flex items-center justify-center text-text-tertiary">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                  </svg>
+                </div>
+
+                <!-- Hover play preview overlay -->
+                <button 
+                  v-if="track.preview_url || isSpotifyConnected"
+                  @click="playModalTrackPreview(track)"
+                  class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer text-white"
+                  title="Прослухати"
+                >
+                  <svg v-if="playingTrackId === (track.id || track.spotifyId)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Title & Artist -->
+              <div class="min-w-0 flex-1 pr-2">
+                <p class="text-sm font-semibold text-text-primary truncate">
+                  {{ track.name || track.title }}
+                </p>
+                <p class="text-xs text-text-secondary truncate mt-0.5">
+                  {{ getModalTrackArtists(track) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: Duration & Add/Added Button -->
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span v-if="track.duration_ms" class="text-xs text-text-tertiary hidden sm:inline-block">
+                {{ formatModalDuration(track.duration_ms) }}
+              </span>
+
+              <!-- Already added checkmark -->
+              <div 
+                v-if="isAlreadyInPlaylist(track)" 
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-semibold select-none"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span>{{ $t('playlist.added') || 'Додано' }}</span>
+              </div>
+
+              <!-- Add to playlist button -->
+              <button 
+                v-else 
+                @click="addTrackFromModal(track)"
+                :disabled="isAddingTrackId === (track.id || track.spotifyId)"
+                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm hover:shadow-purple-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <svg v-if="isAddingTrackId === (track.id || track.spotifyId)" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ $t('playlist.add') || 'Додати' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -645,6 +956,107 @@ const filteredTracks = computed(() => {
            item.track.artistName.toLowerCase().includes(query);
   });
 });
+
+// Sorting and Drag & Drop Reordering
+const currentSort = ref('custom');
+const draggedTrackIndex = ref(null);
+let reorderSaveTimer = null;
+const isSortDropdownOpen = ref(false);
+const sortDropdownRef = ref(null);
+const mobileSortDropdownRef = ref(null);
+
+const sortOptions = computed(() => [
+  { value: 'custom', label: t('playlist.sort_custom') || 'Власний порядок' },
+  { value: 'newest', label: t('playlist.sort_newest') || 'Спочатку нові' },
+  { value: 'oldest', label: t('playlist.sort_oldest') || 'Спочатку старі' },
+  { value: 'title', label: t('playlist.sort_title') || 'За назвою (А-Я)' },
+  { value: 'artist', label: t('playlist.sort_artist') || 'За виконавцем' }
+]);
+
+const currentSortLabel = computed(() => {
+  const opt = sortOptions.value.find(o => o.value === currentSort.value);
+  return opt ? opt.label : (t('playlist.sort_custom') || 'Власний порядок');
+});
+
+const selectSort = (val) => {
+  currentSort.value = val;
+  applySort();
+  isSortDropdownOpen.value = false;
+};
+
+const onTrackDragStart = (index) => {
+  draggedTrackIndex.value = index;
+};
+
+const onTrackDrop = (targetIndex) => {
+  if (draggedTrackIndex.value === null || draggedTrackIndex.value === targetIndex) return;
+  const tracks = [...playlist.value.tracks];
+  const [movedItem] = tracks.splice(draggedTrackIndex.value, 1);
+  tracks.splice(targetIndex, 0, movedItem);
+  playlist.value.tracks = tracks;
+  draggedTrackIndex.value = null;
+  currentSort.value = 'custom';
+  savePlaylistOrderDebounced();
+};
+
+const moveTrackUp = (index) => {
+  if (index <= 0) return;
+  const tracks = [...playlist.value.tracks];
+  const [movedItem] = tracks.splice(index, 1);
+  tracks.splice(index - 1, 0, movedItem);
+  playlist.value.tracks = tracks;
+  currentSort.value = 'custom';
+  savePlaylistOrderDebounced();
+};
+
+const moveTrackDown = (index) => {
+  if (index >= playlist.value.tracks.length - 1) return;
+  const tracks = [...playlist.value.tracks];
+  const [movedItem] = tracks.splice(index, 1);
+  tracks.splice(index + 1, 0, movedItem);
+  playlist.value.tracks = tracks;
+  currentSort.value = 'custom';
+  savePlaylistOrderDebounced();
+};
+
+const applySort = () => {
+  if (!playlist.value?.tracks || playlist.value.tracks.length <= 1) return;
+  const tracks = [...playlist.value.tracks];
+  if (currentSort.value === 'title') {
+    tracks.sort((a, b) => a.track.title.localeCompare(b.track.title));
+  } else if (currentSort.value === 'artist') {
+    tracks.sort((a, b) => a.track.artistName.localeCompare(b.track.artistName));
+  } else if (currentSort.value === 'newest') {
+    tracks.sort((a, b) => new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime());
+  } else if (currentSort.value === 'oldest') {
+    tracks.sort((a, b) => new Date(a.addedAt || 0).getTime() - new Date(b.addedAt || 0).getTime());
+  }
+  playlist.value.tracks = tracks;
+  if (isOwner.value) {
+    savePlaylistOrderDebounced();
+  }
+};
+
+const savePlaylistOrderDebounced = () => {
+  if (reorderSaveTimer) clearTimeout(reorderSaveTimer);
+  reorderSaveTimer = setTimeout(async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !playlist.value?.tracks || !isOwner.value) return;
+    try {
+      const trackIds = playlist.value.tracks.map(item => item.track.id);
+      await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/reorder`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ trackIds })
+      });
+    } catch (err) {
+      console.error('Failed to save playlist reorder:', err);
+    }
+  }, 400);
+};
 
 const fetchRecommendations = async (tag) => {
   if (!tag) return;
@@ -817,15 +1229,31 @@ const handleSpotifyState = (e) => {
   }
 };
 
+const handleGlobalKeydown = (e) => {
+  if (e.key === 'Escape') {
+    if (isSortDropdownOpen.value) isSortDropdownOpen.value = false;
+    if (isAddTracksModalOpen.value) closeAddTracksModal();
+    if (isSavesModalOpen.value) closeSavesModal();
+  }
+};
+
 onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
   document.removeEventListener('click', closeMenuOnClickOutside);
+  window.removeEventListener('keydown', handleGlobalKeydown);
 });
 
 const closeMenuOnClickOutside = (e) => {
   if (openMenuId.value !== null && !e.target.closest('.relative')) {
     openMenuId.value = null;
+  }
+  if (isSortDropdownOpen.value) {
+    const clickedDesktop = sortDropdownRef.value && sortDropdownRef.value.contains(e.target);
+    const clickedMobile = mobileSortDropdownRef.value && mobileSortDropdownRef.value.contains(e.target);
+    if (!clickedDesktop && !clickedMobile) {
+      isSortDropdownOpen.value = false;
+    }
   }
 };
 
@@ -1114,6 +1542,177 @@ const navigateToUserProfile = (userId) => {
   window.location.href = `/${locale.value}/profile?id=${userId}`;
 };
 
+// Add Tracks Modal State & Handlers
+const isAddTracksModalOpen = ref(false);
+const addTrackSearchQuery = ref('');
+const isAddTrackSearching = ref(false);
+const modalSearchResults = ref([]);
+const modalInitialSuggestions = ref([]);
+let searchDebounceTimer = null;
+
+const openAddTracksModal = async () => {
+  if (!isOwner.value) return;
+  isAddTracksModalOpen.value = true;
+  if (modalInitialSuggestions.value.length === 0) {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5001/api/home/feed', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const combined = [...(data.recommended || []), ...(data.trending || [])];
+        const seen = new Set();
+        const deduped = [];
+        for (const t of combined) {
+          const sid = t.spotifyId || t.id;
+          if (sid && !seen.has(sid)) {
+            seen.add(sid);
+            deduped.push(t);
+          }
+        }
+        modalInitialSuggestions.value = deduped.slice(0, 20);
+      }
+    } catch (e) {
+      console.error('Failed to load initial suggestions for modal', e);
+    }
+  }
+};
+
+const closeAddTracksModal = () => {
+  isAddTracksModalOpen.value = false;
+  addTrackSearchQuery.value = '';
+  modalSearchResults.value = [];
+  isAddTrackSearching.value = false;
+};
+
+const onAddTrackSearchInput = () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  const q = addTrackSearchQuery.value.trim();
+  if (!q) {
+    modalSearchResults.value = [];
+    isAddTrackSearching.value = false;
+    return;
+  }
+  isAddTrackSearching.value = true;
+  searchDebounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/spotify/search?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const data = await res.json();
+        modalSearchResults.value = data.tracks || [];
+      } else {
+        modalSearchResults.value = [];
+      }
+    } catch (err) {
+      console.error('Failed to search tracks', err);
+      modalSearchResults.value = [];
+    } finally {
+      isAddTrackSearching.value = false;
+    }
+  }, 350);
+};
+
+const clearAddTrackSearch = () => {
+  addTrackSearchQuery.value = '';
+  modalSearchResults.value = [];
+  isAddTrackSearching.value = false;
+};
+
+const modalDisplayedTracks = computed(() => {
+  if (addTrackSearchQuery.value.trim()) {
+    return modalSearchResults.value;
+  }
+  return modalInitialSuggestions.value;
+});
+
+const isAlreadyInPlaylist = (track) => {
+  if (!playlist.value || !playlist.value.tracks) return false;
+  const sid = track.spotifyId || track.id;
+  return playlist.value.tracks.some(item => {
+    const itemSid = item.track?.spotifyId || item.track?.id;
+    return itemSid && (itemSid === sid || itemSid === track.id || itemSid === track.spotifyId);
+  });
+};
+
+const getModalTrackCover = (track) => {
+  if (!track) return null;
+  if (track.albumCoverUrl) return track.albumCoverUrl;
+  if (track.album?.images?.length) return track.album.images[0]?.url || track.album.images[1]?.url || null;
+  return null;
+};
+
+const getModalTrackArtists = (track) => {
+  if (!track) return '';
+  if (track.artistName) return track.artistName;
+  if (Array.isArray(track.artists)) return track.artists.map(a => a.name).join(', ');
+  return '';
+};
+
+const formatModalDuration = (ms) => {
+  if (!ms) return '';
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
+
+const addTrackFromModal = async (track) => {
+  if (!isOwner.value) return;
+  const token = localStorage.getItem('token');
+  const sid = track.spotifyId || track.id;
+  if (!token || !sid || isAddingTrackId.value === sid) return;
+
+  isAddingTrackId.value = sid;
+
+  const trackData = {
+    spotifyId: sid,
+    title: track.name || track.title,
+    artistName: getModalTrackArtists(track),
+    albumCoverUrl: getModalTrackCover(track) || '',
+    previewUrl: track.preview_url || track.previewUrl || ''
+  };
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`, 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify(trackData)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (!playlist.value.tracks) {
+        playlist.value.tracks = [];
+      }
+      playlist.value.tracks.push({
+        track: {
+          ...data.track,
+          tags: []
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Failed to add track from modal', err);
+  } finally {
+    isAddingTrackId.value = null;
+  }
+};
+
+const playModalTrackPreview = (track) => {
+  const sid = track.spotifyId || track.id;
+  togglePlay({
+    spotifyId: sid,
+    previewUrl: track.preview_url || track.previewUrl,
+    title: track.name || track.title,
+    artistName: getModalTrackArtists(track),
+    albumCoverUrl: getModalTrackCover(track)
+  });
+};
+
 onMounted(async () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -1129,6 +1728,7 @@ onMounted(async () => {
   }
 
   document.addEventListener('click', closeMenuOnClickOutside);
+  window.addEventListener('keydown', handleGlobalKeydown);
   
   playlistCoverUrl.value = localStorage.getItem(`playlistCover_${props.playlistId}`);
 

@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'success',
-    message: 'MusicVerse API працює ідеально! 🚀'
+    message: 'Khvylia API працює ідеально! 🚀'
   });
 });
 
@@ -688,10 +688,17 @@ app.post('/api/playlists/:id/tracks', authenticateToken, async (req: Request, re
     });
 
     if (!existingPlaylistTrack) {
+      const maxPos = await prisma.playlistTrack.aggregate({
+        where: { playlistId },
+        _max: { position: true }
+      });
+      const nextPos = (maxPos._max.position ?? -1) + 1;
+
       await prisma.playlistTrack.create({
         data: {
           playlistId,
-          trackId: track.id
+          trackId: track.id,
+          position: nextPos
         }
       });
     }
@@ -700,6 +707,43 @@ app.post('/api/playlists/:id/tracks', authenticateToken, async (req: Request, re
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка додавання треку' });
+  }
+});
+
+// Зміна порядку треків у плейлісті (Reorder)
+app.put('/api/playlists/:id/reorder', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user.userId;
+    const playlistId = parseInt(req.params.id as string, 10);
+    const { trackIds } = req.body;
+
+    if (isNaN(playlistId) || !Array.isArray(trackIds)) {
+      return res.status(400).json({ error: 'Некоректні дані для сортування' });
+    }
+
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+
+    if (!playlist || playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Немає прав на редагування цього плейліста' });
+    }
+
+    // Оновлюємо position для кожного треку
+    await prisma.$transaction(
+      trackIds.map((trackId: number, index: number) =>
+        prisma.playlistTrack.updateMany({
+          where: { playlistId, trackId },
+          data: { position: index }
+        })
+      )
+    );
+
+    res.json({ status: 'success', message: 'Порядок треків успішно збережено' });
+  } catch (error) {
+    console.error('Failed to reorder playlist tracks:', error);
+    res.status(500).json({ error: 'Помилка зміни порядку треків' });
   }
 });
 
@@ -771,7 +815,10 @@ app.get('/api/playlists/:id', optionalAuthenticateToken, async (req: Request, re
               }
             }
           },
-          orderBy: { addedAt: 'desc' }
+          orderBy: [
+            { position: 'asc' },
+            { addedAt: 'asc' }
+          ]
         }
       }
     });
@@ -1715,7 +1762,7 @@ app.get('/api/lyrics', async (req: Request, res: Response) => {
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    project: 'MusicVerse API',
+    project: 'Khvylia API',
     message: '🚀 Бекенд успішно працює! Япі!'
   });
 });

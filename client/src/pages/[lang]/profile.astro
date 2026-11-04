@@ -8,8 +8,9 @@ const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
 const queryUserId = Astro.url.searchParams.get('id') ?? undefined;
 const username = !queryUserId ? (Astro.cookies.get('username')?.value || '') : '';
+const brand = lang === 'uk' ? 'Хвиля' : 'Khvylia';
 ---
 
-<Layout title={`MusicVerse - ${t('page.profile')}`}>
+<Layout title={`${brand} - ${t('page.profile')}`}>
     <Profile lang={lang} initialUsername={username} targetUserId={queryUserId} client:load />
 </Layout>

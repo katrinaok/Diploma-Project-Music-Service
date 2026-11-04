@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all">
+  <div v-if="isOpen" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pb-24 sm:pb-28 z-[60] transition-all">
     <div class="bg-surface max-w-md w-full rounded-2xl p-6 shadow-2xl border border-border-subtle transform transition-all">
       <div class="flex items-center gap-3 mb-4">
         <div 

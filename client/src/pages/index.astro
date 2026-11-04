@@ -1,5 +1,18 @@
 ---
 // Перенаправлення на мовну версію за замовчуванням
 import { defaultLang } from "../utils/i18nConfig";
+
+const username = Astro.cookies.get('username')?.value;
+if (username) {
+  return Astro.redirect(`/${defaultLang}/home`);
+}
 return Astro.redirect(`/${defaultLang}`);
 ---
+
+<script is:inline define:vars={{ defaultLang }}>
+  if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+    window.location.replace(`/${defaultLang}/home`);
+  } else {
+    window.location.replace(`/${defaultLang}`);
+  }
+</script>

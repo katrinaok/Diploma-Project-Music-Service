@@ -11,7 +11,7 @@
       @input="handleInput"
       @focus="showDropdown = true"
       @keyup.enter="handleSearch"
-      class="block w-full pl-10 pr-3 py-2 border border-transparent rounded-full leading-5 bg-surface-hover text-text-primary placeholder-text-tertiary focus:outline-none focus:bg-surface focus:border-border-strong sm:text-sm transition-colors" 
+      class="block w-full pl-10 pr-3 py-2 border border-border-subtle hover:border-border-strong dark:border-transparent rounded-full leading-5 bg-surface-alt/70 dark:bg-surface-hover text-text-primary placeholder-text-tertiary focus:outline-none focus:bg-surface focus:border-purple-500 dark:focus:border-border-strong focus:ring-2 focus:ring-purple-500/15 sm:text-sm transition-all shadow-xs" 
       :placeholder="$t('home.search_placeholder') || 'Пошук...'" 
     />
     
@@ -29,7 +29,7 @@
       <div v-else class="max-h-96 overflow-y-auto custom-scrollbar">
         <!-- Users Section -->
         <div v-if="userResults.length > 0" class="border-b border-border-subtle p-2">
-          <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-400">
+          <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
             {{ $t('profile.search_users_title') || 'Користувачі' }}
           </div>
           <div 
@@ -40,7 +40,7 @@
           >
             <div class="w-8 h-8 rounded-full overflow-hidden bg-surface-alt border border-border-strong flex items-center justify-center flex-shrink-0">
               <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.username" class="w-full h-full object-cover" />
-              <span v-else class="text-xs font-bold text-purple-400 uppercase">{{ (user.username || 'U')[0] }}</span>
+              <span v-else class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase">{{ (user.username || 'U')[0] }}</span>
             </div>
             <div class="flex-1 min-w-0">
               <h4 class="text-xs font-semibold text-text-primary truncate">{{ user.username }}</h4>

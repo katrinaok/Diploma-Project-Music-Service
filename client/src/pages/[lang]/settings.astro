@@ -5,8 +5,9 @@ import { useTranslations } from "../../utils/i18n";
 
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const t = useTranslations(lang);
+const brand = lang === 'uk' ? 'Хвиля' : 'Khvylia';
 ---
 
-<Layout title={`MusicVerse - ${t('page.settings')}`}>
+<Layout title={`${brand} - ${t('page.settings')}`}>
     <Settings lang={lang} client:load />
 </Layout>

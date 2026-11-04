@@ -4,21 +4,21 @@
 
 :root {
   --bg-surface: #ffffff;
-  --bg-surface-hover: #f9fafb;
-  --bg-surface-alt: #f3f4f6;
-  --border-subtle: #f3f4f6;
-  --border-strong: #e5e7eb;
+  --bg-surface-hover: #f7f6fc;
+  --bg-surface-alt: #f1eff8;
+  --border-subtle: #e5e2ee;
+  --border-strong: #d3cee0;
 
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
-  --text-muted: #9ca3af;
+  --text-primary: #120e24;
+  --text-secondary: #4a4659;
+  --text-tertiary: #6b677a;
+  --text-muted: #8d899d;
 
-  --text-accent: #9333ea;
-  --text-accent-hover: #7e22ce;
+  --text-accent: #7e22ce;
+  --text-accent-hover: #6b21a8;
 
   --bg-success-subtle: #f0fdf4;
-  --text-success: #16a34a;
+  --text-success: #15803d;
   --border-success-subtle: #bbf7d0;
 
   --bg-error-subtle: #fef2f2;

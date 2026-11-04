@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="close">
+  <div v-if="isOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 pb-24 sm:pb-28 bg-black/60 backdrop-blur-sm" @click.self="close">
     <div class="bg-surface border border-border-subtle rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-bold text-text-primary">{{ isCreating ? $t('tag_modal.new_tag') : $t('tag_modal.add_tag') }}</h3>

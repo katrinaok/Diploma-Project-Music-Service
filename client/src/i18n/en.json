@@ -1,5 +1,6 @@
 {
   "nav": {
+    "app_name": "Khvylia",
     "home": "Home",
     "profile": "My Profile",
     "favorites": "Favorites"
@@ -14,7 +15,7 @@
   "auth": {
     "login_title": "Welcome back!",
     "register_title": "Create account",
-    "subtitle": "MusicVerse is waiting for you",
+    "subtitle": "Khvylia is waiting for you",
     "username": "Username",
     "email": "Email Address",
     "login_identifier": "Email or Username",
@@ -127,7 +128,27 @@
     "add_tag": "Add tag",
     "remove_from_playlist": "Remove from playlist",
     "confirm_remove_track": "Remove track from playlist?",
-    "error_remove_tag": "Error removing tag"
+    "error_remove_tag": "Error removing tag",
+    "add_tracks_title": "Add tracks to playlist",
+    "search_tracks_placeholder": "Search tracks or artists...",
+    "searching_tracks": "Searching tracks...",
+    "no_tracks_found": "No tracks found for your search",
+    "try_another_query": "Try another title or artist name",
+    "recommended_for_you": "Recommended tracks",
+    "search_results": "Search results",
+    "added": "Added",
+    "add": "Add",
+    "done": "Done",
+    "sort_custom": "Custom order",
+    "sort_by": "Sort tracks",
+    "sort_order": "Sort order",
+    "sort_newest": "Newest first",
+    "sort_oldest": "Oldest first",
+    "sort_title": "By title (A-Z)",
+    "sort_artist": "By artist",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "drag_to_reorder": "Drag to reorder"
   },
   "global_player": {
     "default_title": "Spotify Player",
@@ -174,7 +195,7 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Manage account and appearance of MusicVerse",
+    "subtitle": "Manage account and appearance of Khvylia",
     "to_profile": "To profile",
     "security": "Security and account",
     "change_password": "Change password",

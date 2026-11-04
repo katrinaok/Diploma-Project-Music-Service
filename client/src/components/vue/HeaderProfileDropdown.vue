@@ -114,7 +114,29 @@ onBeforeUnmount(() => {
   window.removeEventListener('avatar-updated', handleAvatarUpdate);
 });
 
-const logout = () => {
+const logout = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (refreshToken) {
+    try {
+      await fetch('http://localhost:5001/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      });
+    } catch (e) {}
+  }
+
+  // Disconnect Spotify Player if active
+  if (typeof window !== 'undefined' && window.__spotifyState) {
+    if (window.__spotifyState.player) {
+      try {
+        window.__spotifyState.player.disconnect();
+      } catch (e) {}
+      window.__spotifyState.player = null;
+    }
+    window.__spotifyState.isConnected = false;
+  }
+
   const token = localStorage.getItem('token');
   if (token) {
     try {
@@ -125,7 +147,9 @@ const logout = () => {
     } catch (e) {}
   }
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('userAvatarUrl');
-  window.location.href = `/${locale.value}/`;
+  document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  window.location.href = `/${locale.value}`;
 };
 </script>

@@ -3,20 +3,20 @@
     <div class="w-full mx-auto space-y-8">
       
       <!-- Top Welcome Banner -->
-      <div class="relative overflow-hidden bg-gradient-to-r from-purple-900/40 via-surface to-purple-950/30 p-6 md:p-8 rounded-3xl shadow-sm border border-purple-500/20 backdrop-blur-xl">
+      <div class="relative overflow-hidden bg-gradient-to-r from-purple-100/90 via-surface to-purple-50/70 dark:from-purple-900/40 dark:via-surface dark:to-purple-950/30 p-6 md:p-8 rounded-3xl shadow-xs border border-purple-200/80 dark:border-purple-500/20 backdrop-blur-xl">
         <div class="relative z-10 max-w-2xl">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold uppercase tracking-wider mb-3">
-            MusicVerse Feed
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-500/10 border border-purple-300/80 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
+            {{ locale === 'uk' ? 'Стрічка «Хвилі»' : 'Khvylia Feed' }}
           </div>
           <h1 class="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
             {{ $t('home.title') }}
           </h1>
-          <p class="text-text-tertiary text-sm md:text-base mt-2 leading-relaxed">
+          <p class="text-text-secondary text-sm md:text-base mt-2 leading-relaxed">
             {{ $t('home.subtitle') }}
           </p>
         </div>
         <!-- Decorative blurred glow -->
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-purple-400/20 dark:bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
       <!-- SEARCH RESULTS VIEW (Visible when user searched from top bar) -->
@@ -24,7 +24,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border-subtle">
           <div>
             <h2 class="text-xl md:text-2xl font-bold text-text-primary flex items-center gap-2.5">
-              <span>{{ $t('home.search_results_title') }} <span class="text-purple-400">"{{ searchQuery }}"</span></span>
+              <span>{{ $t('home.search_results_title') }} <span class="text-purple-600 dark:text-purple-400">"{{ searchQuery }}"</span></span>
             </h2>
             <p v-if="!isLoadingSearch" class="text-xs text-text-tertiary mt-1">
               Знайдено треків: {{ tracks.length }}
@@ -63,7 +63,7 @@
             class="flex items-center gap-4 p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-purple-500/20 transition-all group cursor-pointer"
             @click="togglePlay(track)"
           >
-            <span class="w-6 text-center text-xs font-semibold text-text-tertiary group-hover:text-purple-400">
+            <span class="w-6 text-center text-xs font-semibold text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400">
               {{ index + 1 }}
             </span>
 
@@ -101,7 +101,7 @@
             <div class="flex-1 min-w-0">
               <h3 
                 class="text-sm font-semibold truncate transition-colors"
-                :class="playingTrackId === getTrackId(track) ? 'text-purple-400' : 'text-text-primary group-hover:text-purple-300'"
+                :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
               >
                 {{ getTrackTitle(track) }}
               </h3>
@@ -112,7 +112,7 @@
               <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
               <button 
                 @click="openPlaylistModal(track)" 
-                class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
+                class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
                 :title="$t('home.add_to_playlist')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -133,7 +133,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-text-tertiary">
               {{ $t('home.explore_moods') }}
             </span>
-            <span v-if="selectedGenre !== 'all'" class="text-xs text-purple-400 cursor-pointer hover:underline" @click="selectGenre(genres[0])">
+            <span v-if="selectedGenre !== 'all'" class="text-xs text-purple-600 dark:text-purple-400 font-semibold cursor-pointer hover:underline" @click="selectGenre(genres[0])">
               Скинути фільтр
             </span>
           </div>
@@ -147,7 +147,7 @@
                 'px-4 py-2 rounded-xl text-xs md:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5 shadow-sm',
                 selectedGenre === genre.id
                   ? 'bg-purple-600 text-white shadow-purple-500/25 scale-102 font-semibold'
-                  : 'bg-surface-hover hover:bg-surface-alt text-text-secondary hover:text-text-primary border border-border-subtle hover:border-purple-500/30'
+                  : 'bg-surface-alt/70 hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border-subtle hover:border-purple-500/30'
               ]"
             >
               {{ $t(genre.labelKey) || genre.defaultLabel }}
@@ -166,7 +166,7 @@
             </div>
             <button 
               @click="selectGenre(genres[0])"
-              class="text-xs text-purple-400 hover:text-purple-300 font-medium px-3 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition-colors cursor-pointer"
+              class="text-xs text-purple-600 dark:text-purple-300 font-semibold px-3 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition-colors cursor-pointer"
             >
               Показати всі
             </button>
@@ -233,7 +233,7 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="p-1.5 text-text-muted hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                  class="p-1.5 text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                   :title="$t('home.add_to_playlist')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -381,7 +381,7 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="p-1.5 text-text-muted hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                  class="p-1.5 text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                   :title="$t('home.add_to_playlist')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -420,7 +420,7 @@
               @click="togglePlay(track)"
             >
               <!-- Index badge -->
-              <span class="w-6 text-center text-xs font-bold text-text-tertiary group-hover:text-purple-400">
+              <span class="w-6 text-center text-xs font-bold text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400">
                 #{{ index + 1 }}
               </span>
 
@@ -460,7 +460,7 @@
               <div class="flex-1 min-w-0">
                 <h3 
                   class="text-sm font-semibold truncate transition-colors"
-                  :class="playingTrackId === getTrackId(track) ? 'text-purple-400' : 'text-text-primary group-hover:text-purple-300'"
+                  :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
                 >
                   {{ getTrackTitle(track) }}
                 </h3>
@@ -477,7 +477,7 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
+                  class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
                   :title="$t('home.add_to_playlist')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -519,7 +519,7 @@
             @click="addTrackToPlaylist(playlist.id)"
             class="w-full text-left px-4 py-3 rounded-2xl bg-surface-hover hover:bg-surface-alt text-text-primary transition-colors flex items-center gap-3 group cursor-pointer border border-transparent hover:border-purple-500/30"
           >
-            <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>

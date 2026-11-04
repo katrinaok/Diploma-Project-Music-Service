@@ -1,7 +1,7 @@
 <template>
   <a
     :href="`/${locale}/home`"
-    class="w-10 h-10 flex-shrink-0 rounded-full bg-surface-alt hover:bg-surface-hover flex items-center justify-center text-text-primary transition-colors focus:outline-none cursor-pointer"
+    class="w-10 h-10 flex-shrink-0 rounded-full bg-surface-alt hover:bg-surface-hover flex items-center justify-center text-text-primary border border-border-subtle hover:border-border-strong transition-all focus:outline-none cursor-pointer shadow-xs active:scale-95"
     :title="$t('nav.home') || 'Домівка'"
   >
     <!-- Solid (Filled) Home Icon for Home Page -->
@@ -24,7 +24,7 @@ const isHome = ref(false);
 const updateRoute = () => {
   const pathname = window.location.pathname;
   locale.value = pathname.split('/')[1] || 'uk';
-  isHome.value = pathname.endsWith('/home') || pathname === `/${locale.value}/home` || pathname === `/${locale.value}`;
+  isHome.value = pathname.endsWith('/home') || pathname === `/${locale.value}/home`;
 };
 
 onMounted(() => {

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Lyrics Overlay -->
-    <div v-if="showLyrics" class="fixed inset-0 z-40 bg-white dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-colors duration-300">
+    <div v-if="showLyrics && !isAuthRoute" class="fixed inset-0 z-40 bg-[#f7f6fc] dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-colors duration-300">
       <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50 cursor-pointer shadow-sm">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -68,8 +68,8 @@
 
     <!-- PLAYBACK QUEUE DRAWER -->
     <div 
-      v-if="showQueue && isConnected" 
-      class="fixed right-3 sm:right-6 bottom-24 w-96 max-w-[calc(100vw-1.5rem)] max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border border-purple-500/25 rounded-3xl shadow-2xl z-40 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+      v-if="showQueue && isConnected && !isAuthRoute" 
+      class="fixed right-3 sm:right-6 bottom-24 w-96 max-w-[calc(100vw-1.5rem)] max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border border-border-subtle dark:border-purple-500/25 rounded-3xl shadow-2xl z-40 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
     >
       <!-- Queue Header -->
       <div class="p-4 border-b border-border-subtle/80 flex items-center justify-between gap-2 bg-surface-alt/40">
@@ -284,7 +284,7 @@
     </div>
 
     <!-- Main Player Panel -->
-    <div v-if="isConnected" class="fixed bottom-0 left-0 w-screen bg-surface border-t border-border-strong shadow-lg p-4 z-50 flex items-center justify-between">
+    <div v-if="isConnected && !isAuthRoute" class="fixed bottom-0 left-0 w-screen bg-surface/95 dark:bg-[#170a24]/95 backdrop-blur-xl border-t border-border-subtle shadow-2xl p-4 z-50 flex items-center justify-between">
     <div class="flex items-center gap-4 w-1/3">
       <img 
         v-if="currentTrack?.album?.images[0]?.url" 
@@ -444,11 +444,11 @@
       </button>
 
       <!-- Status indicator -->
-      <span v-if="deviceId" class="text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center gap-2" :title="$t('global_player.spotify_connect')">
+      <span v-if="deviceId" class="text-xs font-semibold px-2.5 py-1 bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-300/80 dark:border-green-500/20 rounded-full flex items-center gap-2 shadow-xs" :title="$t('global_player.spotify_connect')">
         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
         <span class="hidden sm:inline">{{ $t('global_player.spotify_connect') }}</span>
       </span>
-      <span v-else class="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center gap-2" :title="$t('global_player.initializing')">
+      <span v-else class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-yellow-500/10 text-amber-800 dark:text-yellow-400 border border-amber-300/80 dark:border-yellow-500/20 rounded-full flex items-center gap-2 shadow-xs" :title="$t('global_player.initializing')">
         <span class="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
         <span class="hidden sm:inline">{{ $t('global_player.loading_player') }}</span>
       </span>
@@ -492,6 +492,18 @@ const getSpotifyState = () => {
 };
 
 const globalState = getSpotifyState();
+
+const isAuthRoute = ref(false);
+
+const checkRoute = () => {
+  if (typeof window === 'undefined') return;
+  const path = window.location.pathname;
+  isAuthRoute.value = path === '/' || path === '/uk' || path === '/uk/' || path === '/en' || path === '/en/';
+  if (isAuthRoute.value) {
+    showLyrics.value = false;
+    showQueue.value = false;
+  }
+};
 
 const isConnected = ref(globalState.isConnected);
 const token = ref(globalState.token);
@@ -864,6 +876,9 @@ const handleSeek = (event) => {
 };
 
 const checkConnection = async () => {
+  checkRoute();
+  if (isAuthRoute.value) return;
+
   if (window.__spotifyState.player) {
     isConnected.value = true;
     return;
@@ -912,7 +927,7 @@ const setupSpotifyPlayer = () => {
   if (window.__spotifyState.player) return; // Already initialized
 
   window.__spotifyState.player = new window.Spotify.Player({
-    name: 'MusicVerse Web Player',
+    name: 'Khvylia Web Player',
     getOAuthToken: async cb => {
       try {
         const t = localStorage.getItem('token');
@@ -1083,6 +1098,11 @@ const playTrack = async (uri, allUris = null) => {
 };
 
 onMounted(() => {
+  checkRoute();
+  document.addEventListener('astro:page-load', checkRoute);
+  document.addEventListener('astro:after-swap', checkRoute);
+  window.addEventListener('popstate', checkRoute);
+
   checkConnection();
 
   window.addEventListener('play-spotify-track', (e) => {
@@ -1103,6 +1123,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener('astro:page-load', checkRoute);
+  document.removeEventListener('astro:after-swap', checkRoute);
+  window.removeEventListener('popstate', checkRoute);
   stopProgressTimer();
   // DO NOT disconnect the player here, because Astro View Transitions might unmount/remount
   // this component while we navigate. Disconnecting it would stop the music.

@@ -12,14 +12,27 @@ const basePath = `/${lang}`;
 
 const pathname = Astro.url.pathname;
 // Check if the current path is the home page
-const isHome = pathname.endsWith('/home') || pathname === `/${lang}/home` || pathname === `/${lang}`;
+const isHome = pathname.endsWith('/home') || pathname === `/${lang}/home`;
 ---
 
-<header class="bg-surface border-b border-border-subtle shadow-sm sticky top-0 z-50 transition-colors relative">
+<header class="bg-surface/90 dark:bg-surface/95 backdrop-blur-md border-b border-border-subtle shadow-xs sticky top-0 z-50 transition-colors relative">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-    <!-- Left: Empty (for balance) -->
-    <div class="flex-1 hidden md:flex items-center">
-      <!-- You can add back navigation arrows here in the future if needed -->
+    <!-- Left: Brand Logo -->
+    <div class="flex-1 flex items-center">
+      <a href={`/${lang}/home`} class="flex items-center gap-2.5 group transition-transform active:scale-95 cursor-pointer" title={lang === 'uk' ? 'Хвиля - Головна' : 'Khvylia - Home'}>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-purple-500/25 group-hover:shadow-purple-500/40 group-hover:scale-105 transition-all duration-300">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <rect x="2" y="9" width="2.5" height="6" rx="1.25" />
+            <rect x="6.5" y="5" width="2.5" height="14" rx="1.25" />
+            <rect x="11" y="2" width="2.5" height="20" rx="1.25" />
+            <rect x="15.5" y="6" width="2.5" height="12" rx="1.25" />
+            <rect x="20" y="10" width="2.5" height="4" rx="1.25" />
+          </svg>
+        </div>
+        <span class="font-extrabold text-lg sm:text-xl tracking-tight text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+          {lang === 'uk' ? 'Хвиля' : 'Khvylia'}
+        </span>
+      </a>
     </div>
 
     <!-- Center: Home Icon & Search -->

@@ -2,26 +2,26 @@
   <div class="w-full p-4 md:p-8 pb-32">
     <div class="w-full mx-auto bg-surface rounded-2xl shadow-sm border border-border-subtle overflow-hidden transition-colors">
       
-      <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+      <div class="p-6 border-b border-border-subtle flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold text-text-primary">{{ $t('settings.title') }}</h1>
-          <p class="text-gray-500 text-sm mt-1">{{ $t('settings.subtitle') }}</p>
+          <p class="text-text-secondary text-sm mt-1">{{ $t('settings.subtitle') }}</p>
         </div>
-        <a :href="`/${$i18n.locale}/profile`" class="px-4 py-2 bg-surface-alt hover:bg-border-subtle text-text-primary text-sm font-medium rounded-lg transition-colors">
+        <a :href="`/${$i18n.locale}/profile`" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary border border-border-subtle text-sm font-medium rounded-xl transition-colors shadow-xs">
           {{ $t('settings.to_profile') }}
         </a>
       </div>
 
       <div class="p-6 space-y-8">
         <div>
-          <h2 class="text-lg font-bold text-purple-600 mb-4">{{ $t('settings.security') }}</h2>
+          <h2 class="text-lg font-bold text-purple-600 dark:text-purple-400 mb-4">{{ $t('settings.security') }}</h2>
           <div class="space-y-4">
-            <div class="p-4 bg-surface rounded-xl transition-colors">
+            <div class="p-4 bg-surface-alt/40 border border-border-subtle rounded-2xl transition-colors">
               <label class="block text-sm font-medium text-text-primary mb-2">{{ $t('settings.change_password') }}</label>
               <div class="flex flex-col gap-2">
                 <div class="flex gap-3 w-full">
-                  <input v-model="newPassword" type="password" :placeholder="$t('settings.new_password')" class="flex-1 px-4 py-2 border border-border-strong bg-surface-hover text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" />
-                  <button @click="updatePassword" :disabled="isUpdatingPassword || !newPassword" class="whitespace-nowrap shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2">
+                  <input v-model="newPassword" type="password" :placeholder="$t('settings.new_password')" class="flex-1 px-4 py-2 border border-border-strong bg-surface text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" />
+                  <button @click="updatePassword" :disabled="isUpdatingPassword || !newPassword" class="whitespace-nowrap shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-xs">
                     <svg v-if="isUpdatingPassword" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -33,7 +33,7 @@
               </div>
             </div>
 
-            <div class="flex items-center justify-between p-4 bg-surface rounded-xl transition-colors mt-2">
+            <div class="flex items-center justify-between p-4 bg-surface-alt/40 border border-border-subtle rounded-2xl transition-colors mt-2">
               <div>
                 <p class="text-sm font-medium text-text-primary">{{ $t('settings.private_profile') }}</p>
                 <p class="text-xs text-text-tertiary">{{ $t('settings.private_profile_desc') }}</p>
@@ -49,7 +49,7 @@
         <div>
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h2 class="text-lg font-bold text-purple-600 flex items-center gap-2">
+              <h2 class="text-lg font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -64,7 +64,7 @@
               v-if="otherSessionsCount > 0"
               @click="terminateOtherSessions"
               :disabled="isTerminatingOthers"
-              class="px-3.5 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-xs disabled:opacity-50"
+              class="px-3.5 py-1.5 bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-300 dark:bg-red-600/15 dark:hover:bg-red-600 dark:text-red-400 dark:border-red-500/30 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-xs disabled:opacity-50"
             >
               <svg v-if="isTerminatingOthers" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -88,14 +88,16 @@
               v-else 
               v-for="session in sessions" 
               :key="session.id"
-              class="p-4 bg-surface rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
-              :class="session.isCurrent ? 'border-purple-500/40 bg-purple-950/10' : 'border-border-subtle hover:border-border-strong'"
+              class="p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+              :class="session.isCurrent 
+                ? 'border-purple-300 dark:border-purple-500/40 bg-purple-50/80 dark:bg-purple-950/20 shadow-sm' 
+                : 'border-border-subtle bg-surface-alt/30 hover:bg-surface-hover hover:border-border-strong'"
             >
               <div class="flex items-center gap-3.5 min-w-0">
                 <!-- Device Icon (Desktop / Mobile / Tablet / Browser) -->
                 <div 
                   class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  :class="session.isCurrent ? 'bg-purple-600/20 text-purple-400' : 'bg-surface-alt text-text-tertiary'"
+                  :class="session.isCurrent ? 'bg-purple-100 dark:bg-purple-600/25 text-purple-700 dark:text-purple-300 shadow-xs' : 'bg-surface-alt text-text-secondary border border-border-subtle'"
                 >
                   <!-- Phone / Mobile -->
                   <svg v-if="isMobileDevice(session.device)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,13 +116,13 @@
                     </h4>
                     <span 
                       v-if="session.isCurrent" 
-                      class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/15 text-green-400 border border-green-500/30 flex-shrink-0"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-500/30 flex-shrink-0"
                     >
                       {{ $t('settings.current_device') || 'Поточний пристрій' }}
                     </span>
                   </div>
 
-                  <div class="flex flex-wrap items-center gap-2 text-xs text-text-tertiary mt-0.5">
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-text-secondary mt-0.5">
                     <span class="font-mono text-[11px]">{{ session.ipAddress === '::1' || session.ipAddress === '127.0.0.1' ? '127.0.0.1 (Localhost)' : session.ipAddress }}</span>
                     <span>•</span>
                     <span>{{ formatSessionDate(session.createdAt) }}</span>
@@ -150,9 +152,9 @@
         </div>
 
         <div>
-          <h2 class="text-lg font-bold text-purple-600 mb-4">{{ $t('settings.appearance') }}</h2>
+          <h2 class="text-lg font-bold text-purple-600 dark:text-purple-400 mb-4">{{ $t('settings.appearance') }}</h2>
           <div class="flex flex-col gap-4">
-            <div class="flex items-center justify-between p-4 bg-surface rounded-xl transition-colors">
+            <div class="flex items-center justify-between p-4 bg-surface-alt/40 border border-border-subtle rounded-2xl transition-colors">
               <div>
                 <p class="text-sm font-medium text-text-primary">{{ $t('settings.dark_theme') }}</p>
                 <p class="text-xs text-text-tertiary">{{ $t('settings.dark_theme_desc') }}</p>
@@ -162,20 +164,20 @@
               </button>
             </div>
 
-            <div class="flex items-center justify-between p-4 bg-surface rounded-xl transition-colors">
+            <div class="flex items-center justify-between p-4 bg-surface-alt/40 border border-border-subtle rounded-2xl transition-colors">
               <div>
                 <p class="text-sm font-medium text-text-primary">{{ $t('settings.language') }}</p>
                 <p class="text-xs text-text-tertiary">{{ $t('settings.language_desc') }}</p>
               </div>
-              <div class="relative flex items-center bg-border-strong rounded-xl p-1 text-sm font-medium transition-colors w-fit">
+              <div class="relative flex items-center bg-border-strong/70 dark:bg-border-strong rounded-xl p-1 text-sm font-medium transition-colors w-fit">
                 <div 
                   class="absolute top-1 bottom-1 w-12 bg-white dark:bg-[#32184d] rounded-lg shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
                   :class="locale === 'uk' ? 'translate-x-0' : 'translate-x-12'"
                 ></div>
-                <button @click="handleLanguageChange('uk')" :class="locale === 'uk' ? 'text-purple-600 dark:text-purple-400' : 'text-text-secondary hover:text-text-primary'" class="relative z-10 w-12 py-1 rounded-lg transition-colors cursor-pointer text-center">
+                <button @click="handleLanguageChange('uk')" :class="locale === 'uk' ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-text-secondary hover:text-text-primary'" class="relative z-10 w-12 py-1 rounded-lg transition-colors cursor-pointer text-center">
                   UA
                 </button>
-                <button @click="handleLanguageChange('en')" :class="locale === 'en' ? 'text-purple-600 dark:text-purple-400' : 'text-text-secondary hover:text-text-primary'" class="relative z-10 w-12 py-1 rounded-lg transition-colors cursor-pointer text-center">
+                <button @click="handleLanguageChange('en')" :class="locale === 'en' ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-text-secondary hover:text-text-primary'" class="relative z-10 w-12 py-1 rounded-lg transition-colors cursor-pointer text-center">
                   EN
                 </button>
               </div>
@@ -185,16 +187,16 @@
 
         <div class="pt-6 border-t border-border-subtle flex flex-col gap-4">
           <h2 class="text-lg font-bold text-text-primary">{{ $t('settings.integrations') || 'Інтеграції' }}</h2>
-          <div class="flex items-center justify-between p-4 bg-surface rounded-xl transition-colors">
+          <div class="flex items-center justify-between p-4 bg-surface-alt/40 border border-border-subtle rounded-2xl transition-colors">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white">
+              <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white shadow-xs">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.54.659.301 1.02zm1.44-3.3c-.301.42-.84.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15.001 10.62 18.6 12.84c.361.181.54.84.361 1.2zM19.08 10.5c-3.96-2.34-10.44-2.58-14.22-1.44-.66.18-1.32-.18-1.5-.78-.18-.66.18-1.32.78-1.5 4.38-1.32 11.52-1.02 16.08 1.68.6.36.78 1.08.42 1.62-.3.6-.96.78-1.56.42z"/>
                 </svg>
               </div>
               <div>
                 <p class="text-sm font-medium text-text-primary">Spotify Premium</p>
-                <p class="text-xs" :class="isSpotifyConnected ? 'text-green-500' : 'text-text-tertiary'">
+                <p class="text-xs" :class="isSpotifyConnected ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-text-tertiary'">
                   {{ isSpotifyConnected ? $t('settings.spotify_connected') : $t('settings.spotify_desc') }}
                 </p>
               </div>
@@ -202,14 +204,14 @@
             <button 
               v-if="!isSpotifyConnected"
               @click="connectSpotify" 
-              class="px-4 py-2 bg-green-500 hover:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+              class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               {{ $t('settings.connect') }}
             </button>
             <button 
               v-else
               @click="disconnectSpotify" 
-              class="px-4 py-2 bg-surface-alt hover:bg-border-subtle text-text-primary text-sm font-medium rounded-lg transition-colors cursor-pointer"
+              class="px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary border border-border-subtle text-sm font-medium rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               {{ $t('settings.disconnect') }}
             </button>
@@ -217,10 +219,10 @@
         </div>
 
         <div class="pt-6 border-t border-border-subtle flex gap-4">
-          <button @click="logout" class="px-4 py-2 bg-surface-alt hover:bg-border-subtle text-text-primary text-sm font-medium rounded-lg transition-colors cursor-pointer">
+          <button @click="switchAccount" class="px-4 py-2 bg-surface-alt hover:bg-surface-hover text-text-primary border border-border-subtle text-sm font-medium rounded-xl transition-colors cursor-pointer shadow-xs">
             {{ $t('settings.switch_account') }}
           </button>
-          <button @click="logout" class="px-4 py-2 bg-accent-subtle hover:bg-accent-hover text-text-accent-hover text-sm font-medium rounded-lg transition-colors cursor-pointer">
+          <button @click="() => logout(false)" class="px-4 py-2 bg-accent-subtle hover:bg-accent-hover text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-transparent text-sm font-semibold rounded-xl transition-colors cursor-pointer shadow-xs">
             {{ $t('settings.logout') }}
           </button>
         </div>
@@ -599,7 +601,7 @@ const executeDelete = async () => {
   }
 };
 
-const logout = async () => {
+const logout = async (clearSavedLogin = false) => {
   const refreshToken = localStorage.getItem('refreshToken');
   if (refreshToken) {
     try {
@@ -610,9 +612,38 @@ const logout = async () => {
       });
     } catch (e) {}
   }
+
+  // Disconnect Spotify Player if active
+  if (typeof window !== 'undefined' && window.__spotifyState) {
+    if (window.__spotifyState.player) {
+      try {
+        window.__spotifyState.player.disconnect();
+      } catch (e) {}
+      window.__spotifyState.player = null;
+    }
+    window.__spotifyState.isConnected = false;
+  }
+
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.userId) {
+        localStorage.removeItem(`userAvatar_${payload.userId}`);
+      }
+    } catch (e) {}
+  }
   localStorage.removeItem('token');
   localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userAvatarUrl');
+  if (clearSavedLogin) {
+    localStorage.removeItem('savedLogin');
+  }
   document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  window.location.href = `/${locale.value}/`;
+  window.location.href = `/${locale.value}`;
+};
+
+const switchAccount = () => {
+  logout(true);
 };
 </script>

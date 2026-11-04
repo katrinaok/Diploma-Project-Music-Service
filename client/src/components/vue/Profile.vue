@@ -20,7 +20,7 @@
             </div>
             <img v-else-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
             <div v-else class="w-full h-full flex items-center justify-center text-text-muted bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
-              <span class="text-4xl font-bold text-purple-400 uppercase">{{ (username || 'U')[0] }}</span>
+              <span class="text-4xl font-bold text-purple-600 dark:text-purple-400 uppercase">{{ (username || 'U')[0] }}</span>
             </div>
             
             <!-- Hover Edit Overlay (Only for profile owner) -->
@@ -49,7 +49,7 @@
                 <h1 
                   v-if="!isEditingName"
                   class="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight inline-flex items-center justify-center md:justify-start transition-colors"
-                  :class="{ 'cursor-pointer hover:text-purple-400': isSelf }"
+                  :class="{ 'cursor-pointer hover:text-purple-600 dark:hover:text-purple-400': isSelf }"
                   @click="isSelf ? startEditingName() : null"
                   :title="isSelf ? $t('profile.edit_name') : ''"
                 >
@@ -81,7 +81,7 @@
                 @click="openFollowersModal"
                 class="group/stat inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
               >
-                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-400 transition-colors">
+                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
                   {{ followersCount }}
                 </span>
                 <span class="text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
@@ -95,7 +95,7 @@
                 @click="openFollowingModal"
                 class="group/stat inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
               >
-                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-400 transition-colors">
+                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
                   {{ followingCount }}
                 </span>
                 <span class="text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
@@ -240,7 +240,7 @@
              <button 
                v-if="currentLoggedInUserId && playlist.userId !== currentLoggedInUserId"
                @click.stop="toggleSavePlaylist(playlist, $event)"
-               class="absolute top-3 right-3 p-2 rounded-full bg-surface/80 hover:bg-surface border border-border-subtle hover:border-purple-500/50 text-text-tertiary hover:text-purple-400 transition-all shadow-sm z-10 cursor-pointer"
+               class="absolute top-3 right-3 p-2 rounded-full bg-surface/80 hover:bg-surface border border-border-subtle hover:border-purple-500/50 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 transition-all shadow-sm z-10 cursor-pointer"
                :title="playlist.isSaved ? $t('playlist.remove_from_library') : $t('playlist.save_to_library')"
              >
                <svg v-if="playlist.isSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-500 fill-current" viewBox="0 0 24 24">
@@ -277,7 +277,7 @@
                    </span>
                  </span>
                  <span class="flex items-center gap-1 font-medium text-text-tertiary flex-shrink-0" :title="$t('playlist.saves_count')">
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
                      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
                    </svg>
                    {{ playlist.savesCount || 0 }}
@@ -319,7 +319,7 @@
             <h3 class="text-xl font-bold text-text-primary">
               {{ usersModalType === 'followers' ? ($t('profile.followers_modal_title') || 'Підписники') : ($t('profile.following_modal_title') || 'Підписки') }}
             </h3>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 font-semibold">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 font-semibold">
               {{ usersList.length }}
             </span>
           </div>
@@ -363,18 +363,18 @@
               <!-- Avatar -->
               <div class="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-surface-alt border border-border-strong flex items-center justify-center">
                 <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.username" class="w-full h-full object-cover" />
-                <span v-else class="text-sm font-bold text-purple-400 uppercase">
+                <span v-else class="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase">
                   {{ (user.username || 'U')[0] }}
                 </span>
               </div>
               <div class="min-w-0">
-                <h4 class="text-sm font-semibold text-text-primary group-hover/user:text-purple-400 transition-colors truncate">
+                <h4 class="text-sm font-semibold text-text-primary group-hover/user:text-purple-600 dark:group-hover/user:text-purple-400 transition-colors truncate">
                   {{ user.username }}
                 </h4>
               </div>
             </div>
 
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-muted group-hover/user:text-purple-400 group-hover/user:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-muted group-hover/user:text-purple-600 dark:group-hover/user:text-purple-400 group-hover/user:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>

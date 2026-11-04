@@ -7,8 +7,9 @@ import { useTranslations } from "../../../utils/i18n";
 const lang = (Astro.params.lang || 'uk') as 'uk' | 'en';
 const id = Astro.params.id as string;
 const t = useTranslations(lang);
+const brand = lang === 'uk' ? 'Хвиля' : 'Khvylia';
 ---
 
-<Layout title={`MusicVerse - ${t('page.playlist')}`}>
+<Layout title={`${brand} - ${t('page.playlist')}`}>
     <PlaylistDetail lang={lang} playlistId={id} client:load />
 </Layout>

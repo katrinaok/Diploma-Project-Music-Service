@@ -1,9 +1,9 @@
 <template>
-  <div class="w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 text-text-primary">
-    <div class="max-w-md w-full space-y-8 bg-surface p-10 rounded-2xl shadow-xl border border-border-subtle transition-colors">
+  <div class="w-full flex items-center justify-center py-4 sm:py-6 px-4 text-text-primary">
+    <div class="max-w-md w-full space-y-8 bg-surface p-8 sm:p-10 rounded-3xl shadow-xl border border-border-subtle transition-colors">
       
       <div class="text-center">
-        <h2 class="mt-6 text-3xl font-extrabold text-text-primary">
+        <h2 class="mt-4 text-3xl font-extrabold text-text-primary">
           {{ isLogin ? $t('auth.login_title') : $t('auth.register_title') }}
         </h2>
         <p class="mt-2 text-sm text-text-secondary">
@@ -11,7 +11,7 @@
         </p>
       </div>
 
-      <div v-if="message" :class="isError ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'" class="p-3 rounded-lg text-sm text-center font-medium">
+      <div v-if="message" :class="isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'" class="p-3.5 rounded-xl text-sm text-center font-semibold">
         {{ message }}
       </div>
 
@@ -21,35 +21,35 @@
           <div v-if="!isLogin">
             <label for="username" class="sr-only">{{ $t('auth.username') }}</label>
             <input v-model="form.username" id="username" name="username" type="text" required
-              class="appearance-none relative block w-full px-3 py-3 border border-border-strong bg-surface-hover placeholder-text-muted text-text-primary rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              class="appearance-none relative block w-full px-4 py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 sm:text-sm transition-all shadow-xs"
               :placeholder="$t('auth.username')" />
           </div>
 
           <div v-if="!isLogin">
             <label for="email-address" class="sr-only">{{ $t('auth.email') }}</label>
             <input v-model="form.email" id="email-address" name="email" type="email" required
-              class="appearance-none relative block w-full px-3 py-3 border border-border-strong bg-surface-hover placeholder-text-muted text-text-primary rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              class="appearance-none relative block w-full px-4 py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 sm:text-sm transition-all shadow-xs"
               :placeholder="$t('auth.email')" />
           </div>
 
           <div v-else>
             <label for="login-identifier" class="sr-only">{{ $t('auth.login_identifier') }}</label>
             <input v-model="form.login" id="login-identifier" name="login" type="text" required
-              class="appearance-none relative block w-full px-3 py-3 border border-border-strong bg-surface-hover placeholder-text-muted text-text-primary rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              class="appearance-none relative block w-full px-4 py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 sm:text-sm transition-all shadow-xs"
               :placeholder="$t('auth.login_identifier')" />
           </div>
 
           <div>
             <label for="password" class="sr-only">{{ $t('auth.password') }}</label>
             <input v-model="form.password" id="password" name="password" type="password" required
-              class="appearance-none relative block w-full px-3 py-3 border border-border-strong bg-surface-hover placeholder-text-muted text-text-primary rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              class="appearance-none relative block w-full px-4 py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 sm:text-sm transition-all shadow-xs"
               :placeholder="$t('auth.password')" />
           </div>
 
           <div v-if="!isLogin">
             <label for="password-confirm" class="sr-only">{{ $t('auth.password_confirm') }}</label>
             <input v-model="form.passwordConfirm" id="password-confirm" name="passwordConfirm" type="password" required
-              class="appearance-none relative block w-full px-3 py-3 border border-border-strong bg-surface-hover placeholder-text-muted text-text-primary rounded-lg focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
+              class="appearance-none relative block w-full px-4 py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 sm:text-sm transition-all shadow-xs"
               :placeholder="$t('auth.password_confirm')" />
           </div>
 
@@ -68,14 +68,14 @@
 
         <div>
           <button type="submit"
-            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 shadow-md shadow-purple-600/25 active:scale-[0.99] transition-all cursor-pointer">
             {{ isLogin ? $t('auth.btn_login') : $t('auth.btn_register') }}
           </button>
         </div>
       </form>
 
       <div class="text-center mt-4">
-        <button @click="toggleMode" class="text-sm font-medium text-purple-600 hover:text-purple-500 transition-colors">
+        <button @click="toggleMode" class="text-sm font-medium text-purple-600 hover:text-purple-500 transition-colors cursor-pointer">
           {{ isLogin ? $t('auth.toggle_to_register') : $t('auth.toggle_to_login') }}
         </button>
       </div>
@@ -106,6 +106,13 @@ const form = reactive({
 });
 
 onMounted(() => {
+  // If user already has an active token, immediately redirect to /home
+  const token = localStorage.getItem('token');
+  if (token) {
+    window.location.replace(`/${locale.value}/home`);
+    return;
+  }
+
   const savedLogin = localStorage.getItem('savedLogin');
   if (savedLogin) {
     form.login = savedLogin;
