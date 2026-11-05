@@ -1,17 +1,17 @@
 <template>
-  <div class="w-full p-4 md:p-8 pb-32">
-    <div class="w-full mx-auto space-y-6">
+  <div class="w-full p-3 sm:p-6 md:p-8 pb-32">
+    <div class="w-full mx-auto space-y-5 sm:space-y-6">
       
       <!-- Profile Header Card -->
-      <div class="bg-surface rounded-3xl p-6 md:p-10 shadow-sm border border-border-subtle transition-colors relative overflow-hidden">
+      <div class="bg-surface rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-sm border border-border-subtle transition-colors relative overflow-hidden">
         <!-- Subtle background glow -->
         <div class="absolute -top-24 -right-24 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 relative z-10">
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-6 md:gap-8 relative z-10">
           
           <!-- Avatar Container -->
           <div 
-            class="group relative w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden shadow-md border-2 border-border-strong flex-shrink-0 bg-surface-hover transition-transform duration-300"
+            class="group relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden shadow-md border-2 border-border-strong flex-shrink-0 bg-surface-hover transition-transform duration-300"
             :class="{ 'cursor-pointer hover:scale-[1.02]': isSelf && !isLoadingProfile }"
             @click="isSelf && !isLoadingProfile ? triggerAvatarUpload() : null"
           >
@@ -20,41 +20,41 @@
             </div>
             <img v-else-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
             <div v-else class="w-full h-full flex items-center justify-center text-text-muted bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
-              <span class="text-4xl font-bold text-purple-600 dark:text-purple-400 uppercase">{{ (username || 'U')[0] }}</span>
+              <span class="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400 uppercase">{{ (username || 'U')[0] }}</span>
             </div>
             
             <!-- Hover Edit Overlay (Only for profile owner) -->
             <div v-if="isSelf && !isLoadingProfile" class="absolute inset-0 bg-purple-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white cursor-pointer backdrop-blur-[2px]">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span class="text-[11px] font-semibold uppercase tracking-wider">{{ $t('profile.update_photo') }}</span>
+              <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">{{ $t('profile.update_photo') }}</span>
             </div>
             <input v-if="isSelf && !isLoadingProfile" type="file" ref="avatarInput" class="hidden" accept="image/*" @change="onAvatarChange" />
           </div>
 
           <!-- User Info & Counters -->
           <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-1 min-w-0">
-            <div class="flex items-center justify-center md:justify-start mb-2">
-              <span class="inline-flex items-center gap-1.5 bg-surface-alt text-text-secondary text-xs font-semibold uppercase tracking-wider py-1 px-3 rounded-full border border-border-subtle">
+            <div class="flex items-center justify-center md:justify-start mb-1.5 sm:mb-2">
+              <span class="inline-flex items-center gap-1.5 bg-surface-alt text-text-secondary text-[11px] sm:text-xs font-semibold uppercase tracking-wider py-1 px-3 rounded-full border border-border-subtle">
                 {{ isSelf ? ($t('profile.title') || 'Мій Профіль') : ($t('profile.user_profile') || 'Профіль користувача') }}
               </span>
             </div>
             
             <!-- Username display / editing -->
-            <div class="w-full relative group mb-4">
-              <div v-if="isLoadingProfile" class="h-9 w-44 bg-surface-alt/80 rounded-xl animate-pulse mx-auto md:mx-0 my-0.5"></div>
+            <div class="w-full relative group mb-3 sm:mb-4">
+              <div v-if="isLoadingProfile" class="h-8 sm:h-9 w-40 sm:w-44 bg-surface-alt/80 rounded-xl animate-pulse mx-auto md:mx-0 my-0.5"></div>
               <template v-else>
                 <h1 
                   v-if="!isEditingName"
-                  class="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight inline-flex items-center justify-center md:justify-start transition-colors"
+                  class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight inline-flex items-center justify-center md:justify-start transition-colors"
                   :class="{ 'cursor-pointer hover:text-purple-600 dark:hover:text-purple-400': isSelf }"
                   @click="isSelf ? startEditingName() : null"
                   :title="isSelf ? $t('profile.edit_name') : ''"
                 >
                   {{ username || $t('profile.default_user') }}
-                  <svg v-if="isSelf" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg v-if="isSelf" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </h1>
@@ -65,7 +65,7 @@
                     v-model="editNameValue" 
                     @blur="saveName"
                     @keyup.enter="saveName"
-                    class="text-3xl md:text-4xl font-extrabold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                    class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
                     autofocus
                     ref="nameInput"
                   />
@@ -74,17 +74,17 @@
             </div>
 
             <!-- Statistics Counters (Підписники, Підписки, Плейлисти) -->
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 pt-1">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 pt-1">
               <!-- Followers Counter (Clickable to open modal) -->
               <button 
                 type="button"
                 @click="openFollowersModal"
-                class="group/stat inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
+                class="group/stat inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
               >
-                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
+                <span class="text-xs sm:text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
                   {{ followersCount }}
                 </span>
-                <span class="text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
+                <span class="text-[11px] sm:text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
                   {{ getFollowersLabel(followersCount) }}
                 </span>
               </button>
@@ -93,30 +93,30 @@
               <button 
                 type="button"
                 @click="openFollowingModal"
-                class="group/stat inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
+                class="group/stat inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-border-strong transition-all cursor-pointer shadow-xs"
               >
-                <span class="text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
+                <span class="text-xs sm:text-sm font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">
                   {{ followingCount }}
                 </span>
-                <span class="text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
+                <span class="text-[11px] sm:text-xs font-medium text-text-secondary group-hover/stat:text-text-primary transition-colors">
                   {{ getFollowingLabel(followingCount) }}
                 </span>
               </button>
 
               <!-- Playlists Counter -->
-              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt/70 border border-border-subtle shadow-xs">
-                <span class="text-sm font-bold text-text-primary">{{ playlists.length }}</span>
-                <span class="text-xs font-medium text-text-secondary">{{ getPlaylistsLabel(playlists.length) }}</span>
+              <div class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-alt/70 border border-border-subtle shadow-xs">
+                <span class="text-xs sm:text-sm font-bold text-text-primary">{{ playlists.length }}</span>
+                <span class="text-[11px] sm:text-xs font-medium text-text-secondary">{{ getPlaylistsLabel(playlists.length) }}</span>
               </div>
             </div>
 
             <!-- Follow / Unfollow Reactive Button (When viewing another user's profile) -->
-            <div v-if="!isSelf && currentLoggedInUserId && !isLoadingProfile" class="mt-5 flex justify-center md:justify-start">
+            <div v-if="!isSelf && currentLoggedInUserId && !isLoadingProfile" class="mt-4 sm:mt-5 flex justify-center md:justify-start">
               <button
                 type="button"
                 @click="toggleFollow"
                 :disabled="isFollowLoading"
-                class="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 shadow-md cursor-pointer active:scale-95 disabled:opacity-60"
+                class="inline-flex items-center gap-2 px-5 py-2 sm:px-6 sm:py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 shadow-md cursor-pointer active:scale-95 disabled:opacity-60"
                 :class="isFollowing 
                   ? 'bg-surface-alt hover:bg-red-500/10 text-text-primary hover:text-red-500 border border-border-strong hover:border-red-500/30' 
                   : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/20 hover:shadow-purple-500/40'"
@@ -141,13 +141,13 @@
           </div>
           
           <!-- Settings Action (Visible on own profile) -->
-          <div v-if="isSelf && !isLoadingProfile" class="absolute top-6 right-6 md:static">
+          <div v-if="isSelf && !isLoadingProfile" class="absolute top-4 right-4 sm:top-6 sm:right-6 md:static">
              <a 
                 :href="`/${$i18n.locale}/settings`" 
-                class="flex items-center justify-center p-2.5 text-text-muted hover:text-text-accent bg-surface-hover hover:bg-accent-subtle rounded-xl transition-all shadow-sm border border-border-strong group"
+                class="flex items-center justify-center p-2 sm:p-2.5 text-text-muted hover:text-text-accent bg-surface-hover hover:bg-accent-subtle rounded-xl transition-all shadow-sm border border-border-strong group"
                 :title="$t('settings.title')"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -157,21 +157,21 @@
       </div>
 
       <!-- Playlists Section -->
-      <div class="bg-surface p-6 md:p-8 rounded-3xl shadow-sm border border-border-subtle transition-colors">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 class="text-xl font-bold text-text-primary flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="bg-surface p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-border-subtle transition-colors">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <h2 class="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
             {{ isSelf ? $t('profile.playlists') : ($t('playlist.type') || 'Плейлисти') }}
           </h2>
 
           <!-- Filter Tabs for Profile Owner -->
-          <div v-if="isSelf" class="inline-flex p-1 bg-surface-alt rounded-2xl border border-border-subtle self-start sm:self-auto">
+          <div v-if="isSelf" class="inline-flex flex-wrap p-1 bg-surface-alt rounded-2xl border border-border-subtle self-start sm:self-auto gap-0.5">
             <button 
               type="button"
               @click="playlistTab = 'all'"
-              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              class="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               :class="playlistTab === 'all' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
             >
               {{ $t('profile.tab_all') || 'Всі' }} ({{ playlists.length + savedPlaylists.length }})
@@ -179,7 +179,7 @@
             <button 
               type="button"
               @click="playlistTab = 'created'"
-              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              class="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               :class="playlistTab === 'created' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
             >
               {{ $t('profile.tab_created') || 'Створені' }} ({{ playlists.length }})
@@ -187,7 +187,7 @@
             <button 
               type="button"
               @click="playlistTab = 'saved'"
-              class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              class="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               :class="playlistTab === 'saved' ? 'bg-purple-600 text-white shadow-xs' : 'text-text-tertiary hover:text-text-primary'"
             >
               {{ $t('profile.tab_saved') || 'Збережені' }} ({{ savedPlaylists.length }})

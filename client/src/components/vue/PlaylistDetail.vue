@@ -25,11 +25,11 @@
         </a>
 
         <!-- Playlist Header -->
-        <div class="bg-surface rounded-3xl p-6 md:p-10 shadow-sm border border-border-subtle transition-colors flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
+        <div class="bg-surface rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-sm border border-border-subtle transition-colors flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-10 items-center md:items-start">
           
           <!-- Playlist Cover -->
           <div 
-            class="group relative w-40 h-40 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300"
+            class="group relative w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300"
             :class="{ 'cursor-pointer hover:scale-[1.02]': isOwner }"
             @click="isOwner ? triggerCoverUpload() : null"
           >
@@ -90,16 +90,16 @@
             </div>
             
             <!-- Editable Title -->
-            <div class="w-full relative group mb-4">
+            <div class="w-full relative group mb-3 sm:mb-4">
               <template v-if="isOwner">
                 <h1 
                   v-if="!isEditingTitle"
-                  class="text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
+                  class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
                   @click="startEditingTitle"
                   :title="$t('profile.edit_name')"
                 >
                   <span class="line-clamp-2">{{ playlist.title }}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-3 mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2 sm:ml-3 mt-1 sm:mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </h1>
@@ -110,22 +110,22 @@
                     v-model="editTitleValue" 
                     @blur="saveTitle"
                     @keyup.enter="saveTitle"
-                    class="text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                    class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
                     autofocus
                     ref="titleInputRef"
                   />
                 </div>
               </template>
-              <h1 v-else class="text-3xl md:text-5xl font-bold text-text-primary inline-flex items-center justify-center md:justify-start text-center md:text-left break-words">
+              <h1 v-else class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary inline-flex items-center justify-center md:justify-start text-center md:text-left break-words">
                 <span class="line-clamp-2">{{ playlist.title }}</span>
               </h1>
             </div>
             
-            <p v-if="playlist.description" class="text-text-secondary mb-6 text-sm md:text-base">
+            <p v-if="playlist.description" class="text-text-secondary mb-4 sm:mb-6 text-xs sm:text-sm md:text-base">
               {{ playlist.description }}
             </p>
             
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 text-sm font-medium text-text-tertiary mt-6">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-4 text-xs sm:text-sm font-medium text-text-tertiary mt-3 sm:mt-6">
               <!-- Creator Info -->
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
@@ -298,7 +298,7 @@
       </div>
 
         <!-- Tracks List -->
-        <div class="bg-surface rounded-3xl p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-6">
+        <div class="bg-surface rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-4 sm:mt-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-text-primary">{{ $t('playlist.tracks') }}</h2>
             <div class="flex items-center gap-3">
@@ -460,7 +460,8 @@
               @dragstart="onTrackDragStart(index)"
               @dragover.prevent
               @drop="onTrackDrop(index)"
-              class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group relative"
+              class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group relative cursor-pointer"
+              @click="togglePlay(item.track)"
             >
               <!-- Index / Drag Handle (for Owner) -->
               <div v-if="isOwner && !searchQuery" class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 select-none">
@@ -524,7 +525,7 @@
                     <span 
                       v-for="t in item.track.tags.slice(0, 3)" 
                       :key="t.tag.id"
-                      @click="searchQuery = '#' + t.tag.name"
+                      @click.stop="searchQuery = '#' + t.tag.name"
                       class="group/tag flex items-center gap-0.5 text-[10px] pl-1.5 pr-1 py-0.5 rounded-full border whitespace-nowrap transition-colors leading-none cursor-pointer hover:brightness-110"
                       :style="{ backgroundColor: t.tag.color + '20', color: t.tag.color, borderColor: t.tag.color + '40' }"
                       title="Шукати за цим тегом"
@@ -542,7 +543,7 @@
               <!-- Player logic -->
               <button 
                 v-if="isSpotifyConnected || item.track.previewUrl" 
-                @click="togglePlay(item.track)" 
+                @click.stop="togglePlay(item.track)" 
                 :class="[
                   'w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm',
                   playingTrackId === item.track.spotifyId
@@ -560,7 +561,7 @@
               <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
               
               <!-- Menu and Like logic -->
-              <div class="flex items-center gap-1 relative">
+              <div class="flex items-center gap-1 relative" @click.stop>
                 <LikeButton 
                   :track="item.track" 
                   :initial-liked="favoriteTrackIds.has(item.track.id)"
@@ -1258,6 +1259,10 @@ const closeMenuOnClickOutside = (e) => {
 };
 
 const togglePlay = (track) => {
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    window.dispatchEvent(new CustomEvent('open-mobile-player'));
+  }
+
   if (playingTrackId.value !== track.spotifyId) {
     recordListeningHistory(track);
   }

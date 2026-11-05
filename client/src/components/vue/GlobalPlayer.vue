@@ -1,7 +1,7 @@
 <template>
   <div>
-    <!-- Lyrics Overlay -->
-    <div v-if="showLyrics && !isAuthRoute" class="fixed inset-0 z-40 bg-[#f7f6fc] dark:bg-[#1b0a33] flex flex-col items-center pt-24 pb-32 overflow-hidden transition-colors duration-300">
+    <!-- Lyrics Overlay (Desktop) -->
+    <div v-if="showLyrics && !isAuthRoute" class="hidden md:flex fixed inset-0 z-[60] bg-[#f7f6fc] dark:bg-[#1b0a33] flex-col items-center pt-16 sm:pt-24 pb-24 sm:pb-32 overflow-hidden transition-colors duration-300">
       <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50 cursor-pointer shadow-sm">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -67,12 +67,23 @@
     </div>
 
     <!-- PLAYBACK QUEUE DRAWER -->
-    <div 
-      v-if="showQueue && isConnected && !isAuthRoute" 
-      class="fixed right-3 sm:right-6 bottom-24 w-96 max-w-[calc(100vw-1.5rem)] max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border border-border-subtle dark:border-purple-500/25 rounded-3xl shadow-2xl z-40 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
-    >
-      <!-- Queue Header -->
-      <div class="p-4 border-b border-border-subtle/80 flex items-center justify-between gap-2 bg-surface-alt/40">
+    <div v-if="showQueue && isConnected && !isAuthRoute">
+      <!-- Backdrop for mobile -->
+      <div 
+        class="fixed inset-0 bg-black/70 backdrop-blur-xs z-[140] sm:hidden animate-in fade-in duration-200"
+        @click="showQueue = false"
+      ></div>
+
+      <div 
+        class="fixed inset-x-0 bottom-0 sm:right-6 sm:bottom-24 sm:left-auto w-full sm:w-96 sm:max-w-[calc(100vw-1.5rem)] h-[82vh] sm:h-auto sm:max-h-[75vh] bg-[#130728] sm:bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border-t sm:border border-white/10 sm:border-border-subtle dark:border-purple-500/25 rounded-t-3xl sm:rounded-3xl shadow-2xl z-[150] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+      >
+        <!-- Mobile drag handle indicator -->
+        <div class="pt-2.5 pb-1 sm:hidden flex justify-center bg-surface-alt/40 cursor-pointer" @click="showQueue = false">
+          <div class="w-10 h-1 bg-white/25 rounded-full"></div>
+        </div>
+
+        <!-- Queue Header -->
+        <div class="p-4 border-b border-border-subtle/80 flex items-center justify-between gap-2 bg-surface-alt/40">
         <div class="min-w-0 flex items-center gap-2">
           <h3 class="text-base font-bold text-text-primary tracking-tight">
             {{ $t('global_player.queue_title') }}
@@ -282,9 +293,592 @@
         </div>
       </div>
     </div>
+  </div>
+
+    <!-- MOBILE FULL-SCREEN EXPANDED PLAYER (< md) -->
+    <div 
+      v-if="isMobileFullPlayerOpen && isConnected && !isAuthRoute" 
+      class="md:hidden fixed inset-0 z-[100] bg-[#0d041a] text-text-primary flex flex-col justify-between overflow-hidden transition-all duration-300 animate-in slide-in-from-bottom"
+    >
+      <!-- Atmospheric Dynamic Cover Glow -->
+      <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        <img 
+          v-if="currentTrack?.album?.images[0]?.url" 
+          :src="currentTrack.album.images[0].url" 
+          alt="" 
+          class="w-full h-full object-cover blur-3xl opacity-35 scale-150 transform-gpu" 
+        />
+        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-[#0d041a]/90 to-[#0d041a]"></div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 1: SPOTIFY FULL-SCREEN LIVE KARAOKE MODE                  -->
+      <!-- ============================================================== -->
+      <div v-if="isMobileKaraokeMode" class="relative z-10 flex-1 flex flex-col w-full h-full min-h-0 overflow-hidden">
+        <!-- Top Navigation Bar for Lyrics -->
+        <div class="relative z-20 px-4 pt-3 pb-2 flex items-center justify-between flex-shrink-0">
+          <!-- Back / Minimize player -->
+          <button 
+            @click="isMobileFullPlayerOpen = false" 
+            class="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary active:scale-90 transition-transform cursor-pointer"
+            title="Згорнути"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Center Header Info -->
+          <div class="flex-1 text-center px-2 min-w-0">
+            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30">
+              <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+              <span class="text-[11px] font-black uppercase tracking-wider text-purple-200">Текст пісні / Караоке</span>
+            </div>
+            <h4 class="text-xs font-bold text-text-primary truncate mt-0.5">
+              {{ currentTrack?.name }}
+            </h4>
+          </div>
+
+          <!-- Quick Switch to Artwork Button -->
+          <button 
+            @click="isMobileKaraokeMode = false" 
+            class="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border border-white/15 shadow-sm"
+            title="Показати обкладинку"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Обкладинка</span>
+          </button>
+        </div>
+
+        <!-- Lyrics Body: Full-Screen Scrolling Canvas -->
+        <div class="relative flex-1 w-full min-h-0 overflow-hidden flex flex-col">
+          <!-- Loading State -->
+          <div v-if="lyricsLoading" class="flex-1 flex flex-col items-center justify-center text-center p-6 text-purple-200">
+            <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-base font-bold text-white">Шукаємо синхронізований текст...</p>
+            <p class="text-xs text-purple-300/70 mt-1">Завантаження слів для караоке</p>
+          </div>
+
+          <!-- Error / Not Found State -->
+          <div v-else-if="lyricsNotFound || lyricsError" class="flex-1 flex flex-col items-center justify-center text-center px-6">
+            <div class="w-16 h-16 rounded-3xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 border border-purple-500/30 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-black text-white mb-1.5">
+              {{ lyricsNotFound ? 'Текст пісні поки відсутній' : 'Не вдалося завантажити караоке' }}
+            </h3>
+            <p class="text-xs text-purple-200/70 mb-5 max-w-xs leading-relaxed">
+              {{ lyricsNotFound ? 'Для цієї пісні ще немає синхронізованого тексту караоке.' : lyricsError }}
+            </p>
+            <div class="flex items-center gap-3">
+              <button 
+                @click="fetchLyrics" 
+                class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-lg shadow-purple-600/30"
+              >
+                Спробувати знову
+              </button>
+              <button 
+                @click="isMobileKaraokeMode = false" 
+                class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer transition-colors border border-white/15"
+              >
+                До обкладинки
+              </button>
+            </div>
+          </div>
+
+          <!-- Edge-to-Edge Synced Lyrics Scroll (Spotify mobile style) -->
+          <div 
+            v-else-if="lyricsList.length > 0" 
+            class="flex-1 w-full overflow-y-auto px-6 pt-6 pb-52 no-scrollbar scroll-smooth"
+            ref="mobileLyricsContainer"
+          >
+            <div class="flex flex-col gap-6 py-12 text-left">
+              <div 
+                v-for="(line, index) in lyricsList" 
+                :key="'mobile-lyric-' + index"
+                :ref="el => { if (el) mobileLyricRefs[index] = el; }"
+                @click="seekToLyric(line.time, index)"
+                class="cursor-pointer select-none transition-all duration-300 py-2 rounded-2xl active:scale-[0.98]"
+              >
+                <p 
+                  class="leading-tight tracking-tight transition-all duration-300 select-none break-words"
+                  :class="activeLyricIndex === index 
+                    ? 'text-white text-3xl sm:text-4xl font-black scale-[1.02] origin-left drop-shadow-[0_4px_24px_rgba(255,255,255,0.6)]' 
+                    : activeLyricIndex > index
+                      ? 'text-white/45 text-2xl sm:text-3xl font-extrabold hover:text-white/75'
+                      : 'text-white/25 text-2xl sm:text-3xl font-extrabold hover:text-white/55'"
+                >
+                  {{ line.text }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Bottom Dock: Track Info, Scrubber, Playback (Spotify style) -->
+        <div class="absolute bottom-0 left-0 right-0 z-30 px-5 pt-8 pb-5 bg-gradient-to-t from-[#0d041a] via-[#0d041a]/95 to-transparent pointer-events-auto backdrop-blur-xs">
+          <!-- Track Info + Like Button -->
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="min-w-0 flex-1">
+              <h3 class="text-base font-black text-white truncate">
+                {{ currentTrack?.name }}
+              </h3>
+              <p class="text-xs font-medium text-purple-200/70 truncate mt-0.5">
+                {{ currentTrack?.artists?.map(a => a.name).join(', ') }}
+              </p>
+            </div>
+            <LikeButton 
+              v-if="currentTrackLikeData" 
+              :track="currentTrackLikeData" 
+              :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
+              @liked="likedSpotifyIds.add(currentTrack?.id)"
+              @unliked="likedSpotifyIds.delete(currentTrack?.id)"
+              class="flex-shrink-0"
+            />
+          </div>
+
+          <!-- Progress Bar Scrubber -->
+          <div class="mb-2">
+            <div class="relative h-1.5 bg-white/20 rounded-full flex items-center group cursor-pointer">
+              <div 
+                class="absolute left-0 h-full bg-purple-500 rounded-full pointer-events-none"
+                :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+              ></div>
+              <div 
+                class="absolute w-3 h-3 bg-white rounded-full shadow-md pointer-events-none"
+                :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 6px)` }"
+              ></div>
+              <input 
+                type="range" 
+                min="0" 
+                :max="duration || 100" 
+                v-model="position" 
+                @mousedown="isSeeking = true"
+                @touchstart="isSeeking = true"
+                @mouseup="isSeeking = false; handleSeek($event)"
+                @touchend="isSeeking = false; handleSeek($event)"
+                @change="handleSeek"
+                :disabled="!currentTrack"
+                class="absolute top-1/2 left-0 w-full -translate-y-1/2 h-8 opacity-0 cursor-pointer z-10 m-0"
+              />
+            </div>
+            <div class="flex items-center justify-between text-[10px] font-semibold text-gray-400 mt-1">
+              <span>{{ formatTime(position) }}</span>
+              <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
+            </div>
+          </div>
+
+          <!-- Playback Controls -->
+          <div class="flex items-center justify-between px-2">
+            <!-- Shuffle -->
+            <button 
+              @click="toggleShuffle" 
+              class="p-2 transition-all cursor-pointer relative"
+              :class="isShuffle ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :title="isShuffle ? $t('global_player.shuffle_on') : $t('global_player.shuffle_off')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
+              </svg>
+              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400"></span>
+            </button>
+
+            <!-- Previous -->
+            <button 
+              @click="previousTrack" 
+              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              :title="$t('global_player.previous')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+              </svg>
+            </button>
+
+            <!-- Big Play / Pause -->
+            <button 
+              @click="togglePlay" 
+              class="w-13 h-13 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-lg shadow-purple-600/30 active:scale-95 transition-all cursor-pointer"
+            >
+              <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
+              </svg>
+            </button>
+
+            <!-- Next -->
+            <button 
+              @click="nextTrack" 
+              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              :title="$t('global_player.next')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+              </svg>
+            </button>
+
+            <!-- Repeat -->
+            <button 
+              @click="toggleRepeat" 
+              class="p-2 transition-all cursor-pointer relative"
+              :class="repeatMode !== 'off' ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :title="repeatMode === 'off' ? $t('global_player.repeat_off') : repeatMode === 'context' ? $t('global_player.repeat_all') : $t('global_player.repeat_one')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[8px] font-black pointer-events-none pb-0.5">1</span>
+              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 2: SPOTIFY COVER & NOW PLAYING MODE                       -->
+      <!-- ============================================================== -->
+      <div v-else class="relative z-10 flex-1 flex flex-col justify-between w-full h-full min-h-0 overflow-hidden">
+        <!-- 1. Top Bar -->
+        <div class="relative z-10 px-4 pt-3 pb-1 flex items-center justify-between flex-shrink-0">
+          <button 
+            @click="isMobileFullPlayerOpen = false" 
+            class="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary active:scale-90 transition-transform cursor-pointer"
+            title="Згорнути"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div class="flex-1 text-center px-2 min-w-0">
+            <span class="text-[10px] uppercase font-bold tracking-widest text-text-tertiary block truncate">
+              {{ queueContextName ? 'ГРАЄ З КОНТЕКСТУ' : 'ЗАРАЗ ГРАЄ' }}
+            </span>
+            <h4 class="text-xs font-bold text-text-primary truncate">
+              {{ queueContextName || currentTrack?.album?.name || 'Spotify' }}
+            </h4>
+          </div>
+
+          <button 
+            @click="toggleQueue" 
+            class="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary active:scale-90 transition-transform cursor-pointer relative"
+            :class="showQueue ? 'text-purple-400' : ''"
+            :title="$t('global_player.queue')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7" />
+            </svg>
+            <span 
+              v-if="upcomingQueue.length > 0" 
+              class="absolute top-1 right-1 min-w-[14px] h-3.5 px-0.5 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center shadow-xs"
+            >
+              {{ upcomingQueue.length }}
+            </span>
+          </button>
+        </div>
+
+        <!-- 2. Center: Big Album Artwork -->
+        <div class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-2 min-h-0 w-full overflow-hidden">
+          <div 
+            class="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex-shrink-0 transition-transform duration-500 cursor-pointer group"
+            :class="isPlaying ? 'scale-100 shadow-purple-900/40' : 'scale-95 opacity-85'"
+            @click="openMobileKaraoke"
+            title="Натисніть для перегляду караоке на весь екран"
+          >
+            <img 
+              v-if="currentTrack?.album?.images[0]?.url" 
+              :src="currentTrack.album.images[0].url" 
+              alt="Cover" 
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-text-tertiary/60" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+              </svg>
+            </div>
+
+            <!-- Floating "Караоке" tap badge on cover -->
+            <div class="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/15 shadow-lg group-hover:bg-purple-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+              Караоке
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Bottom Controls Panel -->
+        <div class="relative z-10 w-full pb-4 flex-shrink-0">
+          <!-- Title & Artist & Like Button -->
+          <div class="px-6 py-1.5 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h2 class="text-xl font-black text-white truncate tracking-tight">
+                {{ currentTrack?.name || $t('global_player.default_title') }}
+              </h2>
+              <p class="text-sm font-medium text-purple-200/70 truncate mt-0.5">
+                {{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}
+              </p>
+            </div>
+
+            <!-- Like Button -->
+            <LikeButton 
+              v-if="currentTrackLikeData" 
+              :track="currentTrackLikeData" 
+              :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
+              @liked="likedSpotifyIds.add(currentTrack?.id)"
+              @unliked="likedSpotifyIds.delete(currentTrack?.id)"
+              class="flex-shrink-0"
+            />
+          </div>
+
+          <!-- Progress Bar & Timing -->
+          <div class="px-6 py-1.5">
+            <div class="relative h-2 bg-white/15 rounded-full flex items-center group cursor-pointer">
+              <div 
+                class="absolute left-0 h-full bg-purple-500 rounded-full pointer-events-none"
+                :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+              ></div>
+              <div 
+                class="absolute w-3.5 h-3.5 bg-white rounded-full shadow-md pointer-events-none"
+                :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 7px)` }"
+              ></div>
+              <input 
+                type="range" 
+                min="0" 
+                :max="duration || 100" 
+                v-model="position" 
+                @mousedown="isSeeking = true"
+                @touchstart="isSeeking = true"
+                @mouseup="isSeeking = false; handleSeek($event)"
+                @touchend="isSeeking = false; handleSeek($event)"
+                @change="handleSeek"
+                :disabled="!currentTrack"
+                class="absolute top-1/2 left-0 w-full -translate-y-1/2 h-8 opacity-0 cursor-pointer z-10 m-0"
+              />
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-semibold text-gray-400 mt-1.5">
+              <span>{{ formatTime(position) }}</span>
+              <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
+            </div>
+          </div>
+
+          <!-- Controls: Shuffle, Previous, Play/Pause, Next, Repeat -->
+          <div class="px-6 py-1.5 flex items-center justify-between">
+            <!-- Shuffle -->
+            <button 
+              @click="toggleShuffle" 
+              class="p-2 transition-all cursor-pointer relative"
+              :class="isShuffle ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :title="isShuffle ? $t('global_player.shuffle_on') : $t('global_player.shuffle_off')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 3 21 3 21 8" />
+                <line x1="4" y1="20" x2="21" y2="3" />
+                <polyline points="21 16 21 21 16 21" />
+                <line x1="15" y1="15" x2="21" y2="21" />
+                <line x1="4" y1="4" x2="9" y2="9" />
+              </svg>
+              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+            </button>
+
+            <!-- Previous -->
+            <button 
+              @click="previousTrack" 
+              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              :title="$t('global_player.previous')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+              </svg>
+            </button>
+
+            <!-- Big Play / Pause Button -->
+            <button 
+              @click="togglePlay" 
+              class="w-16 h-16 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-xl shadow-purple-600/30 active:scale-95 transition-all cursor-pointer"
+            >
+              <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 ml-1" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
+              </svg>
+            </button>
+
+            <!-- Next -->
+            <button 
+              @click="nextTrack" 
+              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              :title="$t('global_player.next')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+              </svg>
+            </button>
+
+            <!-- Repeat -->
+            <button 
+              @click="toggleRepeat" 
+              class="p-2 transition-all cursor-pointer relative"
+              :class="repeatMode !== 'off' ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :title="repeatMode === 'off' ? $t('global_player.repeat_off') : repeatMode === 'context' ? $t('global_player.repeat_all') : $t('global_player.repeat_one')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[9px] font-black pointer-events-none pb-0.5">1</span>
+              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+            </button>
+          </div>
+
+          <!-- Bottom Actions (Spotify status, Karaoke, Queue) -->
+          <div class="px-6 pt-3 pb-2 flex items-center justify-between text-xs border-t border-white/10 mt-1">
+            <div class="flex items-center gap-2 text-green-400 font-medium">
+              <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span class="text-[11px]">Spotify Connect</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <!-- Karaoke / Lyrics -->
+              <button 
+                @click="openMobileKaraoke" 
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 text-xs font-bold bg-white/10 text-white border-white/15 hover:bg-white/15"
+                :title="$t('global_player.lyrics')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <span>Караоке</span>
+              </button>
+
+              <!-- Queue -->
+              <button 
+                @click="toggleQueue" 
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 text-xs font-bold"
+                :class="showQueue ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30' : 'bg-white/10 text-white border-white/15 hover:bg-white/15'"
+                :title="$t('global_player.queue')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7" />
+                </svg>
+                <span>Черга</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Player Panel -->
-    <div v-if="isConnected && !isAuthRoute" class="fixed bottom-0 left-0 w-screen bg-surface/95 dark:bg-[#170a24]/95 backdrop-blur-xl border-t border-border-subtle shadow-2xl p-4 z-50 flex items-center justify-between">
+    <div 
+      v-if="isConnected && !isAuthRoute" 
+      class="fixed bottom-0 left-0 w-screen bg-surface/95 dark:bg-[#170a24]/95 backdrop-blur-xl border-t border-border-subtle shadow-2xl z-[70] transition-all"
+      :class="{ 'mobile-full-player-active': isMobileFullPlayerOpen }"
+    >
+      <!-- MOBILE MINI PLAYER (< md) -->
+      <div v-if="!isMobileFullPlayerOpen" class="md:hidden flex flex-col w-full">
+        <!-- Top Thin Progress Bar -->
+        <div class="relative w-full h-1 bg-border-subtle overflow-hidden">
+          <div 
+            class="h-full bg-purple-600 dark:bg-purple-500 transition-all duration-300"
+            :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+          ></div>
+        </div>
+
+        <div class="px-3.5 py-2 flex items-center justify-between gap-3 cursor-pointer" @click="isMobileFullPlayerOpen = true">
+          <!-- Left: Cover + Title/Artist -->
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="relative w-10 h-10 rounded-lg overflow-hidden shadow-xs flex-shrink-0 bg-surface-hover">
+              <img 
+                v-if="currentTrack?.album?.images[0]?.url" 
+                :src="currentTrack.album.images[0].url" 
+                alt="Cover"
+                loading="lazy"
+                class="w-full h-full object-cover" 
+              />
+              <div v-else class="w-full h-full flex items-center justify-center text-text-tertiary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
+              </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <h4 class="text-xs font-bold text-text-primary truncate">
+                {{ currentTrack?.name || $t('global_player.default_title') }}
+              </h4>
+              <p class="text-[10px] text-text-tertiary truncate">
+                {{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Right: Mobile Controls -->
+          <div class="flex items-center gap-1 flex-shrink-0" @click.stop>
+            <!-- Mobile Mini Karaoke Button -->
+            <button 
+              @click="openMobileKaraoke" 
+              class="p-2 text-text-secondary hover:text-purple-400 rounded-xl transition-colors cursor-pointer"
+              :class="isMobileKaraokeMode ? 'text-purple-600 dark:text-purple-400' : ''"
+              title="Караоке"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </button>
+
+            <!-- Queue Button -->
+            <button 
+              @click="toggleQueue" 
+              class="p-2 text-text-secondary hover:text-text-primary rounded-xl transition-colors cursor-pointer relative"
+              :class="showQueue ? 'text-purple-600 dark:text-purple-400' : ''"
+              :title="$t('global_player.queue')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7" />
+              </svg>
+              <span 
+                v-if="upcomingQueue.length > 0" 
+                class="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center shadow-xs"
+              >
+                {{ upcomingQueue.length }}
+              </span>
+            </button>
+
+            <button 
+              @click="togglePlay" 
+              class="w-9 h-9 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-full flex items-center justify-center transition-transform cursor-pointer shadow-md shadow-purple-600/20"
+            >
+              <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
+              </svg>
+            </button>
+
+            <button @click="nextTrack" class="p-2 text-text-secondary hover:text-text-primary active:scale-95 transition-colors cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP PLAYER (>= md) -->
+      <div class="hidden md:flex items-center justify-between p-4 w-full">
     <div class="flex items-center gap-4 w-1/3">
       <img 
         v-if="currentTrack?.album?.images[0]?.url" 
@@ -455,13 +1049,19 @@
     </div>
   </div>
   </div>
+</div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import LikeButton from './LikeButton.vue';
 
 const { t } = useI18n();
+
+// Mobile full-screen expanded player state
+const isMobileFullPlayerOpen = ref(false);
+const likedSpotifyIds = ref(new Set());
 
 // Safely access global state avoiding SSR crashes
 const getSpotifyState = () => {
@@ -502,6 +1102,14 @@ const checkRoute = () => {
   if (isAuthRoute.value) {
     showLyrics.value = false;
     showQueue.value = false;
+    isMobileFullPlayerOpen.value = false;
+    isMobileKaraokeMode.value = false;
+  }
+};
+
+const checkWindowSize = () => {
+  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+    isMobileFullPlayerOpen.value = false;
   }
 };
 
@@ -514,6 +1122,37 @@ const position = ref(globalState.position);
 const duration = ref(globalState.duration);
 const isSeeking = ref(false);
 let progressInterval = null;
+
+// Track formatted for LikeButton
+const currentTrackLikeData = computed(() => {
+  if (!currentTrack.value) return null;
+  return {
+    id: currentTrack.value.id,
+    spotifyId: currentTrack.value.id,
+    title: currentTrack.value.name,
+    name: currentTrack.value.name,
+    artistName: currentTrack.value.artists?.map(a => a.name).join(', ') || 'Unknown Artist',
+    albumCoverUrl: currentTrack.value.album?.images?.[0]?.url || '',
+    previewUrl: null
+  };
+});
+
+const fetchLikedTracks = async () => {
+  if (typeof window === 'undefined') return;
+  const authToken = localStorage.getItem('token');
+  if (!authToken) return;
+  try {
+    const res = await fetch('http://localhost:5001/api/favorites', {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const data = await res.json();
+    if (data.status === 'success' && Array.isArray(data.favorites)) {
+      likedSpotifyIds.value = new Set(data.favorites.map(f => f.track?.spotifyId).filter(Boolean));
+    }
+  } catch (e) {
+    console.warn('Failed to fetch user favorites:', e);
+  }
+};
 
 // Shuffle & Repeat State
 const isShuffle = ref(false);
@@ -683,13 +1322,16 @@ const playFromQueue = (track, upcomingIdx) => {
 
 // Lyrics state
 const showLyrics = ref(false);
+const isMobileKaraokeMode = ref(false);
 const lyricsLoading = ref(false);
 const lyricsError = ref(null);
 const lyricsNotFound = ref(false);
 const lyricsList = ref([]);
 const activeLyricIndex = ref(-1);
 const lyricRefs = ref([]);
+const mobileLyricRefs = ref([]);
 const lyricsContainer = ref(null);
+const mobileLyricsContainer = ref(null);
 
 // Sync refs with global state so updates are preserved
 watch(isConnected, val => { if (typeof window !== 'undefined') window.__spotifyState.isConnected = val; });
@@ -712,7 +1354,9 @@ watch(currentTrack, (newTrack, oldTrack) => {
     lyricsNotFound.value = false;
     lyricsError.value = null;
     activeLyricIndex.value = -1;
-    if (showLyrics.value) {
+    lyricRefs.value = [];
+    mobileLyricRefs.value = [];
+    if (showLyrics.value || isMobileKaraokeMode.value) {
       fetchLyrics();
     }
   }
@@ -724,12 +1368,12 @@ let forcedLyricTimeout = null;
 
 // Sync lyrics scroll position
 watch(position, (newPosMs) => {
-  if (!showLyrics.value || lyricsList.value.length === 0 || forcedLyricIndex !== -1) return;
+  if ((!showLyrics.value && !isMobileKaraokeMode.value) || lyricsList.value.length === 0 || forcedLyricIndex !== -1) return;
   const posSec = newPosMs / 1000;
   
   let newIndex = -1;
   for (let i = 0; i < lyricsList.value.length; i++) {
-    if (lyricsList.value[i].time <= posSec + 0.5) {
+    if (lyricsList.value[i].time <= posSec + 0.35) {
       newIndex = i;
     } else {
       break;
@@ -743,6 +1387,7 @@ watch(position, (newPosMs) => {
 });
 
 const scrollToActiveLyric = () => {
+  // Desktop
   if (activeLyricIndex.value >= 0 && lyricRefs.value[activeLyricIndex.value] && lyricsContainer.value) {
     const el = lyricRefs.value[activeLyricIndex.value];
     const container = lyricsContainer.value;
@@ -756,10 +1401,25 @@ const scrollToActiveLyric = () => {
       behavior: 'smooth'
     });
   }
+
+  // Mobile
+  if (activeLyricIndex.value >= 0 && mobileLyricRefs.value[activeLyricIndex.value] && mobileLyricsContainer.value) {
+    const mEl = mobileLyricRefs.value[activeLyricIndex.value];
+    const mContainer = mobileLyricsContainer.value;
+    
+    const mElTop = mEl.offsetTop;
+    const mElHeight = mEl.offsetHeight;
+    const mContainerHeight = mContainer.offsetHeight;
+    
+    mContainer.scrollTo({
+      top: Math.max(0, mElTop - (mContainerHeight * 0.35) + (mElHeight / 2)),
+      behavior: 'smooth'
+    });
+  }
 };
 
 const seekToLyric = (timeSec, index) => {
-  const newPosMs = Math.max(0, Math.floor(timeSec * 1000) - 550);
+  const newPosMs = Math.max(0, Math.floor(timeSec * 1000));
   position.value = newPosMs;
   
   forcedLyricIndex = index;
@@ -776,27 +1436,59 @@ const seekToLyric = (timeSec, index) => {
   }
 };
 
-const toggleLyrics = async () => {
-  if (!currentTrack.value) return;
-  showLyrics.value = !showLyrics.value;
-  if (showLyrics.value && lyricsList.value.length === 0) {
+const openMobileKaraoke = async () => {
+  isMobileFullPlayerOpen.value = true;
+  isMobileKaraokeMode.value = true;
+  if (lyricsList.value.length === 0 && !lyricsLoading.value) {
     await fetchLyrics();
+  }
+  await nextTick();
+  scrollToActiveLyric();
+};
+
+const toggleMobileKaraoke = async () => {
+  isMobileKaraokeMode.value = !isMobileKaraokeMode.value;
+  if (isMobileKaraokeMode.value) {
+    if (lyricsList.value.length === 0 && !lyricsLoading.value) {
+      await fetchLyrics();
+    }
+    await nextTick();
+    scrollToActiveLyric();
   }
 };
 
+const toggleLyrics = async () => {
+  if (!currentTrack.value) return;
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    if (!isMobileFullPlayerOpen.value) {
+      await openMobileKaraoke();
+    } else {
+      await toggleMobileKaraoke();
+    }
+    return;
+  }
+  showLyrics.value = !showLyrics.value;
+  if (showLyrics.value && lyricsList.value.length === 0 && !lyricsLoading.value) {
+    await fetchLyrics();
+  }
+  await nextTick();
+  scrollToActiveLyric();
+};
+
 const parseLrc = (lrcString) => {
+  if (!lrcString) return [];
   const lines = lrcString.split('\n');
-  const regex = /\[(\d{2}):(\d{2}\.\d{2,3})\](.*)/;
+  const regex = /\[(\d{1,2}):(\d{2}(?:\.\d{1,3})?)\](.*)/;
   const parsed = [];
   lines.forEach(line => {
     const match = line.match(regex);
     if (match) {
-      const minutes = parseInt(match[1]);
+      const minutes = parseInt(match[1], 10);
       const seconds = parseFloat(match[2]);
       const time = minutes * 60 + seconds;
       const text = match[3].trim();
       if (text) {
-         parsed.push({ time, text });
+        parsed.push({ time, text });
       }
     }
   });
@@ -812,9 +1504,18 @@ const fetchLyrics = async () => {
   activeLyricIndex.value = -1;
 
   try {
-    const artist = currentTrack.value.artists?.[0]?.name || '';
-    const track = currentTrack.value.name || '';
-    const query = `${artist} ${track}`;
+    const artist = currentTrack.value.artists?.[0]?.name 
+      || currentTrack.value.artistName 
+      || currentTrack.value.artist 
+      || '';
+    const track = currentTrack.value.name 
+      || currentTrack.value.title 
+      || '';
+    const query = `${artist} ${track}`.trim();
+    if (!query) {
+      lyricsNotFound.value = true;
+      return;
+    }
     
     const res = await fetch(`http://localhost:5001/api/lyrics?q=${encodeURIComponent(query)}`, {
       cache: 'no-store'
@@ -836,7 +1537,7 @@ const fetchLyrics = async () => {
       lyricsError.value = t('global_player.lyrics_error');
     }
   } catch (e) {
-    console.error(e);
+    console.error('fetchLyrics error:', e);
     lyricsError.value = t('global_player.lyrics_error');
   } finally {
     lyricsLoading.value = false;
@@ -1097,13 +1798,27 @@ const playTrack = async (uri, allUris = null) => {
   }
 };
 
-onMounted(() => {
+const handleNav = () => {
   checkRoute();
-  document.addEventListener('astro:page-load', checkRoute);
-  document.addEventListener('astro:after-swap', checkRoute);
-  window.addEventListener('popstate', checkRoute);
+  checkWindowSize();
+};
+
+onMounted(() => {
+  handleNav();
+  document.addEventListener('astro:page-load', handleNav);
+  document.addEventListener('astro:after-swap', handleNav);
+  window.addEventListener('popstate', handleNav);
+  window.addEventListener('resize', checkWindowSize);
 
   checkConnection();
+  fetchLikedTracks();
+
+  window.addEventListener('track-liked', (e) => {
+    if (e.detail?.spotifyId) likedSpotifyIds.value.add(e.detail.spotifyId);
+  });
+  window.addEventListener('track-unliked', (e) => {
+    if (e.detail?.spotifyId) likedSpotifyIds.value.delete(e.detail.spotifyId);
+  });
 
   window.addEventListener('play-spotify-track', (e) => {
     if (e.detail && e.detail.uri) {
@@ -1114,18 +1829,34 @@ onMounted(() => {
         queueContextName.value = e.detail.contextName;
       }
       playTrack(e.detail.uri, e.detail.uris);
+
+      // On mobile screens (< 768px), expand to full player when user clicks to play a song
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        isMobileFullPlayerOpen.value = true;
+      }
     }
   });
 
   window.addEventListener('toggle-spotify-playback', () => {
     togglePlay();
   });
+
+  window.addEventListener('open-mobile-player', () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      isMobileFullPlayerOpen.value = true;
+    }
+  });
+
+  window.addEventListener('open-mobile-karaoke', () => {
+    openMobileKaraoke();
+  });
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('astro:page-load', checkRoute);
-  document.removeEventListener('astro:after-swap', checkRoute);
-  window.removeEventListener('popstate', checkRoute);
+  document.removeEventListener('astro:page-load', handleNav);
+  document.removeEventListener('astro:after-swap', handleNav);
+  window.removeEventListener('popstate', handleNav);
+  window.removeEventListener('resize', checkWindowSize);
   stopProgressTimer();
   // DO NOT disconnect the player here, because Astro View Transitions might unmount/remount
   // this component while we navigate. Disconnecting it would stop the music.
@@ -1139,5 +1870,11 @@ onBeforeUnmount(() => {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-full-player-active {
+    display: none !important;
+  }
 }
 </style>

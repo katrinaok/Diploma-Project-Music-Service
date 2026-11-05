@@ -25,12 +25,12 @@ if (username) {
 </script>
 
 <Layout title={`${lang === 'uk' ? 'Хвиля' : 'Khvylia'} - ${t('page.login')}`} hideNav={true}>
-  <div class="min-h-full flex flex-col justify-between py-6 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-full flex flex-col justify-between py-4 sm:py-6 px-3 sm:px-6 lg:px-8">
     <!-- Minimalist Auth Top Bar -->
-    <header class="w-full max-w-5xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+    <header class="w-full max-w-5xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2 sm:gap-2.5">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
             <rect x="2" y="9" width="2.5" height="6" rx="1.25" />
             <rect x="6.5" y="5" width="2.5" height="14" rx="1.25" />
             <rect x="11" y="2" width="2.5" height="20" rx="1.25" />
@@ -38,12 +38,12 @@ if (username) {
             <rect x="20" y="10" width="2.5" height="4" rx="1.25" />
           </svg>
         </div>
-        <span class="font-black text-2xl tracking-tight text-text-primary">
+        <span class="font-black text-xl sm:text-2xl tracking-tight text-text-primary">
           {lang === 'uk' ? 'Хвиля' : 'Khvylia'}
         </span>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 sm:gap-3">
         <ThemeToggle client:load />
         <LanguageSwitcher />
       </div>

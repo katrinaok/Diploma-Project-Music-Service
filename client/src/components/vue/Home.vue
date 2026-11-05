@@ -1,17 +1,17 @@
 <template>
-  <div class="w-full p-4 md:p-8">
-    <div class="w-full mx-auto space-y-8">
+  <div class="w-full p-3 sm:p-6 md:p-8 pb-28 sm:pb-32">
+    <div class="w-full mx-auto space-y-5 sm:space-y-8">
       
       <!-- Top Welcome Banner -->
-      <div class="relative overflow-hidden bg-gradient-to-r from-purple-100/90 via-surface to-purple-50/70 dark:from-purple-900/40 dark:via-surface dark:to-purple-950/30 p-6 md:p-8 rounded-3xl shadow-xs border border-purple-200/80 dark:border-purple-500/20 backdrop-blur-xl">
+      <div class="relative overflow-hidden bg-gradient-to-r from-purple-100/90 via-surface to-purple-50/70 dark:from-purple-900/40 dark:via-surface dark:to-purple-950/30 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-purple-200/80 dark:border-purple-500/20 backdrop-blur-xl">
         <div class="relative z-10 max-w-2xl">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/90 dark:bg-purple-500/10 border border-purple-300/80 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-3">
+          <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-purple-100/90 dark:bg-purple-500/10 border border-purple-300/80 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3">
             {{ locale === 'uk' ? 'Стрічка «Хвилі»' : 'Khvylia Feed' }}
           </div>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
             {{ $t('home.title') }}
           </h1>
-          <p class="text-text-secondary text-sm md:text-base mt-2 leading-relaxed">
+          <p class="text-text-secondary text-xs sm:text-sm md:text-base mt-1.5 sm:mt-2 leading-relaxed">
             {{ $t('home.subtitle') }}
           </p>
         </div>
@@ -246,21 +246,21 @@
         </div>
 
         <!-- History Section (Recently Played) -->
-        <div v-if="historyTracks.length > 0" class="bg-surface p-6 rounded-3xl shadow-sm border border-border-subtle transition-colors">
-          <div class="flex items-center justify-between mb-4">
+        <div v-if="historyTracks.length > 0" class="bg-surface p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-border-subtle transition-colors">
+          <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <h2 class="text-lg md:text-xl font-bold text-text-primary">
+              <h2 class="text-base sm:text-lg md:text-xl font-bold text-text-primary">
                 {{ $t('home.recently_played') || 'Нещодавно прослухано' }}
               </h2>
               <p class="text-xs text-text-tertiary mt-0.5">Треки, які ви нещодавно слухали</p>
             </div>
           </div>
           
-          <div class="flex overflow-x-auto gap-4 pb-3 snap-x no-scrollbar">
+          <div class="flex overflow-x-auto gap-3 sm:gap-4 pb-3 snap-x no-scrollbar">
             <div 
               v-for="item in historyTracks" 
               :key="item.id" 
-              class="snap-start flex-shrink-0 w-32 md:w-40 group cursor-pointer"
+              class="snap-start flex-shrink-0 w-28 sm:w-36 md:w-40 group cursor-pointer"
               @click="togglePlay(item.track)"
             >
               <div 
@@ -810,6 +810,10 @@ const selectGenre = async (genre) => {
 // Unified Playback Controller
 const togglePlay = (track) => {
   if (!track) return;
+
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    window.dispatchEvent(new CustomEvent('open-mobile-player'));
+  }
 
   const trackId = getTrackId(track);
   if (!trackId) return;
