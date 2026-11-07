@@ -70,39 +70,32 @@
     <div v-if="showQueue && isConnected && !isAuthRoute">
       <!-- Backdrop for mobile -->
       <div 
-        class="fixed inset-0 bg-black/70 backdrop-blur-xs z-[140] sm:hidden animate-in fade-in duration-200"
+        class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-[140] sm:hidden animate-in fade-in duration-200"
         @click="showQueue = false"
       ></div>
 
       <div 
-        class="fixed inset-x-0 bottom-0 sm:right-6 sm:bottom-24 sm:left-auto w-full sm:w-96 sm:max-w-[calc(100vw-1.5rem)] h-[82vh] sm:h-auto sm:max-h-[75vh] bg-[#130728] sm:bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border-t sm:border border-white/10 sm:border-border-subtle dark:border-purple-500/25 rounded-t-3xl sm:rounded-3xl shadow-2xl z-[150] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+        class="fixed inset-x-0 bottom-0 sm:right-6 sm:bottom-24 sm:left-auto w-full sm:w-96 sm:max-w-[calc(100vw-1.5rem)] h-[82vh] sm:h-auto sm:max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border-t sm:border border-border-subtle dark:border-purple-500/25 rounded-t-3xl sm:rounded-3xl shadow-2xl z-[150] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
       >
         <!-- Mobile drag handle indicator -->
         <div class="pt-2.5 pb-1 sm:hidden flex justify-center bg-surface-alt/40 cursor-pointer" @click="showQueue = false">
-          <div class="w-10 h-1 bg-white/25 rounded-full"></div>
+          <div class="w-10 h-1 bg-black/20 dark:bg-white/25 rounded-full"></div>
         </div>
 
         <!-- Queue Header -->
         <div class="p-4 border-b border-border-subtle/80 flex items-center justify-between gap-2 bg-surface-alt/40">
-        <div class="min-w-0 flex items-center gap-2">
-          <h3 class="text-base font-bold text-text-primary tracking-tight">
-            {{ $t('global_player.queue_title') }}
-          </h3>
-          <span 
-            v-if="queueContextName" 
-            class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 truncate max-w-[140px]"
-            :title="queueContextName"
-          >
-            {{ queueContextName }}
-          </span>
-        </div>
+          <div class="min-w-0 flex items-center gap-2">
+            <h3 class="text-base font-bold text-text-primary tracking-tight">
+              {{ $t('global_player.queue_title') }}
+            </h3>
+          </div>
 
         <div class="flex items-center gap-1">
           <!-- Shuffle Queue Button -->
           <button 
             v-if="upcomingQueue.length > 1" 
             @click="shuffleQueue"
-            class="p-1.5 text-text-tertiary hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+            class="p-1.5 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
             :title="$t('global_player.queue_shuffle_btn')"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,16 +136,12 @@
         
         <!-- Now Playing Card -->
         <div v-if="currentTrack">
-          <div class="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+          <div class="text-[11px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2 px-1">
             <span>{{ $t('global_player.queue_now_playing') }}</span>
-            <span v-if="isPlaying" class="inline-flex items-center gap-1 text-purple-400 text-[10px]">
-              <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping"></span>
-              Грає зараз
-            </span>
           </div>
 
-          <div class="bg-purple-950/20 dark:bg-purple-900/25 border border-purple-500/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-sm">
-            <div class="w-12 h-12 rounded-xl overflow-hidden bg-border-subtle flex-shrink-0 shadow-sm">
+          <div class="bg-purple-50/80 dark:bg-purple-900/25 border border-purple-200/80 dark:border-purple-500/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-xs">
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-border-subtle flex-shrink-0 shadow-xs">
               <img 
                 v-if="currentTrack?.album?.images?.[0]?.url" 
                 :src="currentTrack.album.images[0].url" 
@@ -167,15 +156,15 @@
             </div>
 
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-semibold text-purple-300 truncate">{{ currentTrack?.name }}</h4>
+              <h4 class="text-sm font-semibold text-text-primary dark:text-purple-300 truncate">{{ currentTrack?.name }}</h4>
               <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') }}</p>
             </div>
 
             <!-- Playing Sound Wave Indicator -->
             <div v-if="isPlaying" class="flex items-end gap-0.5 h-4 px-1">
-              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_100ms] h-3"></span>
-              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_300ms] h-4"></span>
-              <span class="w-0.5 bg-purple-400 rounded-full animate-[bounce_1s_infinite_200ms] h-2"></span>
+              <span class="w-0.5 bg-purple-600 dark:bg-purple-400 rounded-full animate-[bounce_1s_infinite_100ms] h-3"></span>
+              <span class="w-0.5 bg-purple-600 dark:bg-purple-400 rounded-full animate-[bounce_1s_infinite_300ms] h-4"></span>
+              <span class="w-0.5 bg-purple-600 dark:bg-purple-400 rounded-full animate-[bounce_1s_infinite_200ms] h-2"></span>
             </div>
           </div>
         </div>
@@ -243,7 +232,7 @@
 
               <!-- Title & Artist -->
               <div class="flex-1 min-w-0">
-                <h5 class="text-xs font-semibold text-text-primary group-hover:text-purple-300 truncate">
+                <h5 class="text-xs font-semibold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300 truncate">
                   {{ getQueueTrackTitle(track) }}
                 </h5>
                 <p class="text-[11px] text-text-tertiary truncate">
@@ -298,7 +287,7 @@
     <!-- MOBILE FULL-SCREEN EXPANDED PLAYER (< md) -->
     <div 
       v-if="isMobileFullPlayerOpen && isConnected && !isAuthRoute" 
-      class="md:hidden fixed inset-0 z-[100] bg-[#0d041a] text-text-primary flex flex-col justify-between overflow-hidden transition-all duration-300 animate-in slide-in-from-bottom"
+      class="md:hidden fixed inset-0 z-[100] bg-surface dark:bg-[#0d041a] text-text-primary flex flex-col justify-between overflow-hidden transition-colors duration-300 animate-in slide-in-from-bottom"
     >
       <!-- Atmospheric Dynamic Cover Glow -->
       <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
@@ -306,9 +295,9 @@
           v-if="currentTrack?.album?.images[0]?.url" 
           :src="currentTrack.album.images[0].url" 
           alt="" 
-          class="w-full h-full object-cover blur-3xl opacity-35 scale-150 transform-gpu" 
+          class="w-full h-full object-cover blur-3xl opacity-20 dark:opacity-35 scale-150 transform-gpu" 
         />
-        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-[#0d041a]/90 to-[#0d041a]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-surface/70 via-surface/90 to-surface dark:from-black/60 dark:via-[#0d041a]/90 dark:to-[#0d041a]"></div>
       </div>
 
       <!-- ============================================================== -->
@@ -329,23 +318,18 @@
           </button>
 
           <!-- Center Header Info -->
-          <div class="flex-1 text-center px-2 min-w-0">
-            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30">
-              <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-              <span class="text-[11px] font-black uppercase tracking-wider text-purple-200">Текст пісні / Караоке</span>
-            </div>
-            <h4 class="text-xs font-bold text-text-primary truncate mt-0.5">
-              {{ currentTrack?.name }}
-            </h4>
+          <div class="flex-1 text-center px-2 min-w-0 flex items-center justify-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Караоке</span>
           </div>
 
           <!-- Quick Switch to Artwork Button -->
           <button 
             @click="isMobileKaraokeMode = false" 
-            class="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border border-white/15 shadow-sm"
+            class="px-3 py-1.5 rounded-full bg-surface-alt/80 hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-text-primary dark:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border border-border-subtle dark:border-white/15 shadow-xs"
             title="Показати обкладинку"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span>Обкладинка</span>
@@ -355,35 +339,35 @@
         <!-- Lyrics Body: Full-Screen Scrolling Canvas -->
         <div class="relative flex-1 w-full min-h-0 overflow-hidden flex flex-col">
           <!-- Loading State -->
-          <div v-if="lyricsLoading" class="flex-1 flex flex-col items-center justify-center text-center p-6 text-purple-200">
+          <div v-if="lyricsLoading" class="flex-1 flex flex-col items-center justify-center text-center p-6 text-purple-600 dark:text-purple-200">
             <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-base font-bold text-white">Шукаємо синхронізований текст...</p>
-            <p class="text-xs text-purple-300/70 mt-1">Завантаження слів для караоке</p>
+            <p class="text-base font-bold text-text-primary dark:text-white">Шукаємо синхронізований текст...</p>
+            <p class="text-xs text-text-secondary dark:text-purple-300/70 mt-1">Завантаження слів для караоке</p>
           </div>
 
           <!-- Error / Not Found State -->
           <div v-else-if="lyricsNotFound || lyricsError" class="flex-1 flex flex-col items-center justify-center text-center px-6">
-            <div class="w-16 h-16 rounded-3xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 border border-purple-500/30 shadow-lg">
+            <div class="w-16 h-16 rounded-3xl bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 border border-purple-200 dark:border-purple-500/30 shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
             </div>
-            <h3 class="text-lg font-black text-white mb-1.5">
+            <h3 class="text-lg font-black text-text-primary dark:text-white mb-1.5">
               {{ lyricsNotFound ? 'Текст пісні поки відсутній' : 'Не вдалося завантажити караоке' }}
             </h3>
-            <p class="text-xs text-purple-200/70 mb-5 max-w-xs leading-relaxed">
+            <p class="text-xs text-text-secondary dark:text-purple-200/70 mb-5 max-w-xs leading-relaxed">
               {{ lyricsNotFound ? 'Для цієї пісні ще немає синхронізованого тексту караоке.' : lyricsError }}
             </p>
             <div class="flex items-center gap-3">
               <button 
                 @click="fetchLyrics" 
-                class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-lg shadow-purple-600/30"
+                class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-md shadow-purple-600/30"
               >
                 Спробувати знову
               </button>
               <button 
                 @click="isMobileKaraokeMode = false" 
-                class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer transition-colors border border-white/15"
+                class="px-4 py-2 rounded-xl bg-surface-alt hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-text-primary dark:text-white text-xs font-bold cursor-pointer transition-colors border border-border-subtle dark:border-white/15"
               >
                 До обкладинки
               </button>
@@ -407,10 +391,10 @@
                 <p 
                   class="leading-tight tracking-tight transition-all duration-300 select-none break-words"
                   :class="activeLyricIndex === index 
-                    ? 'text-white text-3xl sm:text-4xl font-black scale-[1.02] origin-left drop-shadow-[0_4px_24px_rgba(255,255,255,0.6)]' 
+                    ? 'text-purple-600 dark:text-purple-400 text-3xl sm:text-4xl font-black scale-[1.02] origin-left drop-shadow-[0_4px_20px_rgba(147,51,234,0.35)] dark:drop-shadow-[0_0_28px_rgba(192,132,252,0.65)]' 
                     : activeLyricIndex > index
-                      ? 'text-white/45 text-2xl sm:text-3xl font-extrabold hover:text-white/75'
-                      : 'text-white/25 text-2xl sm:text-3xl font-extrabold hover:text-white/55'"
+                      ? 'text-text-primary/45 dark:text-white/45 text-2xl sm:text-3xl font-extrabold hover:text-text-primary/75 dark:hover:text-white/75'
+                      : 'text-text-primary/25 dark:text-white/25 text-2xl sm:text-3xl font-extrabold hover:text-text-primary/50 dark:hover:text-white/55'"
                 >
                   {{ line.text }}
                 </p>
@@ -420,14 +404,14 @@
         </div>
 
         <!-- Floating Bottom Dock: Track Info, Scrubber, Playback (Spotify style) -->
-        <div class="absolute bottom-0 left-0 right-0 z-30 px-5 pt-8 pb-5 bg-gradient-to-t from-[#0d041a] via-[#0d041a]/95 to-transparent pointer-events-auto backdrop-blur-xs">
+        <div class="absolute bottom-0 left-0 right-0 z-30 px-5 pt-8 pb-5 bg-gradient-to-t from-surface via-surface/95 to-transparent dark:from-[#0d041a] dark:via-[#0d041a]/95 dark:to-transparent pointer-events-auto backdrop-blur-xs">
           <!-- Track Info + Like Button -->
           <div class="flex items-center justify-between gap-3 mb-2">
             <div class="min-w-0 flex-1">
-              <h3 class="text-base font-black text-white truncate">
+              <h3 class="text-base font-black text-text-primary dark:text-white truncate">
                 {{ currentTrack?.name }}
               </h3>
-              <p class="text-xs font-medium text-purple-200/70 truncate mt-0.5">
+              <p class="text-xs font-medium text-text-secondary dark:text-purple-200/70 truncate mt-0.5">
                 {{ currentTrack?.artists?.map(a => a.name).join(', ') }}
               </p>
             </div>
@@ -443,13 +427,13 @@
 
           <!-- Progress Bar Scrubber -->
           <div class="mb-2">
-            <div class="relative h-1.5 bg-white/20 rounded-full flex items-center group cursor-pointer">
+            <div class="relative h-1.5 bg-black/10 dark:bg-white/20 rounded-full flex items-center group cursor-pointer">
               <div 
-                class="absolute left-0 h-full bg-purple-500 rounded-full pointer-events-none"
+                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none"
                 :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
               ></div>
               <div 
-                class="absolute w-3 h-3 bg-white rounded-full shadow-md pointer-events-none"
+                class="absolute w-3 h-3 bg-purple-600 dark:bg-white rounded-full shadow-md pointer-events-none"
                 :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 6px)` }"
               ></div>
               <input 
@@ -466,7 +450,7 @@
                 class="absolute top-1/2 left-0 w-full -translate-y-1/2 h-8 opacity-0 cursor-pointer z-10 m-0"
               />
             </div>
-            <div class="flex items-center justify-between text-[10px] font-semibold text-gray-400 mt-1">
+            <div class="flex items-center justify-between text-[10px] font-semibold text-text-tertiary mt-1">
               <span>{{ formatTime(position) }}</span>
               <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
             </div>
@@ -478,19 +462,19 @@
             <button 
               @click="toggleShuffle" 
               class="p-2 transition-all cursor-pointer relative"
-              :class="isShuffle ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :class="isShuffle ? 'text-purple-600 dark:text-purple-400' : 'text-text-tertiary hover:text-text-primary dark:text-gray-400 dark:hover:text-white'"
               :title="isShuffle ? $t('global_player.shuffle_on') : $t('global_player.shuffle_off')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
               </svg>
-              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400"></span>
+              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-600 dark:bg-purple-400"></span>
             </button>
 
             <!-- Previous -->
             <button 
               @click="previousTrack" 
-              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              class="p-2 text-text-secondary hover:text-purple-600 dark:text-white/85 dark:hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
               :title="$t('global_player.previous')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
@@ -514,7 +498,7 @@
             <!-- Next -->
             <button 
               @click="nextTrack" 
-              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              class="p-2 text-text-secondary hover:text-purple-600 dark:text-white/85 dark:hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
               :title="$t('global_player.next')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
@@ -526,14 +510,14 @@
             <button 
               @click="toggleRepeat" 
               class="p-2 transition-all cursor-pointer relative"
-              :class="repeatMode !== 'off' ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :class="repeatMode !== 'off' ? 'text-purple-600 dark:text-purple-400' : 'text-text-tertiary hover:text-text-primary dark:text-gray-400 dark:hover:text-white'"
               :title="repeatMode === 'off' ? $t('global_player.repeat_off') : repeatMode === 'context' ? $t('global_player.repeat_all') : $t('global_player.repeat_one')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
               </svg>
               <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[8px] font-black pointer-events-none pb-0.5">1</span>
-              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400"></span>
+              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-600 dark:bg-purple-400"></span>
             </button>
           </div>
         </div>
@@ -557,17 +541,17 @@
 
           <div class="flex-1 text-center px-2 min-w-0">
             <span class="text-[10px] uppercase font-bold tracking-widest text-text-tertiary block truncate">
-              {{ queueContextName ? 'ГРАЄ З КОНТЕКСТУ' : 'ЗАРАЗ ГРАЄ' }}
+              {{ $t('global_player.now_playing') || 'ЗАРАЗ ГРАЄ' }}
             </span>
             <h4 class="text-xs font-bold text-text-primary truncate">
-              {{ queueContextName || currentTrack?.album?.name || 'Spotify' }}
+              {{ currentTrack?.album?.name || 'Spotify' }}
             </h4>
           </div>
 
           <button 
             @click="toggleQueue" 
             class="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary active:scale-90 transition-transform cursor-pointer relative"
-            :class="showQueue ? 'text-purple-400' : ''"
+            :class="showQueue ? 'text-purple-600 dark:text-purple-400' : ''"
             :title="$t('global_player.queue')"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -585,8 +569,8 @@
         <!-- 2. Center: Big Album Artwork -->
         <div class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-2 min-h-0 w-full overflow-hidden">
           <div 
-            class="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex-shrink-0 transition-transform duration-500 cursor-pointer group"
-            :class="isPlaying ? 'scale-100 shadow-purple-900/40' : 'scale-95 opacity-85'"
+            class="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 flex-shrink-0 transition-transform duration-500 cursor-pointer group"
+            :class="isPlaying ? 'scale-100 shadow-purple-600/20 dark:shadow-purple-900/40' : 'scale-95 opacity-85'"
             @click="openMobileKaraoke"
             title="Натисніть для перегляду караоке на весь екран"
           >
@@ -603,8 +587,8 @@
             </div>
 
             <!-- Floating "Караоке" tap badge on cover -->
-            <div class="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/15 shadow-lg group-hover:bg-purple-600 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
+            <div class="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-surface/85 dark:bg-black/60 backdrop-blur-md text-text-primary dark:text-white text-[11px] font-bold flex items-center gap-1.5 border border-border-subtle dark:border-white/15 shadow-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
               </svg>
@@ -614,14 +598,14 @@
         </div>
 
         <!-- 3. Bottom Controls Panel -->
-        <div class="relative z-10 w-full pb-4 flex-shrink-0">
+        <div class="relative z-10 w-full pb-6 flex-shrink-0">
           <!-- Title & Artist & Like Button -->
           <div class="px-6 py-1.5 flex items-center justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <h2 class="text-xl font-black text-white truncate tracking-tight">
+              <h2 class="text-xl font-black text-text-primary truncate tracking-tight">
                 {{ currentTrack?.name || $t('global_player.default_title') }}
               </h2>
-              <p class="text-sm font-medium text-purple-200/70 truncate mt-0.5">
+              <p class="text-sm font-medium text-text-secondary dark:text-purple-200/70 truncate mt-0.5">
                 {{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}
               </p>
             </div>
@@ -639,13 +623,13 @@
 
           <!-- Progress Bar & Timing -->
           <div class="px-6 py-1.5">
-            <div class="relative h-2 bg-white/15 rounded-full flex items-center group cursor-pointer">
+            <div class="relative h-2 bg-black/10 dark:bg-white/15 rounded-full flex items-center group cursor-pointer">
               <div 
-                class="absolute left-0 h-full bg-purple-500 rounded-full pointer-events-none"
+                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none"
                 :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
               ></div>
               <div 
-                class="absolute w-3.5 h-3.5 bg-white rounded-full shadow-md pointer-events-none"
+                class="absolute w-3.5 h-3.5 bg-purple-600 dark:bg-white rounded-full shadow-md pointer-events-none"
                 :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 7px)` }"
               ></div>
               <input 
@@ -662,7 +646,7 @@
                 class="absolute top-1/2 left-0 w-full -translate-y-1/2 h-8 opacity-0 cursor-pointer z-10 m-0"
               />
             </div>
-            <div class="flex items-center justify-between text-[11px] font-semibold text-gray-400 mt-1.5">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-text-tertiary mt-1.5">
               <span>{{ formatTime(position) }}</span>
               <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
             </div>
@@ -674,7 +658,7 @@
             <button 
               @click="toggleShuffle" 
               class="p-2 transition-all cursor-pointer relative"
-              :class="isShuffle ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :class="isShuffle ? 'text-purple-600 dark:text-purple-400' : 'text-text-tertiary hover:text-text-primary dark:text-gray-400 dark:hover:text-white'"
               :title="isShuffle ? $t('global_player.shuffle_on') : $t('global_player.shuffle_off')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -684,13 +668,13 @@
                 <line x1="15" y1="15" x2="21" y2="21" />
                 <line x1="4" y1="4" x2="9" y2="9" />
               </svg>
-              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span v-if="isShuffle" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"></span>
             </button>
 
             <!-- Previous -->
             <button 
               @click="previousTrack" 
-              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              class="p-2 text-text-secondary hover:text-purple-600 dark:text-white/85 dark:hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
               :title="$t('global_player.previous')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 20 20" fill="currentColor">
@@ -714,7 +698,7 @@
             <!-- Next -->
             <button 
               @click="nextTrack" 
-              class="p-2 text-white hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
+              class="p-2 text-text-secondary hover:text-purple-600 dark:text-white/85 dark:hover:text-purple-300 active:scale-90 transition-transform cursor-pointer"
               :title="$t('global_player.next')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 20 20" fill="currentColor">
@@ -726,7 +710,7 @@
             <button 
               @click="toggleRepeat" 
               class="p-2 transition-all cursor-pointer relative"
-              :class="repeatMode !== 'off' ? 'text-purple-400' : 'text-gray-400 hover:text-white'"
+              :class="repeatMode !== 'off' ? 'text-purple-600 dark:text-purple-400' : 'text-text-tertiary hover:text-text-primary dark:text-gray-400 dark:hover:text-white'"
               :title="repeatMode === 'off' ? $t('global_player.repeat_off') : repeatMode === 'context' ? $t('global_player.repeat_all') : $t('global_player.repeat_one')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -736,44 +720,8 @@
                 <path d="M21 13v2a4 4 0 0 1-4 4H3" />
               </svg>
               <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[9px] font-black pointer-events-none pb-0.5">1</span>
-              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"></span>
             </button>
-          </div>
-
-          <!-- Bottom Actions (Spotify status, Karaoke, Queue) -->
-          <div class="px-6 pt-3 pb-2 flex items-center justify-between text-xs border-t border-white/10 mt-1">
-            <div class="flex items-center gap-2 text-green-400 font-medium">
-              <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span class="text-[11px]">Spotify Connect</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <!-- Karaoke / Lyrics -->
-              <button 
-                @click="openMobileKaraoke" 
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 text-xs font-bold bg-white/10 text-white border-white/15 hover:bg-white/15"
-                :title="$t('global_player.lyrics')"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                </svg>
-                <span>Караоке</span>
-              </button>
-
-              <!-- Queue -->
-              <button 
-                @click="toggleQueue" 
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer active:scale-95 text-xs font-bold"
-                :class="showQueue ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30' : 'bg-white/10 text-white border-white/15 hover:bg-white/15'"
-                :title="$t('global_player.queue')"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h7" />
-                </svg>
-                <span>Черга</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -1161,6 +1109,7 @@ const repeatMode = ref('off'); // 'off' | 'context' | 'track'
 // Queue State
 const showQueue = ref(false);
 const queueTracks = ref([]);
+const originalQueueTracks = ref([]);
 const queueContextName = ref('');
 const draggedIndex = ref(null);
 
@@ -1208,10 +1157,51 @@ const toggleQueue = () => {
 };
 
 const toggleShuffle = async () => {
-  isShuffle.value = !isShuffle.value;
+  const targetShuffle = !isShuffle.value;
+  isShuffle.value = targetShuffle;
+
+  if (targetShuffle) {
+    // Save original queue order if not saved yet
+    if (originalQueueTracks.value.length === 0 && queueTracks.value.length > 0) {
+      originalQueueTracks.value = [...queueTracks.value];
+    }
+    // Shuffle upcoming tracks
+    const idx = currentTrackIndexInQueue.value;
+    const before = idx >= 0 ? queueTracks.value.slice(0, idx + 1) : [];
+    const upcoming = idx >= 0 ? queueTracks.value.slice(idx + 1) : [...queueTracks.value];
+    
+    if (upcoming.length > 1) {
+      for (let i = upcoming.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [upcoming[i], upcoming[j]] = [upcoming[j], upcoming[i]];
+      }
+      queueTracks.value = [...before, ...upcoming];
+    }
+  } else {
+    // Restore original playlist order
+    if (originalQueueTracks.value.length > 0) {
+      const currId = currentTrack.value?.id;
+      const currUri = currentTrack.value?.uri;
+      const origIdx = originalQueueTracks.value.findIndex(t => {
+        const sid = getQueueTrackId(t);
+        const suri = getQueueTrackUri(t);
+        return (sid && sid === currId) || (suri && currUri === suri);
+      });
+
+      if (origIdx >= 0) {
+        queueTracks.value = [
+          ...originalQueueTracks.value.slice(origIdx),
+          ...originalQueueTracks.value.slice(0, origIdx)
+        ];
+      } else {
+        queueTracks.value = [...originalQueueTracks.value];
+      }
+    }
+  }
+
   if (token.value && deviceId.value) {
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${isShuffle.value}&device_id=${deviceId.value}`, {
+      await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${targetShuffle}&device_id=${deviceId.value}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token.value}` }
       });
@@ -1238,6 +1228,14 @@ const toggleRepeat = async () => {
 
 const shuffleQueue = () => {
   if (upcomingQueue.value.length <= 1) return;
+  if (!isShuffle.value) {
+    toggleShuffle();
+    return;
+  }
+  // Reshuffle upcoming
+  if (originalQueueTracks.value.length === 0 && queueTracks.value.length > 0) {
+    originalQueueTracks.value = [...queueTracks.value];
+  }
   const idx = currentTrackIndexInQueue.value;
   const before = idx >= 0 ? queueTracks.value.slice(0, idx + 1) : [];
   const upcoming = idx >= 0 ? queueTracks.value.slice(idx + 1) : [...queueTracks.value];
@@ -1316,8 +1314,18 @@ const playFromQueue = (track, upcomingIdx) => {
   if (!uri) return;
   const idx = currentTrackIndexInQueue.value;
   const fullIdx = (idx >= 0 ? idx + 1 : 0) + upcomingIdx;
-  const allUris = queueTracks.value.slice(fullIdx).map(t => getQueueTrackUri(t)).filter(Boolean);
-  playTrack(uri, allUris);
+  
+  if (fullIdx >= 0 && fullIdx < queueTracks.value.length) {
+    const reordered = [
+      ...queueTracks.value.slice(fullIdx),
+      ...queueTracks.value.slice(0, fullIdx)
+    ];
+    queueTracks.value = reordered;
+    const allUris = reordered.map(t => getQueueTrackUri(t)).filter(Boolean);
+    playTrack(uri, allUris);
+  } else {
+    playTrack(uri);
+  }
 };
 
 // Lyrics state
@@ -1685,10 +1693,7 @@ const setupSpotifyPlayer = () => {
     isPlaying.value = !state.paused;
     currentTrack.value = state.track_window.current_track;
     
-    // Sync shuffle & repeat from Spotify if available
-    if (typeof state.shuffle !== 'undefined') {
-      isShuffle.value = state.shuffle;
-    }
+    // Sync repeat from Spotify if available
     if (typeof state.repeat_mode !== 'undefined') {
       repeatMode.value = state.repeat_mode === 2 ? 'track' : state.repeat_mode === 1 ? 'context' : 'off';
     }
@@ -1698,6 +1703,7 @@ const setupSpotifyPlayer = () => {
         state.track_window.current_track,
         ...(state.track_window.next_tracks || [])
       ];
+      originalQueueTracks.value = [...queueTracks.value];
     }
 
     if (!isSeeking.value) {
@@ -1716,9 +1722,91 @@ const setupSpotifyPlayer = () => {
   player.connect();
 };
 
-const togglePlay = () => {
-  if (window.__spotifyState.player) {
-    window.__spotifyState.player.togglePlay();
+const togglePlay = async () => {
+  const player = window.__spotifyState?.player;
+  const currentToken = token.value;
+  const currentDevId = deviceId.value;
+
+  const previousPlaying = isPlaying.value;
+  const targetPlaying = !previousPlaying;
+
+  // Optimistic UI update immediately so user sees instant icon response
+  isPlaying.value = targetPlaying;
+  window.dispatchEvent(new CustomEvent('spotify-state-update', { 
+    detail: { 
+      isPlaying: targetPlaying, 
+      trackId: currentTrack.value?.id 
+    } 
+  }));
+
+  try {
+    let success = false;
+    if (player) {
+      try {
+        if (targetPlaying) {
+          if (typeof player.resume === 'function') {
+            await player.resume();
+          } else {
+            await player.togglePlay();
+          }
+        } else {
+          if (typeof player.pause === 'function') {
+            await player.pause();
+          } else {
+            await player.togglePlay();
+          }
+        }
+        success = true;
+      } catch (sdkErr) {
+        console.warn('Spotify SDK toggle error, falling back to Web API:', sdkErr);
+      }
+    }
+
+    // Fallback to Spotify Web API if SDK call had an issue or player is not attached
+    if (!success && currentToken && currentDevId) {
+      const endpoint = targetPlaying ? 'play' : 'pause';
+      const res = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}?device_id=${currentDevId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      if (res.ok || res.status === 204) {
+        success = true;
+      }
+    }
+
+    // Check actual state from SDK to ensure perfect sync
+    setTimeout(async () => {
+      if (player && typeof player.getCurrentState === 'function') {
+        try {
+          const state = await player.getCurrentState();
+          if (state) {
+            const actualStatePlaying = !state.paused;
+            if (isPlaying.value !== actualStatePlaying) {
+              isPlaying.value = actualStatePlaying;
+              window.dispatchEvent(new CustomEvent('spotify-state-update', { 
+                detail: { 
+                  isPlaying: actualStatePlaying, 
+                  trackId: state.track_window?.current_track?.id || currentTrack.value?.id 
+                } 
+              }));
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }, 200);
+
+  } catch (err) {
+    console.error('Failed to toggle play state:', err);
+    // Revert optimistic update on failure
+    isPlaying.value = previousPlaying;
+    window.dispatchEvent(new CustomEvent('spotify-state-update', { 
+      detail: { 
+        isPlaying: previousPlaying, 
+        trackId: currentTrack.value?.id 
+      } 
+    }));
   }
 };
 
@@ -1731,10 +1819,9 @@ const nextTrack = () => {
     }
   }
 
-  if (isShuffle.value && upcomingQueue.value.length > 0) {
-    const randomUpcomingIdx = Math.floor(Math.random() * upcomingQueue.value.length);
-    const chosenTrack = upcomingQueue.value[randomUpcomingIdx];
-    playFromQueue(chosenTrack, randomUpcomingIdx);
+  if (upcomingQueue.value.length > 0) {
+    const nextItem = upcomingQueue.value[0];
+    playFromQueue(nextItem, 0);
     return;
   }
 
@@ -1744,15 +1831,25 @@ const nextTrack = () => {
 };
 
 const previousTrack = () => {
-  if (window.__spotifyState.player) {
-    // If we're past the first 2.5 seconds, just restart the current song
-    if (position.value > 2500) {
+  // If we're past the first 2.5 seconds, just restart the current song
+  if (position.value > 2500) {
+    if (window.__spotifyState.player) {
       window.__spotifyState.player.seek(0);
       position.value = 0;
-    } else {
-      // Otherwise, skip to the previous track
-      window.__spotifyState.player.previousTrack();
     }
+    return;
+  }
+
+  // If at index 0 and we have a circular playlist queue, jump to the last track
+  const idx = currentTrackIndexInQueue.value;
+  if (idx === 0 && queueTracks.value.length > 1) {
+    const lastTrack = queueTracks.value[queueTracks.value.length - 1];
+    playFromQueue(lastTrack, queueTracks.value.length - 2);
+    return;
+  }
+
+  if (window.__spotifyState.player) {
+    window.__spotifyState.player.previousTrack();
   }
 };
 
@@ -1822,13 +1919,46 @@ onMounted(() => {
 
   window.addEventListener('play-spotify-track', (e) => {
     if (e.detail && e.detail.uri) {
-      if (e.detail.tracks && Array.isArray(e.detail.tracks)) {
-        queueTracks.value = [...e.detail.tracks];
+      let tracks = Array.isArray(e.detail.tracks) ? [...e.detail.tracks] : [];
+      let uris = Array.isArray(e.detail.uris) ? [...e.detail.uris] : [];
+      const targetUri = e.detail.uri;
+
+      if (tracks.length > 0) {
+        // Find if target track is at index > 0
+        const idx = tracks.findIndex(t => {
+          const sid = getQueueTrackId(t);
+          const suri = getQueueTrackUri(t);
+          return (suri && suri === targetUri) || (sid && targetUri.includes(sid)) || (e.detail.id && sid === e.detail.id);
+        });
+
+        if (idx > 0) {
+          // Reorder so that the selected track is at index 0 and earlier tracks wrap to the end of the queue
+          tracks = [
+            ...tracks.slice(idx),
+            ...tracks.slice(0, idx)
+          ];
+          uris = tracks.map(t => getQueueTrackUri(t)).filter(Boolean);
+        }
       }
-      if (e.detail.contextName) {
-        queueContextName.value = e.detail.contextName;
+
+      // Save original ordered queue
+      originalQueueTracks.value = [...tracks];
+
+      // If shuffle is active when starting playback, shuffle upcoming tracks immediately
+      if (isShuffle.value && tracks.length > 2) {
+        const before = tracks.slice(0, 1);
+        const upcoming = tracks.slice(1);
+        for (let i = upcoming.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [upcoming[i], upcoming[j]] = [upcoming[j], upcoming[i]];
+        }
+        tracks = [...before, ...upcoming];
+        uris = tracks.map(t => getQueueTrackUri(t)).filter(Boolean);
       }
-      playTrack(e.detail.uri, e.detail.uris);
+
+      queueTracks.value = tracks;
+      queueContextName.value = e.detail.contextName || '';
+      playTrack(targetUri, uris.length > 0 ? uris : e.detail.uris);
 
       // On mobile screens (< 768px), expand to full player when user clicks to play a song
       if (typeof window !== 'undefined' && window.innerWidth < 768) {

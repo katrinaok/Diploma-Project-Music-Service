@@ -183,7 +183,15 @@ const togglePlay = (track) => {
     } else {
       const uri = `spotify:track:${track.spotifyId}`;
       const sourceList = tracks.value.map(t => t.track);
-      const allUris = sourceList
+      const clickedIdx = sourceList.findIndex(t => (t.spotifyId || t.id) === track.spotifyId);
+      let orderedTracks = sourceList;
+      if (clickedIdx > 0) {
+        orderedTracks = [
+          ...sourceList.slice(clickedIdx),
+          ...sourceList.slice(0, clickedIdx)
+        ];
+      }
+      const allUris = orderedTracks
         .map(t => `spotify:track:${t.spotifyId}`)
         .filter(u => !u.includes('undefined') && !u.includes('null'));
       window.dispatchEvent(new CustomEvent('play-spotify-track', { 
@@ -191,7 +199,7 @@ const togglePlay = (track) => {
           uri: uri, 
           id: track.spotifyId, 
           uris: allUris,
-          tracks: sourceList,
+          tracks: orderedTracks,
           contextName: 'Улюблені треки'
         } 
       }));

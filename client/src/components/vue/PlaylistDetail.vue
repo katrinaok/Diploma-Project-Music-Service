@@ -1072,9 +1072,9 @@ const fetchRecommendations = async (tag) => {
     if (res.ok) {
       const data = await res.json();
       const all = data.tracks || [];
-      // Відображаємо перші 10 треків, решту тримаємо в пулі
-      recommendedTracks.value = all.slice(0, 10);
-      recommendationsPool.value = all.slice(10);
+      // Відображаємо перші 12 треків, решту тримаємо в пулі
+      recommendedTracks.value = all.slice(0, 12);
+      recommendationsPool.value = all.slice(12);
     }
   } catch (error) {
     console.error('Failed to fetch recommendations', error);
@@ -1283,7 +1283,18 @@ const togglePlay = (track) => {
         contextName = playlist.value?.title ? `Плейліст: ${playlist.value.title}` : 'Плейліст';
       }
 
-      let allUris = sourceList
+      // Reorder tracks starting from the clicked track, wrapping earlier tracks to the end
+      // so all songs in the playlist are included in the queue and get played
+      const clickedIdx = sourceList.findIndex(t => (t.spotifyId || t.id) === track.spotifyId);
+      let orderedTracks = sourceList;
+      if (clickedIdx > 0) {
+        orderedTracks = [
+          ...sourceList.slice(clickedIdx),
+          ...sourceList.slice(0, clickedIdx)
+        ];
+      }
+
+      let allUris = orderedTracks
         .map(t => t.spotifyId ? `spotify:track:${t.spotifyId}` : (t.uri || `spotify:track:${t.id}`))
         .filter(u => u && !u.includes('undefined') && !u.includes('null'));
         
@@ -1296,7 +1307,7 @@ const togglePlay = (track) => {
           uri: uri, 
           id: track.spotifyId, 
           uris: allUris,
-          tracks: sourceList,
+          tracks: orderedTracks,
           contextName
         } 
       }));

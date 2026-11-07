@@ -3,20 +3,27 @@
     <div class="w-full mx-auto space-y-5 sm:space-y-8">
       
       <!-- Top Welcome Banner -->
-      <div class="relative overflow-hidden bg-gradient-to-r from-purple-100/90 via-surface to-purple-50/70 dark:from-purple-900/40 dark:via-surface dark:to-purple-950/30 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-purple-200/80 dark:border-purple-500/20 backdrop-blur-xl">
+      <div class="relative overflow-hidden bg-surface rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 shadow-xs border border-border-subtle transition-colors">
+        <!-- Decorative SVG Wave Pattern on the right -->
+        <svg class="absolute right-0 top-0 bottom-0 h-full w-1/2 sm:w-2/5 md:w-1/3 pointer-events-none opacity-20 dark:opacity-30 text-purple-500" viewBox="0 0 300 120" preserveAspectRatio="none" fill="none">
+          <path d="M0,60 C60,20 90,100 150,55 C210,10 240,90 300,50 L300,120 L0,120 Z" fill="url(#hero-wave-gradient)" />
+          <defs>
+            <linearGradient id="hero-wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="currentColor" stop-opacity="0" />
+              <stop offset="50%" stop-color="currentColor" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0.5" />
+            </linearGradient>
+          </defs>
+        </svg>
+
         <div class="relative z-10 max-w-2xl">
-          <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-purple-100/90 dark:bg-purple-500/10 border border-purple-300/80 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3">
-            {{ locale === 'uk' ? 'Стрічка «Хвилі»' : 'Khvylia Feed' }}
-          </div>
-          <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary">
             {{ $t('home.title') }}
           </h1>
-          <p class="text-text-secondary text-xs sm:text-sm md:text-base mt-1.5 sm:mt-2 leading-relaxed">
+          <p class="text-text-secondary text-xs sm:text-sm md:text-base mt-2 leading-relaxed">
             {{ $t('home.subtitle') }}
           </p>
         </div>
-        <!-- Decorative blurred glow -->
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-purple-400/20 dark:bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
       <!-- SEARCH RESULTS VIEW (Visible when user searched from top bar) -->
@@ -261,7 +268,7 @@
               v-for="item in historyTracks" 
               :key="item.id" 
               class="snap-start flex-shrink-0 w-28 sm:w-36 md:w-40 group cursor-pointer"
-              @click="togglePlay(item.track)"
+              @click="togglePlay(item.track, { isHistory: true })"
             >
               <div 
                 class="relative w-full aspect-square rounded-2xl overflow-hidden shadow-sm mb-2.5 bg-border-subtle group-hover:shadow-md transition-shadow"
@@ -288,7 +295,7 @@
                   ]"
                 >
                   <button 
-                    @click.stop="togglePlay(item.track)" 
+                    @click.stop="togglePlay(item.track, { isHistory: true })" 
                     class="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-lg transform transition-all duration-300 cursor-pointer hover:scale-110"
                     :class="playingTrackId === getTrackId(item.track) ? 'scale-100' : 'translate-y-2 group-hover:translate-y-0'"
                   >
@@ -808,7 +815,7 @@ const selectGenre = async (genre) => {
 };
 
 // Unified Playback Controller
-const togglePlay = (track) => {
+const togglePlay = (track, options = {}) => {
   if (!track) return;
 
   if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -838,7 +845,10 @@ const togglePlay = (track) => {
       let sourceList = [];
       let contextName = '';
 
-      if (searchQuery.value && tracks.value.some(t => getTrackId(t) === trackId)) {
+      if (options.isHistory) {
+        sourceList = [track];
+        contextName = '';
+      } else if (searchQuery.value && tracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = tracks.value;
         contextName = `Результати пошуку: "${searchQuery.value}"`;
       } else if (selectedGenre.value !== 'all' && genreTracks.value.some(t => getTrackId(t) === trackId)) {
@@ -850,9 +860,6 @@ const togglePlay = (track) => {
       } else if (trendingTracks.value.some(t => getTrackId(t) === trackId)) {
         sourceList = trendingTracks.value;
         contextName = 'Популярні хіти зараз';
-      } else if (historyTracks.value.some(h => getTrackId(h.track) === trackId)) {
-        sourceList = historyTracks.value.map(h => h.track);
-        contextName = 'Нещодавно прослухано';
       }
 
       let allUris = sourceList.map(t => getTrackUri(t)).filter(u => u && !u.includes('undefined') && !u.includes('null'));
