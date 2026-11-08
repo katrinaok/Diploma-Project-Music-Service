@@ -864,6 +864,7 @@ import LikeButton from './LikeButton.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import { recordListeningHistory } from '../../utils/history.js';
 import { getTracksCountText } from '../../utils/plural';
+import { multiTokenFuzzyRank } from '../../utils/searchAlgorithm';
 
 const props = defineProps({ 
   lang: String,
@@ -941,21 +942,20 @@ const onTrackUnliked = (track) => {
 const filteredTracks = computed(() => {
   if (!playlist.value || !playlist.value.tracks) return [];
   
-  const query = searchQuery.value.trim().toLowerCase();
+  const query = searchQuery.value.trim();
   if (!query) return playlist.value.tracks;
   
-  if (query.startsWith('#')) {
-    const tagQuery = query.slice(1);
-    return playlist.value.tracks.filter(item => {
-      if (!item.track.tags || item.track.tags.length === 0) return false;
-      return item.track.tags.some(t => t.tag.name.toLowerCase().includes(tagQuery));
-    });
-  }
+  const prepared = playlist.value.tracks.map(item => ({
+    ...item,
+    title: item.track?.title || '',
+    artistName: item.track?.artistName || '',
+    albumName: item.track?.albumName || '',
+    tags: (item.track?.tags || []).map(t => t.tag?.name).filter(Boolean)
+  }));
   
-  return playlist.value.tracks.filter(item => {
-    return item.track.title.toLowerCase().includes(query) || 
-           item.track.artistName.toLowerCase().includes(query);
-  });
+  // Інтелектуальний багатофакторний нечіткий пошук з ранжуванням
+  const ranked = multiTokenFuzzyRank(prepared, query, 10);
+  return ranked.map(r => r.item);
 });
 
 // Sorting and Drag & Drop Reordering

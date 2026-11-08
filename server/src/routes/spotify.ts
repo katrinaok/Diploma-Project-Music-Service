@@ -1,7 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { prisma } from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { getSpotifyAccessToken } from '../utils/spotify.js';
+import { getSpotifyAccessToken, isSpamTrack } from '../utils/spotify.js';
+import { multiTokenFuzzyRank, tokenizeQuery } from '../utils/searchAlgorithm.js';
 
 export const spotifyRouter = Router();
 
@@ -24,45 +25,102 @@ spotifyRouter.get('/test', async (req: Request, res: Response) => {
   }
 });
 
-// Роут для пошуку треків
+// Роут для інтелектуального пошуку треків за алгоритмом багатофакторного нечіткого ранжування
 spotifyRouter.get('/search', async (req: Request, res: Response) => {
   try {
-    const query = req.query.q;
-    if (!query) {
+    const rawQuery = req.query.q;
+    if (!rawQuery) {
       return res.status(400).json({ error: 'Введіть запит для пошуку (параметр q)' });
     }
 
+    const queryString = String(rawQuery).trim();
     const token = await getSpotifyAccessToken();
-    const encodedQuery = encodeURIComponent(query as string);
-    const urls = [
-      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=0`,
-      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=10`,
-      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=10&offset=20`
-    ];
+    const tokens = tokenizeQuery(queryString);
+    const cleanTokens = tokens.map(t => t.replace(/^#/, '')).filter(Boolean);
+
+    // Формуємо пошукові запити (основний запит + запит очищений від символів тегів)
+    const searchStrings = [queryString];
+    if (cleanTokens.length > 0) {
+      const joinedClean = cleanTokens.join(' ');
+      if (joinedClean !== queryString.toLowerCase()) {
+        searchStrings.push(joinedClean);
+      }
+    }
+
+    const urls: string[] = [];
+    for (const qStr of searchStrings.slice(0, 2)) {
+      const encoded = encodeURIComponent(qStr);
+      urls.push(`https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=10&offset=0`);
+      urls.push(`https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=10&offset=10`);
+      urls.push(`https://api.spotify.com/v1/search?q=${encoded}&type=track&limit=10&offset=20`);
+    }
 
     const responses = await Promise.all(urls.map(url => fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
     })));
 
     let allTracks: any[] = [];
+    const seenIds = new Set<string>();
+
     for (const response of responses) {
       if (!response.ok) {
-        console.error('Помилка при запиті до бази Spotify:', await response.text());
         continue;
       }
       const data = await response.json();
       if (data.tracks && data.tracks.items) {
-        allTracks = allTracks.concat(data.tracks.items);
+        for (const tr of data.tracks.items) {
+          if (tr && tr.id && !seenIds.has(tr.id) && !isSpamTrack(tr)) {
+            seenIds.add(tr.id);
+            allTracks.push(tr);
+          }
+        }
       }
     }
 
     if (allTracks.length === 0) {
-      throw new Error('Не вдалося отримати треки або запит порожній');
+      return res.json({ status: 'success', tracks: [] });
     }
+
+    // Підтягуємо збережені користувацькі теги з PostgreSQL для персоналізованого ранжування
+    const spotifyIds = allTracks.map((t: any) => t.id).filter(Boolean);
+    const tagMap = new Map<string, string[]>();
+
+    if (spotifyIds.length > 0) {
+      const localTracks = await prisma.track.findMany({
+        where: { spotifyId: { in: spotifyIds } },
+        include: { tags: { include: { tag: true } } }
+      });
+      for (const lt of localTracks) {
+        tagMap.set(lt.spotifyId, lt.tags.map(tt => tt.tag.name));
+      }
+    }
+
+    // Підготовка даних до обробки алгоритмом
+    const preparedTracks = allTracks.map((track: any) => ({
+      title: track.name || '',
+      artistName: (track.artists || []).map((a: any) => a.name).join(', '),
+      albumName: track.album?.name || '',
+      tags: tagMap.get(track.id) || [],
+      raw: track
+    }));
+
+    // Застосування алгоритму багатофакторного нечіткого пошуку (Multi-Token Weighted Fuzzy Rank)
+    const rankedResults = multiTokenFuzzyRank(preparedTracks, queryString, 5);
+
+    const finalTracks = rankedResults.length > 0
+      ? rankedResults.map(r => ({
+          ...r.item.raw,
+          relevanceScore: r.score,
+          matchedTokens: r.matchedTokens
+        }))
+      : allTracks;
 
     res.json({
       status: 'success',
-      tracks: allTracks
+      algorithm: 'Multi-Token Weighted Fuzzy Search',
+      query: queryString,
+      tokens,
+      tracks: finalTracks
     });
 
   } catch (error) {
