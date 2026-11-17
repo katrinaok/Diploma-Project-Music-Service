@@ -37,3 +37,10 @@ export const getFollowingCountText = (count: number, locale = 'uk'): string => {
   }
   return getPluralForm(count, 'підписка', 'підписки', 'підписок');
 };
+
+export const getSavesCountText = (count: number, locale = 'uk'): string => {
+  if (locale === 'en') {
+    return count === 1 ? 'save' : 'saves';
+  }
+  return getPluralForm(count, 'збереження', 'збереження', 'збережень');
+};

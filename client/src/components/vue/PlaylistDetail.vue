@@ -1,6 +1,6 @@
 <template>
-  <div class="w-full p-4 md:p-8 pb-32">
-    <div class="w-full mx-auto space-y-6">
+  <div class="w-full px-2 sm:px-4 md:px-8 py-3 sm:py-6 pb-32">
+    <div class="w-full mx-auto space-y-4 sm:space-y-6">
       
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center py-20">
@@ -125,78 +125,77 @@
               {{ playlist.description }}
             </p>
             
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-4 text-xs sm:text-sm font-medium text-text-tertiary mt-3 sm:mt-6">
-              <!-- Creator Info -->
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
-                  <img v-if="playlist.user?.avatarUrl" :src="playlist.user.avatarUrl" alt="" class="w-full h-full object-cover" />
-                  <span v-else>{{ (playlist.user?.username || 'U')[0].toUpperCase() }}</span>
-                </div>
-                <a 
-                  v-if="!isOwner && playlist.user?.id" 
-                  :href="`/${locale}/profile?id=${playlist.user.id}`" 
-                  class="text-text-primary hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors"
-                >
-                  {{ playlist.user.username }}
-                </a>
-                <span v-else class="text-text-primary font-semibold">
-                  {{ isOwner ? $t('playlist.created_by_you') : (playlist.user?.username || $t('profile.default_user')) }}
-                </span>
+            <!-- Creator Info -->
+            <div class="flex items-center justify-center md:justify-start gap-2 mt-2 sm:mt-3">
+              <div class="w-6 h-6 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
+                <img v-if="playlist.user?.avatarUrl" :src="playlist.user.avatarUrl" alt="" class="w-full h-full object-cover" />
+                <span v-else>{{ (playlist.user?.username || 'U')[0].toUpperCase() }}</span>
               </div>
+              <a 
+                v-if="!isOwner && playlist.user?.id" 
+                :href="`/${locale}/profile?id=${playlist.user.id}`" 
+                class="text-text-primary hover:text-purple-600 dark:hover:text-purple-400 text-sm font-semibold transition-colors"
+              >
+                {{ playlist.user.username }}
+              </a>
+              <span v-else class="text-text-primary text-sm font-semibold">
+                {{ isOwner ? $t('playlist.created_by_you') : (playlist.user?.username || $t('profile.default_user')) }}
+              </span>
+            </div>
 
-              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
+            <!-- Stats Chips -->
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2.5">
+              <!-- Tracks Count -->
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-alt/70 border border-border-subtle text-xs font-medium text-text-secondary shadow-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-purple-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <span>{{ playlist.tracks.length }} {{ getTracksCountText(playlist.tracks.length, locale) }}</span>
+              </div>
 
               <!-- Creation Date -->
-              <div class="flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-alt/70 border border-border-subtle text-xs font-medium text-text-secondary shadow-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-text-tertiary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {{ new Date(playlist.createdAt).toLocaleDateString() }}
+                <span>{{ new Date(playlist.createdAt).toLocaleDateString() }}</span>
               </div>
-
-              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
-
-              <!-- Tracks Count -->
-              <div>
-                {{ playlist.tracks.length }} {{ getTracksCountText(playlist.tracks.length, locale) }}
-              </div>
-
-              <div class="w-1 h-1 rounded-full bg-border-strong"></div>
 
               <!-- Saves Count (Clickable modal for creator/visitors to see who saved it) -->
               <button 
                 type="button" 
                 @click="openSavesModal"
-                class="flex items-center gap-1.5 text-text-secondary hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer group"
+                class="group/stat inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-purple-500/40 text-xs font-medium text-text-secondary transition-all cursor-pointer shadow-xs active:scale-95"
                 :title="$t('playlist.saves_modal_title')"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 group-hover/stat:scale-110 transition-transform flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
                 </svg>
-                <span class="font-bold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{{ savesCount }}</span>
-                <span>{{ $t('playlist.saves_count') }}</span>
+                <span class="font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">{{ savesCount }}</span>
+                <span>{{ getSavesCountText(savesCount, locale) }}</span>
               </button>
-
-              <template v-if="isOwner">
-                <div class="w-1 h-1 rounded-full bg-border-strong"></div>
-                <button 
-                  @click="triggerDeletePlaylist"
-                  class="flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                  :title="$t('playlist.delete')"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  {{ $t('playlist.delete') }}
-                </button>
-              </template>
             </div>
 
-            <!-- Visitor Actions Row (Save to library button like Spotify) -->
-            <div v-if="!isOwner" class="mt-5 flex items-center justify-center md:justify-start gap-3">
+            <!-- Actions Row (Owner actions or Visitor actions) -->
+            <div class="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <!-- Delete Playlist Button (Owner) -->
               <button 
+                v-if="isOwner"
+                @click="triggerDeletePlaylist"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 hover:border-red-500/30 transition-all cursor-pointer shadow-xs active:scale-95"
+                :title="$t('playlist.delete')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>{{ $t('playlist.delete') }}</span>
+              </button>
+
+              <!-- Save to Library (Visitor) -->
+              <button 
+                v-else
                 @click="toggleSavePlaylist"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm border"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer shadow-xs border active:scale-95"
                 :class="isSaved 
                   ? 'bg-purple-100 dark:bg-purple-600/15 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-500/40 hover:bg-purple-200/70 dark:hover:bg-purple-600/25' 
                   : 'bg-surface-alt hover:bg-surface-hover text-text-primary border-border-strong hover:border-purple-500/50'"
@@ -298,7 +297,7 @@
       </div>
 
         <!-- Tracks List -->
-        <div class="bg-surface rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-4 sm:mt-6">
+        <div class="bg-surface rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 shadow-sm border border-border-subtle transition-colors mt-4 sm:mt-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-text-primary">{{ $t('playlist.tracks') }}</h2>
             <div class="flex items-center gap-3">
@@ -460,13 +459,13 @@
               @dragstart="onTrackDragStart(index)"
               @dragover.prevent
               @drop="onTrackDrop(index)"
-              class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group relative cursor-pointer"
+              class="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 rounded-2xl hover:bg-surface-hover border border-transparent hover:border-border-subtle transition-all group relative cursor-pointer"
               @click="togglePlay(item.track)"
             >
               <!-- Index / Drag Handle (for Owner) -->
               <div v-if="isOwner && !searchQuery" class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 select-none">
-                <!-- Up / Down buttons on hover -->
-                <div class="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                <!-- Up / Down buttons on hover (Desktop) -->
+                <div class="hidden sm:flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     v-if="index > 0"
                     @click.stop="moveTrackUp(index)"
@@ -491,14 +490,14 @@
 
                 <!-- Drag handle or index number -->
                 <div 
-                  class="w-5 sm:w-6 text-center text-xs font-semibold text-text-tertiary cursor-grab active:cursor-grabbing group-hover:text-purple-600 dark:group-hover:text-purple-400"
+                  class="w-4 sm:w-6 text-center text-[11px] sm:text-xs font-semibold text-text-tertiary cursor-grab active:cursor-grabbing group-hover:text-purple-600 dark:group-hover:text-purple-400"
                   :title="$t('playlist.drag_to_reorder')"
                 >
                   <span class="group-hover:hidden">{{ index + 1 }}</span>
                   <span class="hidden group-hover:inline-block">⠿</span>
                 </div>
               </div>
-              <div v-else class="w-5 sm:w-6 text-center text-xs font-semibold text-text-tertiary flex-shrink-0">
+              <div v-else class="w-4 sm:w-6 text-center text-[11px] sm:text-xs font-semibold text-text-tertiary flex-shrink-0">
                 {{ index + 1 }}
               </div>
               
@@ -509,33 +508,37 @@
                 loading="lazy"
                 referrerpolicy="no-referrer"
                 @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
-                class="w-12 h-12 rounded-lg shadow-sm object-cover" 
+                class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg shadow-sm object-cover flex-shrink-0" 
               />
-              <div :style="item.track.albumCoverUrl ? 'display: none;' : ''" class="w-12 h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary">
+              <div :style="item.track.albumCoverUrl ? 'display: none;' : ''" class="w-10 h-10 sm:w-12 sm:h-12 bg-border-subtle rounded-lg flex items-center justify-center text-text-tertiary flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
-                <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <p class="text-xs text-text-tertiary truncate">{{ item.track.artistName }}</p>
-                  <div v-if="item.track.tags && item.track.tags.length > 0" class="flex items-center gap-1 overflow-hidden">
+                <h3 class="text-xs sm:text-sm font-bold text-text-primary truncate" :title="item.track.title">{{ item.track.title }}</h3>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-0.5">
+                  <p class="text-[11px] sm:text-xs text-text-tertiary truncate" :title="item.track.artistName">{{ item.track.artistName }}</p>
+                  
+                  <!-- Tags -->
+                  <div v-if="item.track.tags && item.track.tags.length > 0" class="flex flex-wrap items-center gap-1">
                     <span 
                       v-for="t in item.track.tags.slice(0, 3)" 
                       :key="t.tag.id"
                       @click.stop="searchQuery = '#' + t.tag.name"
-                      class="group/tag flex items-center gap-0.5 text-[10px] pl-1.5 pr-1 py-0.5 rounded-full border whitespace-nowrap transition-colors leading-none cursor-pointer hover:brightness-110"
+                      class="group/tag inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] pl-1.5 pr-1 py-0.5 rounded-full border whitespace-nowrap transition-colors leading-none cursor-pointer hover:brightness-110 max-w-[120px]"
                       :style="{ backgroundColor: t.tag.color + '20', color: t.tag.color, borderColor: t.tag.color + '40' }"
-                      title="Шукати за цим тегом"
+                      :title="`Шукати за тегом #${t.tag.name}`"
                     >
-                      <span>#{{ t.tag.name }}</span>
-                      <button v-if="isOwner" @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none" :title="$t('playlist.remove_tag')">
+                      <span class="truncate">#{{ t.tag.name }}</span>
+                      <button v-if="isOwner" @click.stop="removeTagFromTrack(item.track.id, t.tag.id)" class="flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-500 transition-opacity focus:outline-none flex-shrink-0" :title="$t('playlist.remove_tag')">
                         <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                       </button>
                     </span>
-                    <span v-if="item.track.tags.length > 3" class="text-[10px] text-text-muted">...</span>
+                    <span v-if="item.track.tags.length > 3" class="text-[9px] sm:text-[10px] text-text-muted font-medium flex-shrink-0">
+                      +{{ item.track.tags.length - 3 }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -545,32 +548,32 @@
                 v-if="isSpotifyConnected || item.track.previewUrl" 
                 @click.stop="togglePlay(item.track)" 
                 :class="[
-                  'w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm',
+                  'w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm',
                   playingTrackId === item.track.spotifyId
                     ? 'bg-purple-600 text-white shadow-purple-500/25 scale-105'
                     : 'bg-accent-subtle hover:bg-accent-hover text-text-accent hover:scale-105'
                 ]"
               >
-                <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <svg v-if="playingTrackId === item.track.spotifyId" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
                   <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div v-else class="text-xs text-text-muted italic px-2">{{ $t('home.preview_unavailable') }}</div>
+              <div v-else class="text-xs text-text-muted italic px-1 sm:px-2 flex-shrink-0">{{ $t('home.preview_unavailable') }}</div>
               
               <!-- Menu and Like logic -->
-              <div class="flex items-center gap-1 relative" @click.stop>
+              <div class="flex items-center gap-0.5 sm:gap-1 relative flex-shrink-0" @click.stop>
                 <LikeButton 
                   :track="item.track" 
-                  :initial-liked="favoriteTrackIds.has(item.track.id)"
+                  :initial-liked="favoriteTrackIds.has(item.track.id) || (item.track.spotifyId && favoriteTrackIds.has(item.track.spotifyId))"
                   @liked="onTrackLiked"
                   @unliked="onTrackUnliked"
                 />
                 
-                <button v-if="isOwner" @click="toggleMenu(item.track.id)" class="p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button v-if="isOwner" @click="toggleMenu(item.track.id)" class="p-1 sm:p-2 text-text-tertiary hover:text-text-primary transition-colors focus:outline-none cursor-pointer" title="Опції">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
                 </button>
@@ -863,7 +866,7 @@ import TagModal from './TagModal.vue';
 import LikeButton from './LikeButton.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import { recordListeningHistory } from '../../utils/history.js';
-import { getTracksCountText } from '../../utils/plural';
+import { getTracksCountText, getSavesCountText } from '../../utils/plural';
 import { multiTokenFuzzyRank } from '../../utils/searchAlgorithm';
 
 const props = defineProps({ 
@@ -932,11 +935,30 @@ const activeTrackIdForTag = ref(null);
 const favoriteTrackIds = ref(new Set());
 
 const onTrackLiked = (track) => {
-  favoriteTrackIds.value.add(track.id);
+  const newSet = new Set(favoriteTrackIds.value);
+  if (track.id) newSet.add(track.id);
+  if (track.spotifyId) newSet.add(track.spotifyId);
+  favoriteTrackIds.value = newSet;
 };
 
 const onTrackUnliked = (track) => {
-  favoriteTrackIds.value.delete(track.id);
+  const newSet = new Set(favoriteTrackIds.value);
+  if (track.id) newSet.delete(track.id);
+  if (track.spotifyId) newSet.delete(track.spotifyId);
+  favoriteTrackIds.value = newSet;
+};
+
+const handleTrackFavoriteUpdated = (event) => {
+  const { spotifyId, trackId, isFavorite } = event?.detail || {};
+  const newSet = new Set(favoriteTrackIds.value);
+  if (isFavorite) {
+    if (trackId) newSet.add(trackId);
+    if (spotifyId) newSet.add(spotifyId);
+  } else {
+    if (trackId) newSet.delete(trackId);
+    if (spotifyId) newSet.delete(spotifyId);
+  }
+  favoriteTrackIds.value = newSet;
 };
 
 const filteredTracks = computed(() => {
@@ -1241,6 +1263,7 @@ const handleGlobalKeydown = (e) => {
 onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
+  window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
   document.removeEventListener('click', closeMenuOnClickOutside);
   window.removeEventListener('keydown', handleGlobalKeydown);
 });
@@ -1758,6 +1781,7 @@ onMounted(async () => {
     });
 
     window.addEventListener('spotify-state-update', handleSpotifyState);
+    window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
 
     const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -1777,7 +1801,14 @@ onMounted(async () => {
       });
       if (favRes.ok) {
         const favData = await favRes.json();
-        const ids = new Set(favData.favorites.map(f => f.trackId));
+        const ids = new Set();
+        if (Array.isArray(favData.favorites)) {
+          favData.favorites.forEach(f => {
+            if (f.trackId) ids.add(f.trackId);
+            if (f.track?.id) ids.add(f.track.id);
+            if (f.track?.spotifyId) ids.add(f.track.spotifyId);
+          });
+        }
         favoriteTrackIds.value = ids;
       }
     } catch (e) {

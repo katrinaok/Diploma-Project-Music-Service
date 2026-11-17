@@ -580,6 +580,19 @@ const isPlaylistModalOpen = ref(false);
 const trackToAdd = ref(null);
 const favoriteTrackIds = ref(new Set());
 
+const handleTrackFavoriteUpdated = (event) => {
+  const { spotifyId, trackId, isFavorite } = event?.detail || {};
+  const newSet = new Set(favoriteTrackIds.value);
+  if (isFavorite) {
+    if (spotifyId) newSet.add(spotifyId);
+    if (trackId) newSet.add(trackId);
+  } else {
+    if (spotifyId) newSet.delete(spotifyId);
+    if (trackId) newSet.delete(trackId);
+  }
+  favoriteTrackIds.value = newSet;
+};
+
 // Genre configuration
 const genres = [
   { id: 'all', labelKey: 'home.genre_all', defaultLabel: 'Всі хіти' },
@@ -670,12 +683,14 @@ onMounted(async () => {
 
   // Spotify state updates
   window.addEventListener('spotify-state-update', handleSpotifyState);
+  window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
   window.addEventListener('popstate', handlePopState);
 });
 
 onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
+  window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
   window.removeEventListener('popstate', handlePopState);
 });
 
@@ -733,8 +748,14 @@ const loadUserData = async (token) => {
     fetch('http://localhost:5001/api/favorites', {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(r => r.json()).then(data => {
-      if (data.favorites) {
-        favoriteTrackIds.value = new Set(data.favorites.map(f => f.track.spotifyId));
+      if (data.favorites && Array.isArray(data.favorites)) {
+        const ids = new Set();
+        data.favorites.forEach(f => {
+          if (f.track?.spotifyId) ids.add(f.track.spotifyId);
+          if (f.trackId) ids.add(f.trackId);
+          if (f.track?.id) ids.add(f.track.id);
+        });
+        favoriteTrackIds.value = ids;
       }
     }).catch(e => console.error(e));
 

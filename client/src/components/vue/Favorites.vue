@@ -149,7 +149,19 @@ const playingTrackId = ref(null);
 const isSpotifyConnected = ref(false);
 
 const onTrackUnliked = (track) => {
-  tracks.value = tracks.value.filter(t => t.track.id !== track.id);
+  tracks.value = tracks.value.filter(t => t.track.id !== track.id && t.track.spotifyId !== track.spotifyId && t.track.spotifyId !== track.id);
+};
+
+const handleTrackFavoriteUpdated = (event) => {
+  const { spotifyId, trackId, isFavorite } = event?.detail || {};
+  if (!isFavorite) {
+    tracks.value = tracks.value.filter(t => 
+      t.track?.id !== trackId && 
+      t.track?.spotifyId !== spotifyId && 
+      t.track?.spotifyId !== trackId && 
+      t.trackId !== trackId
+    );
+  }
 };
 
 const handleSpotifyState = (e) => {
@@ -166,6 +178,7 @@ const handleSpotifyState = (e) => {
 onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
+  window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
 });
 
 const togglePlay = (track) => {
@@ -248,6 +261,7 @@ onMounted(async () => {
   }).catch(e => console.error(e));
 
   window.addEventListener('spotify-state-update', handleSpotifyState);
+  window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
 
   // Sync initial state from GlobalPlayer if it's already playing
   if (typeof window !== 'undefined' && window.__spotifyState) {

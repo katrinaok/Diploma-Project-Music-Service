@@ -419,8 +419,8 @@
               v-if="currentTrackLikeData" 
               :track="currentTrackLikeData" 
               :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
-              @liked="likedSpotifyIds.add(currentTrack?.id)"
-              @unliked="likedSpotifyIds.delete(currentTrack?.id)"
+              @liked="onGlobalPlayerLiked"
+              @unliked="onGlobalPlayerUnliked"
               class="flex-shrink-0"
             />
           </div>
@@ -541,7 +541,7 @@
 
           <div class="flex-1 text-center px-2 min-w-0">
             <span class="text-[10px] uppercase font-bold tracking-widest text-text-tertiary block truncate">
-              {{ $t('global_player.now_playing') || 'ЗАРАЗ ГРАЄ' }}
+              {{ $t('global_player.now_playing') }}
             </span>
             <h4 class="text-xs font-bold text-text-primary truncate">
               {{ currentTrack?.album?.name || 'Spotify' }}
@@ -615,8 +615,8 @@
               v-if="currentTrackLikeData" 
               :track="currentTrackLikeData" 
               :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
-              @liked="likedSpotifyIds.add(currentTrack?.id)"
-              @unliked="likedSpotifyIds.delete(currentTrack?.id)"
+              @liked="onGlobalPlayerLiked"
+              @unliked="onGlobalPlayerUnliked"
               class="flex-shrink-0"
             />
           </div>
@@ -1085,6 +1085,35 @@ const currentTrackLikeData = computed(() => {
   };
 });
 
+const onGlobalPlayerLiked = (track) => {
+  const newSet = new Set(likedSpotifyIds.value);
+  if (currentTrack.value?.id) newSet.add(currentTrack.value.id);
+  if (track?.id) newSet.add(track.id);
+  if (track?.spotifyId) newSet.add(track.spotifyId);
+  likedSpotifyIds.value = newSet;
+};
+
+const onGlobalPlayerUnliked = (track) => {
+  const newSet = new Set(likedSpotifyIds.value);
+  if (currentTrack.value?.id) newSet.delete(currentTrack.value.id);
+  if (track?.id) newSet.delete(track.id);
+  if (track?.spotifyId) newSet.delete(track.spotifyId);
+  likedSpotifyIds.value = newSet;
+};
+
+const handleTrackFavoriteUpdated = (e) => {
+  const { spotifyId, trackId, isFavorite } = e.detail || {};
+  const newSet = new Set(likedSpotifyIds.value);
+  if (isFavorite) {
+    if (spotifyId) newSet.add(spotifyId);
+    if (trackId) newSet.add(trackId);
+  } else {
+    if (spotifyId) newSet.delete(spotifyId);
+    if (trackId) newSet.delete(trackId);
+  }
+  likedSpotifyIds.value = newSet;
+};
+
 const fetchLikedTracks = async () => {
   if (typeof window === 'undefined') return;
   const authToken = localStorage.getItem('token');
@@ -1095,7 +1124,13 @@ const fetchLikedTracks = async () => {
     });
     const data = await res.json();
     if (data.status === 'success' && Array.isArray(data.favorites)) {
-      likedSpotifyIds.value = new Set(data.favorites.map(f => f.track?.spotifyId).filter(Boolean));
+      const ids = new Set();
+      data.favorites.forEach(f => {
+        if (f.track?.spotifyId) ids.add(f.track.spotifyId);
+        if (f.trackId) ids.add(f.trackId);
+        if (f.track?.id) ids.add(f.track.id);
+      });
+      likedSpotifyIds.value = ids;
     }
   } catch (e) {
     console.warn('Failed to fetch user favorites:', e);
@@ -1910,11 +1945,20 @@ onMounted(() => {
   checkConnection();
   fetchLikedTracks();
 
+  window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
   window.addEventListener('track-liked', (e) => {
-    if (e.detail?.spotifyId) likedSpotifyIds.value.add(e.detail.spotifyId);
+    if (e.detail?.spotifyId) {
+      const newSet = new Set(likedSpotifyIds.value);
+      newSet.add(e.detail.spotifyId);
+      likedSpotifyIds.value = newSet;
+    }
   });
   window.addEventListener('track-unliked', (e) => {
-    if (e.detail?.spotifyId) likedSpotifyIds.value.delete(e.detail.spotifyId);
+    if (e.detail?.spotifyId) {
+      const newSet = new Set(likedSpotifyIds.value);
+      newSet.delete(e.detail.spotifyId);
+      likedSpotifyIds.value = newSet;
+    }
   });
 
   window.addEventListener('play-spotify-track', (e) => {
@@ -1983,6 +2027,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
   document.removeEventListener('astro:page-load', handleNav);
   document.removeEventListener('astro:after-swap', handleNav);
   window.removeEventListener('popstate', handleNav);
