@@ -35,6 +35,7 @@
   "home": {
     "title": "Main Feed",
     "subtitle": "Fresh tracks, personalized recommendations and your favorite hits",
+    "tracks_title": "Tracks",
     "search_title": "Search Music",
     "search_placeholder": "E.g.: Falling in Reverse...",
     "search_btn": "Search",

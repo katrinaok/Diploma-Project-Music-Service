@@ -35,6 +35,7 @@
   "home": {
     "title": "Головна стрічка",
     "subtitle": "Свіжі треки, персональні рекомендації та ваші улюблені хіти",
+    "tracks_title": "Треки",
     "search_title": "Знайти музику",
     "search_placeholder": "Наприклад: Falling in Reverse...",
     "search_btn": "Шукати",
