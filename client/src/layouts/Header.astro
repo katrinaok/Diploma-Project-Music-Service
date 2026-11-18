@@ -49,35 +49,6 @@ const isHome = pathname.endsWith('/home') || pathname === `/${lang}/home`;
       </div>
       
       <HeaderProfileDropdown client:load />
-      
-      <!-- Mobile Menu Button (Optional, for Theme/Lang toggle) -->
-      <button id="mobile-menu-toggle" class="sm:hidden p-2 text-text-primary hover:bg-surface-hover rounded-lg transition-colors ml-1 cursor-pointer" aria-label="Menu">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Mobile Navigation Menu -->
-  <div id="mobile-menu" class="hidden sm:hidden absolute top-16 left-0 w-full bg-surface border-b border-border-subtle shadow-lg py-4 px-6 flex flex-col gap-4 z-50">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-sm font-medium text-text-secondary">{t('page.settings') || 'Налаштування'}</span>
-      <div class="flex gap-2">
-        <ThemeToggle client:load />
-        <LanguageSwitcher />
-      </div>
     </div>
   </div>
 </header>
-
-<script>
-  const toggleBtn = document.getElementById('mobile-menu-toggle');
-  const mobileMenu = document.getElementById('mobile-menu');
-
-  if (toggleBtn && mobileMenu) {
-    toggleBtn.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-    });
-  }
-</script>
