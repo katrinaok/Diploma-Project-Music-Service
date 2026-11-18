@@ -94,7 +94,10 @@
     "no_followers": "No followers yet",
     "no_following": "Not following anyone yet",
     "no_public_playlists": "This user does not have any public playlists yet",
-    "search_users_title": "Users"
+    "search_users_title": "Users",
+    "private_badge": "Private profile",
+    "private_profile_title": "This account is private",
+    "private_profile_desc": "The user has hidden their playlists and following lists."
   },
   "favorites": {
     "system_playlist": "System Playlist",

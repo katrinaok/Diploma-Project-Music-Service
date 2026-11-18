@@ -94,7 +94,10 @@
     "no_followers": "Ще немає підписників",
     "no_following": "Ще немає підписок",
     "no_public_playlists": "У цього користувача ще немає публічних плейлистів",
-    "search_users_title": "Користувачі"
+    "search_users_title": "Користувачі",
+    "private_badge": "Приватний профіль",
+    "private_profile_title": "Це приватний профіль",
+    "private_profile_desc": "Користувач приховав свої плейлисти та списки підписок."
   },
   "favorites": {
     "system_playlist": "Системний плейлист",

@@ -121,6 +121,9 @@ userRouter.get('/:id', optionalAuthenticateToken, async (req: Request, res: Resp
         username: true,
         avatarUrl: true,
         createdAt: true,
+        setting: {
+          select: { isPrivate: true }
+        },
         _count: {
           select: {
             followers: true,
@@ -134,6 +137,8 @@ userRouter.get('/:id', optionalAuthenticateToken, async (req: Request, res: Resp
     if (!user) {
       return res.status(404).json({ error: 'Користувача не знайдено' });
     }
+
+    const isPrivate = !!user.setting?.isPrivate;
 
     let isFollowing = false;
     if (currentUserId && !isSelf) {
@@ -157,9 +162,10 @@ userRouter.get('/:id', optionalAuthenticateToken, async (req: Request, res: Resp
         createdAt: user.createdAt,
         followersCount: user._count.followers,
         followingCount: user._count.following,
-        playlistsCount: user._count.playlists,
+        playlistsCount: (isPrivate && !isSelf) ? 0 : user._count.playlists,
         isFollowing,
-        isSelf
+        isSelf,
+        isPrivate
       }
     });
   } catch (error) {
@@ -248,12 +254,24 @@ userRouter.delete('/:id/unfollow', authenticateToken, async (req: Request, res: 
 });
 
 // 5. Отримання списку підписників (GET /api/users/:id/followers)
-userRouter.get('/:id/followers', async (req: Request, res: Response) => {
+userRouter.get('/:id/followers', optionalAuthenticateToken, async (req: Request, res: Response) => {
   try {
     const followingId = parseInt(req.params.id as string, 10);
 
     if (isNaN(followingId)) {
       return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    // @ts-ignore
+    const currentUserId = req.user?.userId;
+    const isOwner = currentUserId && currentUserId === followingId;
+
+    const targetSetting = await prisma.userSetting.findUnique({
+      where: { userId: followingId }
+    });
+
+    if (targetSetting?.isPrivate && !isOwner) {
+      return res.json({ status: 'success', followers: [], count: 0, isPrivate: true });
     }
 
     const records = await prisma.follower.findMany({
@@ -276,7 +294,7 @@ userRouter.get('/:id/followers', async (req: Request, res: Response) => {
       followedAt: r.createdAt
     }));
 
-    res.json({ status: 'success', followers, count: followers.length });
+    res.json({ status: 'success', followers, count: followers.length, isPrivate: false });
   } catch (error) {
     console.error('Помилка отримання підписників:', error);
     res.status(500).json({ error: 'Помилка отримання підписників' });
@@ -284,12 +302,24 @@ userRouter.get('/:id/followers', async (req: Request, res: Response) => {
 });
 
 // 6. Отримання списку підписок (GET /api/users/:id/following)
-userRouter.get('/:id/following', async (req: Request, res: Response) => {
+userRouter.get('/:id/following', optionalAuthenticateToken, async (req: Request, res: Response) => {
   try {
     const followerId = parseInt(req.params.id as string, 10);
 
     if (isNaN(followerId)) {
       return res.status(400).json({ error: 'Некоректний ID користувача' });
+    }
+
+    // @ts-ignore
+    const currentUserId = req.user?.userId;
+    const isOwner = currentUserId && currentUserId === followerId;
+
+    const targetSetting = await prisma.userSetting.findUnique({
+      where: { userId: followerId }
+    });
+
+    if (targetSetting?.isPrivate && !isOwner) {
+      return res.json({ status: 'success', following: [], count: 0, isPrivate: true });
     }
 
     const records = await prisma.follower.findMany({
@@ -312,7 +342,7 @@ userRouter.get('/:id/following', async (req: Request, res: Response) => {
       followedAt: r.createdAt
     }));
 
-    res.json({ status: 'success', following, count: following.length });
+    res.json({ status: 'success', following, count: following.length, isPrivate: false });
   } catch (error) {
     console.error('Помилка отримання підписок:', error);
     res.status(500).json({ error: 'Помилка отримання підписок' });
@@ -331,6 +361,22 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
     // @ts-ignore
     const currentUserId = req.user?.userId;
     const isOwner = currentUserId && currentUserId === targetUserId;
+
+    // Перевірка приватності профілю користувача: якщо профіль приватний і це не власник, приховуємо всі плейлисти
+    const targetSetting = await prisma.userSetting.findUnique({
+      where: { userId: targetUserId }
+    });
+    const isPrivate = !!targetSetting?.isPrivate;
+
+    if (isPrivate && !isOwner) {
+      return res.json({
+        status: 'success',
+        isOwner: false,
+        isPrivate: true,
+        playlists: [],
+        savedPlaylists: []
+      });
+    }
 
     // Власні плейлисти користувача
     const createdPlaylists = await prisma.playlist.findMany({

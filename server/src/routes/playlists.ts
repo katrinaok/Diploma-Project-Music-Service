@@ -29,7 +29,12 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
           playlist: {
             include: {
               user: {
-                select: { id: true, username: true, avatarUrl: true }
+                select: {
+                  id: true,
+                  username: true,
+                  avatarUrl: true,
+                  setting: { select: { isPrivate: true } }
+                }
               },
               _count: {
                 select: { savedBy: true, tracks: true }
@@ -50,7 +55,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     }));
 
     const formattedSaved = savedRecords
-      .filter(s => s.playlist.isPublic || s.playlist.userId === userId)
+      .filter(s => (s.playlist.isPublic || s.playlist.userId === userId) && (!s.playlist.user?.setting?.isPrivate || s.playlist.userId === userId))
       .map(s => ({
         ...s.playlist,
         isOwner: s.playlist.userId === userId,
@@ -259,7 +264,12 @@ router.get('/:id', optionalAuthenticateToken, async (req: Request, res: Response
       where: { id: playlistId },
       include: {
         user: {
-          select: { id: true, username: true, avatarUrl: true }
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+            setting: { select: { isPrivate: true } }
+          }
         },
         _count: {
           select: { savedBy: true, tracks: true }
@@ -290,6 +300,10 @@ router.get('/:id', optionalAuthenticateToken, async (req: Request, res: Response
 
     if (!playlist.isPublic && (!currentUserId || playlist.userId !== currentUserId)) {
       return res.status(403).json({ error: 'Немає доступу до цього плейлиста' });
+    }
+
+    if (playlist.user?.setting?.isPrivate && (!currentUserId || playlist.userId !== currentUserId)) {
+      return res.status(403).json({ error: 'Цей плейлист належить користувачу з приватним профілем' });
     }
 
     const savedRecord = currentUserId
