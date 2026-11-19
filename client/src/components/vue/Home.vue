@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full p-3 sm:p-6 md:p-8 pb-28 sm:pb-32">
+  <div class="w-full p-3 sm:p-6 md:p-8 pb-20 md:pb-28">
     <div class="w-full mx-auto space-y-5 sm:space-y-8">
       
       <!-- Top Welcome Banner -->
@@ -106,24 +106,31 @@
             </div>
             
             <div class="flex-1 min-w-0">
-              <h3 
-                class="text-sm font-semibold truncate transition-colors"
-                :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
-              >
-                {{ getTrackTitle(track) }}
-              </h3>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h3 
+                  class="text-sm font-semibold truncate transition-colors"
+                  :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
+                >
+                  {{ getTrackTitle(track) }}
+                </h3>
+                <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+              </div>
               <p class="text-xs text-text-tertiary truncate">{{ getTrackArtist(track) }}</p>
             </div>
 
-            <div class="flex items-center gap-2" @click.stop>
+            <div class="flex items-center gap-1 flex-shrink-0" @click.stop>
               <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
               <button 
                 @click="openPlaylistModal(track)" 
-                class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
-                :title="$t('home.add_to_playlist')"
+                class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
+                :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt'"
+                :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
               </button>
             </div>
@@ -232,7 +239,10 @@
               </div>
 
               <div>
-                <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(track)">{{ getTrackTitle(track) }}</h3>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(track)">{{ getTrackTitle(track) }}</h3>
+                  <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+                </div>
                 <p class="text-xs text-text-tertiary truncate mt-0.5" :title="getTrackArtist(track)">{{ getTrackArtist(track) }}</p>
               </div>
 
@@ -240,11 +250,15 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="p-1.5 text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                  :title="$t('home.add_to_playlist')"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover'"
+                  :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                  <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
@@ -308,7 +322,10 @@
                   </button>
                 </div>
               </div>
-              <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(item.track)">{{ getTrackTitle(item.track) }}</h3>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(item.track)">{{ getTrackTitle(item.track) }}</h3>
+                <ExplicitBadge v-if="isExplicitTrack(item.track)" size="xs" />
+              </div>
               <p class="text-xs text-text-tertiary truncate mt-0.5">{{ getTrackArtist(item.track) }}</p>
             </div>
           </div>
@@ -380,7 +397,10 @@
               </div>
 
               <div>
-                <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(track)">{{ getTrackTitle(track) }}</h3>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 class="text-sm font-semibold text-text-primary truncate" :title="getTrackTitle(track)">{{ getTrackTitle(track) }}</h3>
+                  <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+                </div>
                 <p class="text-xs text-text-tertiary truncate mt-0.5" :title="getTrackArtist(track)">{{ getTrackArtist(track) }}</p>
               </div>
 
@@ -388,11 +408,15 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="p-1.5 text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                  :title="$t('home.add_to_playlist')"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover'"
+                  :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                  <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
@@ -401,8 +425,8 @@
         </div>
 
         <!-- TRENDING HITS SECTION -->
-        <div class="bg-surface p-6 md:p-8 rounded-3xl shadow-sm border border-border-subtle transition-all">
-          <div class="flex items-center justify-between mb-6 pb-3 border-b border-border-subtle">
+        <div class="bg-surface p-3.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-border-subtle transition-all">
+          <div class="flex items-center justify-between mb-4 sm:mb-6 pb-3 border-b border-border-subtle">
             <div>
               <h2 class="text-xl md:text-2xl font-bold text-text-primary">
                 {{ $t('home.trending_title') }}
@@ -419,20 +443,20 @@
           </div>
 
           <!-- Trending 2-Column List -->
-          <div v-else-if="trendingTracks.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div v-else-if="trendingTracks.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-3">
             <div 
               v-for="(track, index) in trendingTracks" 
               :key="getTrackId(track)"
-              class="flex items-center gap-3.5 p-3 rounded-2xl bg-surface-hover/40 hover:bg-surface-hover border border-border-subtle/70 hover:border-purple-500/30 transition-all group cursor-pointer"
+              class="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-2xl bg-surface-hover/40 hover:bg-surface-hover border border-border-subtle/70 hover:border-purple-500/30 transition-all group cursor-pointer"
               @click="togglePlay(track)"
             >
               <!-- Index badge -->
-              <span class="w-6 text-center text-xs font-bold text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400">
+              <span class="w-5 sm:w-6 text-center text-xs font-bold text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400 flex-shrink-0">
                 #{{ index + 1 }}
               </span>
 
               <!-- Cover with overlay -->
-              <div class="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden bg-border-subtle shadow-sm">
+              <div class="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-xl overflow-hidden bg-border-subtle shadow-sm">
                 <img 
                   v-if="getTrackCover(track) && !failedCovers.has(getTrackId(track))" 
                   :src="getTrackCover(track)" 
@@ -443,7 +467,7 @@
                   class="w-full h-full object-cover" 
                 />
                 <div v-else class="w-full h-full flex items-center justify-center bg-surface-alt text-text-tertiary/40">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                   </svg>
                 </div>
@@ -464,31 +488,39 @@
               </div>
 
               <!-- Track info -->
-              <div class="flex-1 min-w-0">
-                <h3 
-                  class="text-sm font-semibold truncate transition-colors"
-                  :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
-                >
-                  {{ getTrackTitle(track) }}
-                </h3>
-                <p class="text-xs text-text-tertiary truncate">{{ getTrackArtist(track) }}</p>
+              <div class="flex-1 min-w-0 pr-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 
+                    class="text-xs sm:text-sm font-semibold truncate transition-colors leading-tight"
+                    :class="playingTrackId === getTrackId(track) ? 'text-purple-600 dark:text-purple-400' : 'text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300'"
+                    :title="getTrackTitle(track)"
+                  >
+                    {{ getTrackTitle(track) }}
+                  </h3>
+                  <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+                </div>
+                <p class="text-[11px] sm:text-xs text-text-tertiary truncate mt-0.5 leading-tight" :title="getTrackArtist(track)">{{ getTrackArtist(track) }}</p>
               </div>
 
               <!-- Track duration if available -->
-              <span v-if="track.duration_ms" class="text-xs text-text-muted hidden sm:inline-block">
+              <span v-if="track.duration_ms" class="text-xs text-text-muted hidden sm:inline-block flex-shrink-0">
                 {{ formatDuration(track.duration_ms) }}
               </span>
 
               <!-- Actions -->
-              <div class="flex items-center gap-1" @click.stop>
+              <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0" @click.stop>
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="opacity-0 group-hover:opacity-100 p-2 text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt rounded-lg transition-all cursor-pointer" 
-                  :title="$t('home.add_to_playlist')"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt'"
+                  :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                  <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
@@ -502,9 +534,9 @@
 
     <!-- Playlist Selection Modal -->
     <div v-if="isPlaylistModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" @click.self="closePlaylistModal">
-      <div class="bg-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-border-subtle animate-in fade-in zoom-in-95 duration-200">
-        <div class="flex justify-between items-center mb-4 pb-3 border-b border-border-subtle">
-          <h3 class="text-lg font-bold text-text-primary">{{ $t('home.select_playlist') || 'Оберіть плейлист' }}</h3>
+      <div class="bg-surface rounded-3xl p-4 sm:p-5 w-full max-w-sm shadow-2xl border border-border-subtle animate-in fade-in zoom-in-95 duration-200">
+        <div class="flex justify-between items-center mb-3 pb-3 border-b border-border-subtle">
+          <h3 class="text-base sm:text-lg font-bold text-text-primary">{{ $t('home.select_playlist') || 'Оберіть плейлист' }}</h3>
           <button @click="closePlaylistModal" class="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover cursor-pointer transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -523,17 +555,50 @@
           <button 
             v-for="playlist in playlists" 
             :key="playlist.id"
-            @click="addTrackToPlaylist(playlist.id)"
-            class="w-full text-left px-4 py-3 rounded-2xl bg-surface-hover hover:bg-surface-alt text-text-primary transition-colors flex items-center gap-3 group cursor-pointer border border-transparent hover:border-purple-500/30"
+            @click="toggleTrackInHomePlaylist(playlist)"
+            :disabled="loadingPlaylistId === playlist.id"
+            class="w-full text-left px-3.5 py-2.5 rounded-2xl bg-surface-hover hover:bg-surface-alt text-text-primary transition-colors flex items-center gap-3 group cursor-pointer border border-transparent hover:border-purple-500/30 disabled:opacity-75 min-h-[58px]"
+            :class="{ 'border-purple-500/30 bg-purple-500/5': isTrackInHomePlaylist(playlist) }"
           >
-            <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-            </div>
+            <PlaylistCover
+              :coverUrl="playlist.coverUrl"
+              :trackCovers="playlist.trackCovers || []"
+              :alt="playlist.title"
+              containerClass="w-10 h-10 min-w-10 max-w-10 min-h-10 max-h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm overflow-hidden shrink-0 relative"
+              iconClass="h-5 w-5"
+            />
             <div class="flex-1 min-w-0">
               <div class="font-medium text-sm text-text-primary truncate">{{ playlist.title }}</div>
-              <div class="text-xs text-text-tertiary truncate">Плейлист</div>
+              <div class="text-xs text-text-tertiary truncate">
+                {{ playlist.tracksCount ? playlist.tracksCount + ' треків' : 'Плейлист' }}
+              </div>
+            </div>
+            <div class="flex-shrink-0 flex items-center justify-end">
+              <svg v-if="loadingPlaylistId === playlist.id" class="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <!-- Already in this playlist -->
+              <span 
+                v-else-if="isTrackInHomePlaylist(playlist)" 
+                class="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 group-hover:bg-purple-500/25 group-hover:border-purple-500/50 transition-colors select-none"
+                :title="$t('home.click_to_remove')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current flex-shrink-0" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ $t('home.added') }}</span>
+              </span>
+              <!-- Not in this playlist -->
+              <span 
+                v-else 
+                class="w-7 h-7 rounded-full flex items-center justify-center text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:bg-purple-500/10 transition-colors"
+                title="Додати в цей плейлист"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </span>
             </div>
           </button>
         </div>
@@ -547,6 +612,9 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LikeButton from './LikeButton.vue';
+import PlaylistCover from './PlaylistCover.vue';
+import ExplicitBadge from './ExplicitBadge.vue';
+import { isExplicitTrack, registerTracksExplicit, fetchMissingExplicitStatus } from '../../utils/explicit';
 import { recordListeningHistory } from '../../utils/history.js';
 
 const props = defineProps({ lang: String });
@@ -578,6 +646,7 @@ const isSpotifyConnected = ref(false);
 const playlists = ref([]);
 const isPlaylistModalOpen = ref(false);
 const trackToAdd = ref(null);
+const loadingPlaylistId = ref(null);
 const favoriteTrackIds = ref(new Set());
 
 const handleTrackFavoriteUpdated = (event) => {
@@ -684,6 +753,8 @@ onMounted(async () => {
   // Spotify state updates
   window.addEventListener('spotify-state-update', handleSpotifyState);
   window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+  window.addEventListener('playlist-track-added', handleHomePlaylistTrackAdded);
+  window.addEventListener('playlist-track-removed', handleHomePlaylistTrackRemoved);
   window.addEventListener('popstate', handlePopState);
 });
 
@@ -691,6 +762,8 @@ onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
   window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+  window.removeEventListener('playlist-track-added', handleHomePlaylistTrackAdded);
+  window.removeEventListener('playlist-track-removed', handleHomePlaylistTrackRemoved);
   window.removeEventListener('popstate', handlePopState);
 });
 
@@ -720,6 +793,7 @@ const loadDiscoverFeed = async (token) => {
     if (data.status === 'success') {
       recommendedTracks.value = data.recommended || [];
       trendingTracks.value = data.trending || [];
+      registerTracksExplicit([...recommendedTracks.value, ...trendingTracks.value]);
     }
   } catch (err) {
     console.error('Failed to load home feed:', err);
@@ -734,7 +808,14 @@ const loadUserData = async (token) => {
     fetch('http://localhost:5001/api/playlists', {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(r => r.json()).then(data => {
-      if (data.playlists) playlists.value = data.playlists;
+      if (data.playlists) {
+        playlists.value = data.playlists.map(p => ({
+          ...p,
+          coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null,
+          trackCovers: p.trackCovers || [],
+          trackSpotifyIds: p.trackSpotifyIds || []
+        }));
+      }
     }).catch(e => console.error(e));
 
     // Spotify connection
@@ -938,39 +1019,98 @@ const openPlaylistModal = (track) => {
 const closePlaylistModal = () => {
   isPlaylistModalOpen.value = false;
   trackToAdd.value = null;
+  loadingPlaylistId.value = null;
 };
 
-const addTrackToPlaylist = async (playlistId) => {
+const isTrackInHomePlaylist = (playlist) => {
+  if (!trackToAdd.value || !playlist?.trackSpotifyIds) return false;
+  return playlist.trackSpotifyIds.includes(getTrackId(trackToAdd.value));
+};
+
+const isTrackInAnyPlaylist = (track) => {
+  const tid = getTrackId(track);
+  if (!tid || !playlists.value.length) return false;
+  return playlists.value.some(p => p.trackSpotifyIds && p.trackSpotifyIds.includes(tid));
+};
+
+const handleHomePlaylistTrackAdded = (e) => {
+  const { playlistId, track } = e.detail || {};
+  const pl = playlists.value.find(p => String(p.id) === String(playlistId));
+  const sId = track?.spotifyId;
+  if (pl) {
+    if (sId && (!pl.trackSpotifyIds || !pl.trackSpotifyIds.includes(sId))) {
+      pl.tracksCount = (pl.tracksCount || 0) + 1;
+      pl.trackSpotifyIds = [...(pl.trackSpotifyIds || []), sId];
+    }
+  }
+};
+
+const handleHomePlaylistTrackRemoved = (e) => {
+  const { playlistId, spotifyId } = e.detail || {};
+  const pl = playlists.value.find(p => String(p.id) === String(playlistId));
+  if (pl && spotifyId && pl.trackSpotifyIds) {
+    if (pl.trackSpotifyIds.includes(spotifyId)) {
+      pl.tracksCount = Math.max(0, (pl.tracksCount || 1) - 1);
+      pl.trackSpotifyIds = pl.trackSpotifyIds.filter(id => id !== spotifyId);
+    }
+  }
+};
+
+const toggleTrackInHomePlaylist = async (playlist) => {
   if (!trackToAdd.value) return;
   const token = localStorage.getItem('token');
   if (!token) return;
 
+  const currentId = getTrackId(trackToAdd.value);
+  if (!currentId) return;
+
+  const playlistId = playlist.id;
+  loadingPlaylistId.value = playlistId;
+
+  const inPlaylist = isTrackInHomePlaylist(playlist);
+
   try {
-    const t = trackToAdd.value;
-    const trackData = {
-      spotifyId: getTrackId(t),
-      title: getTrackTitle(t),
-      artistName: getTrackArtist(t),
-      albumCoverUrl: getTrackCover(t),
-      previewUrl: t.previewUrl || t.preview_url || null
-    };
-
-    const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}/tracks`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(trackData)
-    });
-
-    if (res.ok) {
-      closePlaylistModal();
+    if (inPlaylist) {
+      // Remove from playlist
+      const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}/tracks/${currentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('playlist-track-removed', { 
+          detail: { playlistId, spotifyId: currentId } 
+        }));
+      }
     } else {
-      console.error('Failed to add track to playlist');
+      // Add to playlist
+      const t = trackToAdd.value;
+      const trackData = {
+        spotifyId: currentId,
+        title: getTrackTitle(t),
+        artistName: getTrackArtist(t),
+        albumCoverUrl: getTrackCover(t),
+        previewUrl: t.previewUrl || t.preview_url || null
+      };
+
+      const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(trackData)
+      });
+
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('playlist-track-added', { 
+          detail: { playlistId, track: trackData } 
+        }));
+      }
     }
   } catch (error) {
-    console.error('Failed to add track:', error);
+    console.error('Failed to toggle track in playlist:', error);
+  } finally {
+    loadingPlaylistId.value = null;
   }
 };
 </script>

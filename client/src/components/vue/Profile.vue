@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full p-3 sm:p-6 md:p-8 pb-32">
+  <div class="w-full p-3 sm:p-6 md:p-8 pb-20 md:pb-28">
     <div class="w-full mx-auto space-y-5 sm:space-y-6">
       
       <!-- Profile Header Card -->
@@ -277,12 +277,14 @@
                </button>
 
                <!-- Playlist Cover -->
-               <div class="w-16 h-16 sm:w-full sm:h-auto sm:aspect-square flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center overflow-hidden shadow-sm sm:mb-4">
-                  <img v-if="playlist.coverUrl" :src="playlist.coverUrl" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-12 sm:w-12 text-white opacity-50 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                  </svg>
-               </div>
+               <PlaylistCover 
+                 :coverUrl="playlist.coverUrl"
+                 :trackCovers="playlist.trackCovers"
+                 :alt="playlist.title"
+                 containerClass="w-16 h-16 sm:w-full sm:h-auto sm:aspect-square flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center overflow-hidden shadow-sm sm:mb-4 relative"
+                 imgClass="group-hover:scale-105 transition-transform duration-300"
+                 iconClass="h-8 w-8 sm:h-12 sm:w-12 text-white opacity-50 group-hover:scale-110 transition-transform duration-300"
+               />
 
                <div class="flex-grow flex flex-col min-w-0">
                  <div class="flex items-center justify-between mb-1 gap-2">
@@ -475,6 +477,7 @@
 import { onMounted, ref, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { navigate } from 'astro:transitions/client';
+import PlaylistCover from './PlaylistCover.vue';
 
 const props = defineProps({ 
   lang: String, 
@@ -942,11 +945,13 @@ const fetchPlaylists = async () => {
       const data = await response.json();
       playlists.value = (data.playlists || []).map(p => ({
         ...p,
-        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null
+        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null,
+        trackCovers: p.trackCovers || []
       }));
       savedPlaylists.value = (data.savedPlaylists || []).map(p => ({
         ...p,
-        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null
+        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null,
+        trackCovers: p.trackCovers || []
       }));
     }
   } catch (error) {
@@ -1014,7 +1019,8 @@ const createPlaylist = async () => {
       const data = await response.json();
       playlists.value.unshift({
         ...data.playlist,
-        coverUrl: null
+        coverUrl: null,
+        trackCovers: []
       });
       closePlaylistModal();
     } else {

@@ -19,6 +19,17 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
           },
           _count: {
             select: { savedBy: true, tracks: true }
+          },
+          tracks: {
+            include: {
+              track: {
+                select: { id: true, spotifyId: true, albumCoverUrl: true }
+              }
+            },
+            orderBy: [
+              { position: 'asc' },
+              { addedAt: 'asc' }
+            ]
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -38,6 +49,17 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
               },
               _count: {
                 select: { savedBy: true, tracks: true }
+              },
+              tracks: {
+                include: {
+                  track: {
+                    select: { id: true, spotifyId: true, albumCoverUrl: true }
+                  }
+                },
+                orderBy: [
+                  { position: 'asc' },
+                  { addedAt: 'asc' }
+                ]
               }
             }
           }
@@ -51,7 +73,14 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       isOwner: true,
       isSaved: false,
       savesCount: p._count.savedBy,
-      tracksCount: p._count.tracks
+      tracksCount: p._count.tracks,
+      trackCovers: (p.tracks || [])
+        .map(t => t.track?.albumCoverUrl)
+        .filter((url): url is string => Boolean(url))
+        .slice(0, 4),
+      trackSpotifyIds: (p.tracks || [])
+        .map(t => t.track?.spotifyId)
+        .filter((id): id is string => Boolean(id))
     }));
 
     const formattedSaved = savedRecords
@@ -62,6 +91,13 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
         isSaved: true,
         savesCount: s.playlist._count.savedBy,
         tracksCount: s.playlist._count.tracks,
+        trackCovers: (s.playlist.tracks || [])
+          .map(t => t.track?.albumCoverUrl)
+          .filter((url): url is string => Boolean(url))
+          .slice(0, 4),
+        trackSpotifyIds: (s.playlist.tracks || [])
+          .map(t => t.track?.spotifyId)
+          .filter((id): id is string => Boolean(id)),
         savedAt: s.savedAt
       }));
 
@@ -219,10 +255,41 @@ router.delete('/:id/tracks/:trackId', authenticateToken, async (req: Request, re
     // @ts-ignore
     const userId = req.user.userId;
     const playlistId = parseInt(req.params.id as string, 10);
-    const trackId = parseInt(req.params.trackId as string, 10);
+    const rawTrackId = req.params.trackId as string;
 
-    if (isNaN(playlistId) || isNaN(trackId)) {
+    if (isNaN(playlistId) || !rawTrackId) {
       return res.status(400).json({ error: 'Некоректний ID' });
+    }
+
+    const cleanSpotifyId = rawTrackId.replace(/^spotify:track:/, '');
+
+    let trackId: number | null = null;
+
+    // 1. Try finding by spotifyId (both raw and cleaned prefix)
+    let foundTrack = await prisma.track.findFirst({
+      where: {
+        OR: [
+          { spotifyId: rawTrackId },
+          { spotifyId: cleanSpotifyId }
+        ]
+      }
+    });
+
+    if (foundTrack) {
+      trackId = foundTrack.id;
+    } else if (/^\d+$/.test(rawTrackId)) {
+      // 2. Only if not found by spotifyId and rawTrackId is strictly composed of digits, check DB numeric ID
+      const dbId = parseInt(rawTrackId, 10);
+      foundTrack = await prisma.track.findUnique({
+        where: { id: dbId }
+      });
+      if (foundTrack) {
+        trackId = foundTrack.id;
+      }
+    }
+
+    if (!trackId) {
+      return res.status(404).json({ error: 'Трек не знайдено' });
     }
 
     const playlist = await prisma.playlist.findUnique({
@@ -233,16 +300,14 @@ router.delete('/:id/tracks/:trackId', authenticateToken, async (req: Request, re
       return res.status(403).json({ error: 'Плейлист не знайдено або доступ заборонено' });
     }
 
-    await prisma.playlistTrack.delete({
+    const deleteResult = await prisma.playlistTrack.deleteMany({
       where: {
-        playlistId_trackId: {
-          playlistId,
-          trackId
-        }
+        playlistId,
+        trackId
       }
     });
 
-    res.json({ status: 'success', message: 'Трек успішно видалено' });
+    res.json({ status: 'success', message: 'Трек успішно видалено', deletedCount: deleteResult.count });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка видалення треку' });
@@ -315,15 +380,20 @@ router.get('/:id', optionalAuthenticateToken, async (req: Request, res: Response
     const isOwner = !!currentUserId && playlist.userId === currentUserId;
     const isSaved = !!savedRecord;
     const savesCount = playlist._count.savedBy;
+    const trackCovers = (playlist.tracks || [])
+      .map(t => t.track?.albumCoverUrl)
+      .filter((url): url is string => Boolean(url));
 
     res.json({
       status: 'success',
       playlist: {
         ...playlist,
+        trackCovers,
         isOwner,
         isSaved,
         savesCount
       },
+      trackCovers,
       isOwner,
       isSaved,
       savesCount

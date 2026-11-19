@@ -1,21 +1,50 @@
 <template>
   <div>
     <!-- Lyrics Overlay (Desktop) -->
-    <div v-if="showLyrics && !isAuthRoute" class="hidden md:flex fixed inset-0 z-[60] bg-[#f7f6fc] dark:bg-[#1b0a33] flex-col items-center pt-16 sm:pt-24 pb-24 sm:pb-32 overflow-hidden transition-colors duration-300">
-      <button @click="showLyrics = false" class="absolute top-6 right-6 p-2 rounded-full bg-surface-hover text-text-primary hover:bg-surface-alt transition-colors z-50 cursor-pointer shadow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div 
+      v-if="showLyrics && !isAuthRoute" 
+      class="hidden md:flex fixed inset-0 z-[60] bg-[#f7f6fc] dark:bg-[#0c0414] flex-col items-center overflow-hidden transition-colors duration-500 select-none"
+    >
+      <!-- Dynamic Ambient Background with Cover Art & Mesh Glow -->
+      <div class="absolute inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+        <!-- Blurred Cover Art -->
+        <img 
+          v-if="currentTrackCover" 
+          :src="currentTrackCover" 
+          alt="" 
+          class="w-full h-full object-cover blur-[90px] md:blur-[130px] scale-125 opacity-25 dark:opacity-35 transform-gpu transition-all duration-1000"
+        />
+        <!-- Vignette & Deep Gradients -->
+        <div class="absolute inset-0 bg-gradient-to-b from-[#f7f6fc]/80 via-[#f7f6fc]/90 to-[#f7f6fc] dark:from-[#080210]/75 dark:via-[#0e041a]/90 dark:to-[#080210]"></div>
+        <!-- Atmospheric Dynamic Floating Ambient Orbs (smoothly rolling across corners) -->
+        <div class="absolute -top-24 -left-24 w-[500px] h-[500px] bg-purple-600/25 dark:bg-purple-600/30 rounded-full blur-[100px] md:blur-[130px] pointer-events-none animate-orb-1"></div>
+        <div class="absolute -bottom-24 -right-24 w-[540px] h-[540px] bg-indigo-500/20 dark:bg-indigo-600/25 rounded-full blur-[110px] md:blur-[140px] pointer-events-none animate-orb-2"></div>
+        <div class="absolute top-1/4 -right-20 w-[460px] h-[460px] bg-fuchsia-500/18 dark:bg-fuchsia-600/20 rounded-full blur-[100px] md:blur-[120px] pointer-events-none animate-orb-3"></div>
+        <div class="absolute bottom-1/4 -left-20 w-[420px] h-[420px] bg-violet-400/18 dark:bg-violet-500/20 rounded-full blur-[90px] md:blur-[120px] pointer-events-none animate-orb-4"></div>
+      </div>
+
+      <!-- Floating Top Close Action Button (Minimalist, no duplicate track info) -->
+      <div class="absolute top-0 right-0 z-50 p-6 sm:p-8 flex items-center justify-end pointer-events-none">
+        <button 
+          @click="showLyrics = false" 
+          class="w-11 h-11 rounded-full bg-surface/80 hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-text-secondary hover:text-text-primary transition-all cursor-pointer border border-border-subtle/60 dark:border-white/15 flex items-center justify-center group shadow-md active:scale-90 pointer-events-auto backdrop-blur-md"
+          title="Закрити караоке (Esc)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
       <!-- Loading State -->
-      <div v-if="lyricsLoading" class="flex flex-col items-center justify-center h-full text-text-secondary animate-fade-in">
-        <span class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></span>
-        <p class="font-medium text-base">{{ $t('global_player.lyrics_loading') }}</p>
+      <div v-if="lyricsLoading" class="flex flex-col items-center justify-center flex-1 text-text-secondary animate-fade-in">
+        <span class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></span>
+        <p class="font-extrabold text-lg text-text-primary dark:text-white">{{ $t('global_player.lyrics_loading') }}</p>
+        <p class="text-xs text-text-tertiary mt-1">Синхронізація слів та таймкодів</p>
       </div>
 
       <!-- Not Found / Error State -->
-      <div v-else-if="lyricsNotFound || lyricsError" class="flex flex-col items-center justify-center h-full max-w-md mx-auto px-6 text-center animate-fade-in">
+      <div v-else-if="lyricsNotFound || lyricsError" class="flex flex-col items-center justify-center flex-1 max-w-md mx-auto px-6 text-center animate-fade-in">
         <div class="relative mb-5">
           <div class="w-20 h-20 rounded-3xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-inner">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,23 +74,72 @@
         </div>
       </div>
 
-      <!-- Lyrics List -->
-      <div v-else-if="lyricsList.length > 0" class="w-full max-w-4xl h-full overflow-y-auto px-6 py-8 lyrics-container no-scrollbar" ref="lyricsContainer">
-        <div class="flex flex-col gap-6 md:gap-8 text-center pb-64 pt-32">
-          <div v-for="(line, index) in lyricsList" :key="index"
-               class="cursor-pointer select-none px-4 py-1"
-               @click="seekToLyric(line.time, index)"
-               :ref="el => { if(el) lyricRefs[index] = el }">
-            <span
-              :class="[
-                'inline-block text-2xl md:text-3xl lg:text-4xl font-bold break-words leading-relaxed transform-gpu origin-center transition-all duration-500 ease-out',
-                activeLyricIndex === index
-                  ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm dark:drop-shadow-[0_0_20px_rgba(192,132,252,0.45)]'
-                  : 'text-gray-400 dark:text-white/35 hover:text-gray-700 dark:hover:text-white/70 scale-100 hover:scale-[1.02]'
-              ]">
-              {{ line.text }}
+      <!-- Lyrics List Body with Top & Bottom Mask Fade -->
+      <div 
+        v-else-if="lyricsList.length > 0" 
+        class="w-full flex-1 min-h-0 overflow-y-auto px-6 sm:px-12 md:px-16 lyrics-container no-scrollbar scroll-smooth relative"
+        :style="{
+          '-webkit-mask-image': 'linear-gradient(to bottom, transparent 0%, black 10%, black 85%, transparent 100%)',
+          'mask-image': 'linear-gradient(to bottom, transparent 0%, black 10%, black 85%, transparent 100%)'
+        }"
+        ref="lyricsContainer"
+        @wheel.passive="onLyricsScroll"
+        @touchmove.passive="onLyricsScroll"
+      >
+        <div class="flex flex-col gap-6 md:gap-7 pt-[40vh] pb-[46vh] text-center max-w-4xl mx-auto">
+          <!-- Intro Instrumental Break Indicator (if song starts with music break) -->
+          <div 
+            v-if="isInstrumentalBreak && activeLyricIndex === -1" 
+            class="flex items-center justify-center gap-2.5 py-6 animate-fade-in"
+          >
+            <span class="flex gap-1.5 items-center">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0ms"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 150ms"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 300ms"></span>
+            </span>
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-300 ml-1.5 bg-purple-500/10 dark:bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/25">
+              {{ instrumentalBreakLabel }}
             </span>
           </div>
+
+          <!-- Lyrics Lines -->
+          <template v-for="(line, index) in lyricsList" :key="index">
+            <div 
+              class="cursor-pointer select-none px-4 py-2 transition-all duration-300 rounded-2xl group/line relative"
+              @click="seekToLyric(line.time, index)"
+              :ref="el => { if(el) lyricRefs[index] = el }"
+            >
+              <span
+                :class="[
+                  'inline-block text-xl sm:text-2xl md:text-3xl font-bold break-words leading-relaxed transform-gpu origin-center transition-all duration-500 ease-out select-none',
+                  activeLyricIndex === index
+                    ? 'text-purple-600 dark:text-purple-400 scale-[1.05] drop-shadow-sm dark:drop-shadow-[0_2px_24px_rgba(192,132,252,0.65)] opacity-100'
+                    : activeLyricIndex + 1 === index
+                    ? 'text-gray-400 dark:text-white/60 hover:text-gray-700 dark:hover:text-white/80 scale-100 opacity-70'
+                    : activeLyricIndex > index
+                    ? 'text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/60 scale-[0.98] opacity-35'
+                    : 'text-gray-400 dark:text-white/35 hover:text-gray-600 dark:hover:text-white/70 scale-[0.98] opacity-40'
+                ]"
+              >
+                {{ line.text }}
+              </span>
+            </div>
+
+            <!-- In-between Instrumental Break (Solo) Indicator -->
+            <div 
+              v-if="isInstrumentalBreak && activeLyricIndex === index" 
+              class="flex items-center justify-center gap-2.5 py-4 animate-fade-in"
+            >
+              <span class="flex gap-1.5 items-center">
+                <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0ms"></span>
+                <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 150ms"></span>
+                <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 300ms"></span>
+              </span>
+              <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/25">
+                {{ instrumentalBreakLabel }}
+              </span>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -70,15 +148,16 @@
     <div v-if="showQueue && isConnected && !isAuthRoute">
       <!-- Backdrop for mobile -->
       <div 
-        class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-[140] sm:hidden animate-in fade-in duration-200"
+        class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-[140] md:hidden animate-in fade-in duration-200"
         @click="showQueue = false"
       ></div>
 
       <div 
-        class="fixed inset-x-0 bottom-0 sm:right-6 sm:bottom-24 sm:left-auto w-full sm:w-96 sm:max-w-[calc(100vw-1.5rem)] h-[82vh] sm:h-auto sm:max-h-[75vh] bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border-t sm:border border-border-subtle dark:border-purple-500/25 rounded-t-3xl sm:rounded-3xl shadow-2xl z-[150] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+        class="fixed inset-x-0 bottom-0 md:inset-x-auto md:left-auto md:right-0 md:top-16 w-full md:w-80 lg:w-96 h-[82vh] md:h-auto bg-surface/95 dark:bg-[#130728]/95 backdrop-blur-2xl border-t md:border-t-0 md:border-l border-border-subtle dark:border-purple-500/20 rounded-t-3xl md:rounded-none md:rounded-tl-2xl shadow-2xl md:shadow-[-8px_0_24px_rgba(0,0,0,0.25)] z-[150] md:z-[80] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:slide-in-from-right-4 duration-200"
+        :style="queuePanelStyle"
       >
         <!-- Mobile drag handle indicator -->
-        <div class="pt-2.5 pb-1 sm:hidden flex justify-center bg-surface-alt/40 cursor-pointer" @click="showQueue = false">
+        <div class="pt-2.5 pb-1 md:hidden flex justify-center bg-surface-alt/40 cursor-pointer" @click="showQueue = false">
           <div class="w-10 h-1 bg-black/20 dark:bg-white/25 rounded-full"></div>
         </div>
 
@@ -156,7 +235,10 @@
             </div>
 
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-semibold text-text-primary dark:text-purple-300 truncate">{{ currentTrack?.name }}</h4>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h4 class="text-sm font-semibold text-text-primary dark:text-purple-300 truncate">{{ currentTrack?.name }}</h4>
+                <ExplicitBadge v-if="isExplicitTrack(currentTrack)" size="xs" />
+              </div>
               <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') }}</p>
             </div>
 
@@ -232,9 +314,12 @@
 
               <!-- Title & Artist -->
               <div class="flex-1 min-w-0">
-                <h5 class="text-xs font-semibold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300 truncate">
-                  {{ getQueueTrackTitle(track) }}
-                </h5>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h5 class="text-xs font-semibold text-text-primary group-hover:text-purple-600 dark:group-hover:text-purple-300 truncate">
+                    {{ getQueueTrackTitle(track) }}
+                  </h5>
+                  <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+                </div>
                 <p class="text-[11px] text-text-tertiary truncate">
                   {{ getQueueTrackArtist(track) }}
                 </p>
@@ -378,51 +463,101 @@
           <div 
             v-else-if="lyricsList.length > 0" 
             class="flex-1 w-full overflow-y-auto px-6 pt-6 pb-52 no-scrollbar scroll-smooth"
+            :style="{
+              '-webkit-mask-image': 'linear-gradient(to bottom, transparent 0%, black 6%, black 82%, transparent 100%)',
+              'mask-image': 'linear-gradient(to bottom, transparent 0%, black 6%, black 82%, transparent 100%)'
+            }"
             ref="mobileLyricsContainer"
+            @wheel.passive="onLyricsScroll"
+            @touchmove.passive="onLyricsScroll"
           >
-            <div class="flex flex-col gap-6 py-12 text-left">
-              <div 
-                v-for="(line, index) in lyricsList" 
-                :key="'mobile-lyric-' + index"
-                :ref="el => { if (el) mobileLyricRefs[index] = el; }"
-                @click="seekToLyric(line.time, index)"
-                class="cursor-pointer select-none transition-all duration-300 py-2 rounded-2xl active:scale-[0.98]"
-              >
-                <p 
-                  class="leading-tight tracking-tight transition-all duration-300 select-none break-words"
-                  :class="activeLyricIndex === index 
-                    ? 'text-purple-600 dark:text-purple-400 text-3xl sm:text-4xl font-black scale-[1.02] origin-left drop-shadow-[0_4px_20px_rgba(147,51,234,0.35)] dark:drop-shadow-[0_0_28px_rgba(192,132,252,0.65)]' 
-                    : activeLyricIndex > index
-                      ? 'text-text-primary/45 dark:text-white/45 text-2xl sm:text-3xl font-extrabold hover:text-text-primary/75 dark:hover:text-white/75'
-                      : 'text-text-primary/25 dark:text-white/25 text-2xl sm:text-3xl font-extrabold hover:text-text-primary/50 dark:hover:text-white/55'"
-                >
-                  {{ line.text }}
-                </p>
+            <div class="flex flex-col gap-6 pt-[35vh] pb-[40vh] text-left">
+              <!-- Intro Instrumental Break on mobile -->
+              <div v-if="isInstrumentalBreak && activeLyricIndex === -1" class="flex items-center gap-2 py-4 justify-start animate-fade-in">
+                <span class="flex gap-1.5 items-center">
+                  <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0ms"></span>
+                  <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 150ms"></span>
+                  <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 300ms"></span>
+                </span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-500/25">
+                  {{ instrumentalBreakLabel }}
+                </span>
               </div>
+
+              <template v-for="(line, index) in lyricsList" :key="'mobile-lyric-' + index">
+                <div 
+                  :ref="el => { if (el) mobileLyricRefs[index] = el; }"
+                  @click="seekToLyric(line.time, index)"
+                  class="cursor-pointer select-none transition-all duration-300 py-2 rounded-2xl active:scale-[0.98]"
+                >
+                  <p 
+                    class="leading-tight tracking-tight transition-all duration-300 select-none break-words font-bold"
+                    :class="[
+                      activeLyricIndex === index 
+                        ? 'text-purple-600 dark:text-purple-400 text-2xl sm:text-3xl scale-[1.04] origin-left drop-shadow-[0_4px_24px_rgba(147,51,234,0.35)] dark:drop-shadow-[0_0_24px_rgba(192,132,252,0.6)]' 
+                        : 'text-text-primary/35 dark:text-white/35 text-2xl sm:text-3xl hover:text-text-primary/70 dark:hover:text-white/70'
+                    ]"
+                  >
+                    {{ line.text }}
+                  </p>
+                </div>
+
+                <!-- Solo Instrumental Break between lines on mobile -->
+                <div v-if="isInstrumentalBreak && activeLyricIndex === index" class="flex items-center gap-2 py-3 justify-start animate-fade-in pl-2">
+                  <span class="flex gap-1.5 items-center">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0ms"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 150ms"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 300ms"></span>
+                  </span>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/25">
+                    {{ instrumentalBreakLabel }}
+                  </span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
 
         <!-- Floating Bottom Dock: Track Info, Scrubber, Playback (Spotify style) -->
         <div class="absolute bottom-0 left-0 right-0 z-30 px-5 pt-8 pb-5 bg-gradient-to-t from-surface via-surface/95 to-transparent dark:from-[#0d041a] dark:via-[#0d041a]/95 dark:to-transparent pointer-events-auto backdrop-blur-xs">
-          <!-- Track Info + Like Button -->
+          <!-- Track Info + Like & Playlist Buttons -->
           <div class="flex items-center justify-between gap-3 mb-2">
             <div class="min-w-0 flex-1">
-              <h3 class="text-base font-black text-text-primary dark:text-white truncate">
-                {{ currentTrack?.name }}
-              </h3>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h3 class="text-base font-black text-text-primary dark:text-white truncate">
+                  {{ currentTrack?.name }}
+                </h3>
+                <ExplicitBadge v-if="isExplicitTrack(currentTrack)" size="sm" />
+              </div>
               <p class="text-xs font-medium text-text-secondary dark:text-purple-200/70 truncate mt-0.5">
                 {{ currentTrack?.artists?.map(a => a.name).join(', ') }}
               </p>
             </div>
-            <LikeButton 
-              v-if="currentTrackLikeData" 
-              :track="currentTrackLikeData" 
-              :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
-              @liked="onGlobalPlayerLiked"
-              @unliked="onGlobalPlayerUnliked"
-              class="flex-shrink-0"
-            />
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <LikeButton 
+                v-if="currentTrackLikeData" 
+                :track="currentTrackLikeData" 
+                :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
+                @liked="onGlobalPlayerLiked"
+                @unliked="onGlobalPlayerUnliked"
+              />
+              <button 
+                v-if="currentTrack"
+                @click.stop="openAddToPlaylistModal"
+                class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 focus:outline-none cursor-pointer flex-shrink-0"
+                :class="isCurrentTrackInAnyPlaylist ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400'"
+                :title="isCurrentTrackInAnyPlaylist ? ($t('home.in_playlist') || 'Вже у плейлісті (натисніть для перегляду)') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
+              >
+                <!-- Checked circle icon when in playlist -->
+                <svg v-if="isCurrentTrackInAnyPlaylist" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                </svg>
+                <!-- Outline plus icon when not in playlist -->
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Progress Bar Scrubber -->
@@ -610,15 +745,32 @@
               </p>
             </div>
 
-            <!-- Like Button -->
-            <LikeButton 
-              v-if="currentTrackLikeData" 
-              :track="currentTrackLikeData" 
-              :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
-              @liked="onGlobalPlayerLiked"
-              @unliked="onGlobalPlayerUnliked"
-              class="flex-shrink-0"
-            />
+            <!-- Like & Add to Playlist Buttons -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <LikeButton 
+                v-if="currentTrackLikeData" 
+                :track="currentTrackLikeData" 
+                :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
+                @liked="onGlobalPlayerLiked"
+                @unliked="onGlobalPlayerUnliked"
+              />
+              <button 
+                v-if="currentTrack"
+                @click.stop="openAddToPlaylistModal"
+                class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 focus:outline-none cursor-pointer flex-shrink-0"
+                :class="isCurrentTrackInAnyPlaylist ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400'"
+                :title="isCurrentTrackInAnyPlaylist ? ($t('home.in_playlist') || 'Вже у плейлісті (натисніть для перегляду)') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
+              >
+                <!-- Checked circle icon when in playlist -->
+                <svg v-if="isCurrentTrackInAnyPlaylist" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+                </svg>
+                <!-- Outline plus icon when not in playlist -->
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Progress Bar & Timing -->
@@ -729,6 +881,7 @@
 
     <!-- Main Player Panel -->
     <div 
+      ref="playerBarRef"
       v-if="isConnected && !isAuthRoute" 
       class="fixed bottom-0 left-0 w-screen bg-surface/95 dark:bg-[#170a24]/95 backdrop-blur-xl border-t border-border-subtle shadow-2xl z-[70] transition-all"
       :class="{ 'mobile-full-player-active': isMobileFullPlayerOpen }"
@@ -762,9 +915,12 @@
             </div>
 
             <div class="min-w-0 flex-1">
-              <h4 class="text-xs font-bold text-text-primary truncate">
-                {{ currentTrack?.name || $t('global_player.default_title') }}
-              </h4>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h4 class="text-xs font-bold text-text-primary truncate">
+                  {{ currentTrack?.name || $t('global_player.default_title') }}
+                </h4>
+                <ExplicitBadge v-if="isExplicitTrack(currentTrack)" size="xs" />
+              </div>
               <p class="text-[10px] text-text-tertiary truncate">
                 {{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}
               </p>
@@ -827,7 +983,7 @@
 
       <!-- DESKTOP PLAYER (>= md) -->
       <div class="hidden md:flex items-center justify-between p-4 w-full">
-    <div class="flex items-center gap-4 w-1/3">
+    <div class="flex items-center gap-4 w-[30%] min-w-0">
       <img 
         v-if="currentTrack?.album?.images[0]?.url" 
         :src="currentTrack.album.images[0].url" 
@@ -835,21 +991,42 @@
         loading="lazy"
         referrerpolicy="no-referrer"
         @error="$event.target.style.display = 'none'; if ($event.target.nextElementSibling) $event.target.nextElementSibling.style.display = 'flex'"
-        class="w-14 h-14 rounded-lg shadow-md object-cover" 
+        class="w-14 h-14 rounded-lg shadow-md object-cover flex-shrink-0" 
       />
-      <div :style="currentTrack?.album?.images[0]?.url ? 'display: none;' : ''" class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center text-text-tertiary">
+      <div :style="currentTrack?.album?.images[0]?.url ? 'display: none;' : ''" class="w-14 h-14 bg-surface-hover rounded-lg flex items-center justify-center text-text-tertiary flex-shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-text-tertiary/70" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
         </svg>
       </div>
-      <div class="min-w-0">
-        <h4 class="text-sm font-bold text-text-primary truncate">{{ currentTrack?.name || $t('global_player.default_title') }}</h4>
-        <p class="text-xs text-text-tertiary truncate">{{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}</p>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <h4 class="text-sm font-bold text-text-primary truncate" :title="currentTrack?.name">{{ currentTrack?.name || $t('global_player.default_title') }}</h4>
+          <ExplicitBadge v-if="isExplicitTrack(currentTrack)" size="xs" />
+        </div>
+        <p class="text-xs text-text-tertiary truncate mt-0.5" :title="currentTrack?.artists?.map(a => a.name).join(', ')">{{ currentTrack?.artists?.map(a => a.name).join(', ') || $t('global_player.ready_to_play') }}</p>
       </div>
     </div>
 
-    <div class="flex flex-col items-center justify-center w-1/3 w-full max-w-lg">
-      <div class="flex items-center gap-3 sm:gap-5 mb-2">
+    <div class="flex flex-col items-center justify-center flex-1 max-w-xl px-2">
+      <div class="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2">
+        <!-- Heart / Like Button -->
+        <LikeButton 
+          v-if="currentTrackLikeData" 
+          :track="currentTrackLikeData" 
+          :initial-liked="likedSpotifyIds.has(currentTrack?.id)"
+          @liked="onGlobalPlayerLiked"
+          @unliked="onGlobalPlayerUnliked"
+        />
+        <button 
+          v-else 
+          disabled 
+          class="p-1 sm:p-2 opacity-30 cursor-default flex items-center justify-center text-text-tertiary"
+        >
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+
         <!-- Shuffle Button -->
         <button 
           @click="toggleShuffle" 
@@ -877,7 +1054,7 @@
         </button>
         
         <!-- Play/Pause Button -->
-        <button @click="togglePlay" class="w-11 h-11 sm:w-12 sm:h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-md">
+        <button @click="togglePlay" class="w-11 h-11 sm:w-12 sm:h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer shadow-md shadow-purple-600/30">
           <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 5.5a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1H7a1 1 0 01-1-1v-13zm8 0a1 1 0 011-1h2a1 1 0 011 1v13a1 1 0 01-1 1h-2a1 1 0 01-1-1v-13z" />
           </svg>
@@ -910,6 +1087,33 @@
           </svg>
           <span v-if="repeatMode === 'track'" class="absolute inset-0 flex items-center justify-center text-[9px] font-black pointer-events-none pb-0.5">1</span>
           <span v-if="repeatMode !== 'off'" class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-500 dark:bg-purple-400"></span>
+        </button>
+
+        <!-- Add to Playlist Button -->
+        <button 
+          v-if="currentTrack"
+          @click.stop="openAddToPlaylistModal"
+          class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 focus:outline-none cursor-pointer flex-shrink-0"
+          :class="isCurrentTrackInAnyPlaylist ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400'"
+          :title="isCurrentTrackInAnyPlaylist ? ($t('home.in_playlist') || 'Вже у плейлісті (натисніть для перегляду)') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
+        >
+          <!-- Checked circle icon when in playlist -->
+          <svg v-if="isCurrentTrackInAnyPlaylist" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.25z" clip-rule="evenodd" />
+          </svg>
+          <!-- Outline plus icon when not in playlist -->
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <button 
+          v-else 
+          disabled 
+          class="p-1 sm:p-2 opacity-30 cursor-default flex items-center justify-center text-text-tertiary"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
         </button>
       </div>
 
@@ -945,7 +1149,7 @@
       </div>
     </div>
     
-    <div class="flex items-center justify-end w-1/3 gap-2.5 sm:gap-4">
+    <div class="flex items-center justify-end w-[30%] gap-2.5 sm:gap-4">
       <!-- Lyrics Button -->
       <button @click="toggleLyrics" :class="[
         'p-2 rounded-xl transition-all duration-300 tooltip-trigger flex items-center justify-center relative group',
@@ -985,31 +1189,220 @@
         </span>
       </button>
 
-      <!-- Status indicator -->
-      <span v-if="deviceId" class="text-xs font-semibold px-2.5 py-1 bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-300/80 dark:border-green-500/20 rounded-full flex items-center gap-2 shadow-xs" :title="$t('global_player.spotify_connect')">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        <span class="hidden sm:inline">{{ $t('global_player.spotify_connect') }}</span>
-      </span>
-      <span v-else class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-yellow-500/10 text-amber-800 dark:text-yellow-400 border border-amber-300/80 dark:border-yellow-500/20 rounded-full flex items-center gap-2 shadow-xs" :title="$t('global_player.initializing')">
-        <span class="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-        <span class="hidden sm:inline">{{ $t('global_player.loading_player') }}</span>
-      </span>
     </div>
   </div>
-  </div>
 </div>
+
+    <!-- Connect Spotify Bottom Prompt (shown when Spotify is not connected on non-auth routes) -->
+    <div 
+      v-if="!isCheckingConnection && !isConnected && !isAuthRoute" 
+      class="fixed bottom-0 left-0 w-screen bg-surface/95 dark:bg-[#170a24]/95 backdrop-blur-xl border-t border-border-subtle shadow-2xl z-[70] py-2.5 sm:py-3 px-3.5 sm:px-6 transition-all"
+    >
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm font-bold text-text-primary truncate">
+              {{ $t('global_player.connect_spotify_prompt') || 'Підключіть Spotify для відтворення треків' }}
+            </p>
+            <p class="text-[11px] sm:text-xs text-text-tertiary truncate hidden sm:block">
+              {{ $t('global_player.connect_spotify_desc') || 'Отримайте доступ до повної музики, синхронізації та караоке' }}
+            </p>
+          </div>
+        </div>
+
+        <button 
+          type="button"
+          @click="connectSpotify" 
+          :disabled="isConnectingSpotify"
+          class="px-3.5 sm:px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-green-500/25 flex items-center gap-2 flex-shrink-0 cursor-pointer disabled:opacity-60"
+        >
+          <svg v-if="isConnectingSpotify" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ $t('global_player.connect_spotify_btn') || 'Підключити Spotify' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Add to Playlist Selection Modal -->
+    <div 
+      v-if="isAddToPlaylistModalOpen" 
+      class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" 
+      @click.self="closeAddToPlaylistModal"
+    >
+      <div class="bg-surface rounded-3xl p-4 sm:p-5 w-full max-w-sm shadow-2xl border border-border-subtle animate-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-3 pb-3 border-b border-border-subtle">
+          <h3 class="text-base sm:text-lg font-bold text-text-primary">
+            {{ $t('home.select_playlist') || 'Оберіть плейлист' }}
+          </h3>
+          <button 
+            @click="closeAddToPlaylistModal" 
+            class="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover cursor-pointer transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Loading state -->
+        <div v-if="isLoadingUserPlaylists" class="py-8 flex flex-col items-center justify-center text-text-tertiary gap-2">
+          <svg class="animate-spin h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-xs">{{ $t('home.searching') || 'Завантаження...' }}</span>
+        </div>
+
+        <!-- Empty state (no playlists) -->
+        <div v-else-if="userPlaylists.length === 0" class="text-center py-8 text-text-tertiary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-text-tertiary/40 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <p class="text-sm font-medium">{{ $t('home.no_playlists') || 'У вас ще немає плейлистів.' }}</p>
+        </div>
+        
+        <!-- Playlists List -->
+        <div v-else class="max-h-64 overflow-y-auto space-y-2 pr-1">
+          <button 
+            v-for="pl in userPlaylists" 
+            :key="pl.id"
+            @click="toggleTrackInPlaylist(pl)"
+            :disabled="loadingPlaylistId === pl.id"
+            class="w-full text-left px-3.5 py-2.5 rounded-2xl bg-surface-hover hover:bg-surface-alt text-text-primary transition-colors flex items-center gap-3 group cursor-pointer border border-transparent hover:border-purple-500/30 disabled:opacity-75 min-h-[58px]"
+            :class="{ 'border-purple-500/30 bg-purple-500/5': isTrackInPlaylist(pl) }"
+          >
+            <PlaylistCover
+              :coverUrl="pl.coverUrl"
+              :trackCovers="pl.trackCovers || []"
+              :alt="pl.title"
+              containerClass="w-10 h-10 min-w-10 max-w-10 min-h-10 max-h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm overflow-hidden shrink-0 relative"
+              iconClass="h-5 w-5"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm text-text-primary truncate">{{ pl.title }}</div>
+              <div class="text-xs text-text-tertiary truncate">
+                {{ pl.tracksCount ? pl.tracksCount + ' треків' : 'Плейлист' }}
+              </div>
+            </div>
+
+            <!-- State Icon: Checked badge if already in this playlist, or '+' if not -->
+            <div class="flex-shrink-0 flex items-center justify-end">
+              <svg v-if="loadingPlaylistId === pl.id" class="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <!-- Already in this playlist -->
+              <span 
+                v-else-if="isTrackInPlaylist(pl)" 
+                class="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 group-hover:bg-purple-500/25 group-hover:border-purple-500/50 transition-colors select-none"
+                :title="$t('home.click_to_remove')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current flex-shrink-0" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ $t('home.added') }}</span>
+              </span>
+              <!-- Not in this playlist -->
+              <span 
+                v-else 
+                class="w-7 h-7 rounded-full flex items-center justify-center text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:bg-purple-500/10 transition-colors"
+                title="Додати в цей плейлист"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LikeButton from './LikeButton.vue';
+import PlaylistCover from './PlaylistCover.vue';
+import ExplicitBadge from './ExplicitBadge.vue';
+import { isExplicitTrack, fetchMissingExplicitStatus, registerTracksExplicit } from '../../utils/explicit';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // Mobile full-screen expanded player state
 const isMobileFullPlayerOpen = ref(false);
 const likedSpotifyIds = ref(new Set());
+
+const loadSavedTrack = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem('lastPlayedTrack');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && (parsed.id || parsed.uri || parsed.name)) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return null;
+};
+
+const loadSavedQueue = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('lastPlayedQueue');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return [];
+};
+
+const loadSavedOriginalQueue = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('lastPlayedOriginalQueue');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return [];
+};
+
+const loadSavedShuffle = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const saved = localStorage.getItem('player_shuffle');
+    if (saved !== null) return saved === 'true';
+  } catch (e) {}
+  return false;
+};
+
+const loadSavedRepeat = () => {
+  if (typeof window === 'undefined') return 'off';
+  try {
+    const saved = localStorage.getItem('player_repeat');
+    if (saved === 'context' || saved === 'track' || saved === 'off') {
+      return saved;
+    }
+  } catch (e) {}
+  return 'off';
+};
 
 // Safely access global state avoiding SSR crashes
 const getSpotifyState = () => {
@@ -1022,7 +1415,9 @@ const getSpotifyState = () => {
       isPlaying: false,
       currentTrack: null,
       position: 0,
-      duration: 0
+      duration: 0,
+      isShuffle: false,
+      repeatMode: 'off'
     };
   }
   
@@ -1034,7 +1429,9 @@ const getSpotifyState = () => {
     isPlaying: false,
     currentTrack: null,
     position: 0,
-    duration: 0
+    duration: 0,
+    isShuffle: loadSavedShuffle(),
+    repeatMode: loadSavedRepeat()
   };
   return window.__spotifyState;
 };
@@ -1055,19 +1452,76 @@ const checkRoute = () => {
   }
 };
 
-const checkWindowSize = () => {
-  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-    isMobileFullPlayerOpen.value = false;
+const isDesktopOrTablet = ref(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
+const playerBarRef = ref(null);
+const playerBarHeight = ref(88);
+let playerResizeObserver = null;
+
+const updatePlayerHeight = () => {
+  if (playerBarRef.value) {
+    const h = playerBarRef.value.offsetHeight;
+    if (h > 0) {
+      playerBarHeight.value = h;
+    }
   }
 };
 
+const checkWindowSize = () => {
+  if (typeof window !== 'undefined') {
+    isDesktopOrTablet.value = window.innerWidth >= 768;
+    if (window.innerWidth >= 768) {
+      isMobileFullPlayerOpen.value = false;
+    }
+  }
+  updatePlayerHeight();
+};
+
+const queuePanelStyle = computed(() => {
+  if (isDesktopOrTablet.value) {
+    return {
+      bottom: `${playerBarHeight.value}px`
+    };
+  }
+  return {};
+});
+
+const saveLastPlayed = (track, queue = null, pos = 0) => {
+  if (!track || typeof window === 'undefined') return;
+  try {
+    const trackObj = {
+      id: track.id || track.spotifyId,
+      name: track.name || track.title,
+      artists: track.artists ? (track.artists.map(a => typeof a === 'string' ? { name: a } : { name: a.name })) : (track.artistName ? [{ name: track.artistName }] : [{ name: 'Unknown Artist' }]),
+      album: {
+        images: track.album?.images?.length ? track.album.images : (track.albumCoverUrl ? [{ url: track.albumCoverUrl }] : [])
+      },
+      duration_ms: track.duration_ms || track.duration || 0,
+      uri: track.uri || ((track.id || track.spotifyId) ? `spotify:track:${track.id || track.spotifyId}` : null)
+    };
+    localStorage.setItem('lastPlayedTrack', JSON.stringify(trackObj));
+    if (queue && Array.isArray(queue) && queue.length > 0) {
+      localStorage.setItem('lastPlayedQueue', JSON.stringify(queue.slice(0, 50)));
+    }
+    if (pos > 0) {
+      localStorage.setItem('lastPlayedPosition', String(Math.floor(pos)));
+    }
+  } catch (e) {
+    console.warn('Failed to save last played to localStorage', e);
+  }
+};
+
+const initialSavedTrack = loadSavedTrack();
+const initialSavedPosition = typeof window !== 'undefined' ? parseInt(localStorage.getItem('lastPlayedPosition') || '0', 10) : 0;
+
 const isConnected = ref(globalState.isConnected);
+const isCheckingConnection = ref(!globalState.isConnected);
+const isConnectingSpotify = ref(false);
 const token = ref(globalState.token);
 const deviceId = ref(globalState.deviceId);
 const isPlaying = ref(globalState.isPlaying);
-const currentTrack = ref(globalState.currentTrack);
-const position = ref(globalState.position);
-const duration = ref(globalState.duration);
+const currentTrack = ref(globalState.currentTrack || initialSavedTrack);
+const position = ref(globalState.position || (initialSavedTrack ? (isNaN(initialSavedPosition) ? 0 : initialSavedPosition) : 0));
+const duration = ref(globalState.duration || (initialSavedTrack?.duration_ms || 0));
 const isSeeking = ref(false);
 let progressInterval = null;
 
@@ -1099,6 +1553,161 @@ const onGlobalPlayerUnliked = (track) => {
   if (track?.id) newSet.delete(track.id);
   if (track?.spotifyId) newSet.delete(track.spotifyId);
   likedSpotifyIds.value = newSet;
+};
+
+// Add to Playlist Modal State & Actions
+const isAddToPlaylistModalOpen = ref(false);
+const userPlaylists = ref([]);
+const isLoadingUserPlaylists = ref(false);
+const loadingPlaylistId = ref(null);
+
+const fetchUserPlaylists = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  isLoadingUserPlaylists.value = true;
+  try {
+    const res = await fetch('http://localhost:5001/api/playlists', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const list = data.playlists || [];
+      userPlaylists.value = list.map(p => ({
+        ...p,
+        coverUrl: localStorage.getItem(`playlistCover_${p.id}`) || null,
+        trackCovers: p.trackCovers || [],
+        trackSpotifyIds: p.trackSpotifyIds || []
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to load user playlists:', err);
+  } finally {
+    isLoadingUserPlaylists.value = false;
+  }
+};
+
+const getCurrentSpotifyId = () => {
+  return currentTrack.value?.id || currentTrack.value?.uri?.replace(/^spotify:track:/, '') || '';
+};
+
+const currentTrackInPlaylistIds = computed(() => {
+  const sId = getCurrentSpotifyId();
+  if (!sId) return new Set();
+  const set = new Set();
+  for (const pl of userPlaylists.value) {
+    if (pl.trackSpotifyIds && pl.trackSpotifyIds.includes(sId)) {
+      set.add(pl.id);
+    }
+  }
+  return set;
+});
+
+const isCurrentTrackInAnyPlaylist = computed(() => {
+  return currentTrackInPlaylistIds.value.size > 0;
+});
+
+const isTrackInPlaylist = (playlist) => {
+  const sId = getCurrentSpotifyId();
+  if (!sId || !playlist?.trackSpotifyIds) return false;
+  return playlist.trackSpotifyIds.includes(sId);
+};
+
+const openAddToPlaylistModal = () => {
+  if (!currentTrack.value) return;
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = `/${locale?.value || 'uk'}/`;
+    return;
+  }
+  isAddToPlaylistModalOpen.value = true;
+  fetchUserPlaylists();
+};
+
+const closeAddToPlaylistModal = () => {
+  isAddToPlaylistModalOpen.value = false;
+  loadingPlaylistId.value = null;
+};
+
+const toggleTrackInPlaylist = async (playlist) => {
+  if (!currentTrack.value) return;
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const currentId = getCurrentSpotifyId();
+  if (!currentId) return;
+
+  const playlistId = playlist.id;
+  loadingPlaylistId.value = playlistId;
+
+  const inPlaylist = isTrackInPlaylist(playlist);
+
+  try {
+    if (inPlaylist) {
+      // Remove from playlist
+      const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}/tracks/${currentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('playlist-track-removed', { 
+          detail: { playlistId, spotifyId: currentId } 
+        }));
+      }
+    } else {
+      // Add to playlist
+      const trackData = {
+        spotifyId: currentId,
+        title: currentTrack.value.name,
+        artistName: currentTrack.value.artists?.map(a => a.name).join(', ') || 'Unknown Artist',
+        albumCoverUrl: currentTrack.value.album?.images?.[0]?.url || '',
+        previewUrl: null
+      };
+
+      const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(trackData)
+      });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('playlist-track-added', { 
+          detail: { playlistId, track: trackData } 
+        }));
+      }
+    }
+  } catch (err) {
+    console.error('Error toggling track in playlist:', err);
+  } finally {
+    loadingPlaylistId.value = null;
+  }
+};
+
+const handlePlaylistTrackAdded = (e) => {
+  const { playlistId, track } = e.detail || {};
+  const pl = userPlaylists.value.find(p => String(p.id) === String(playlistId));
+  const sId = track?.spotifyId || getCurrentSpotifyId();
+  if (pl) {
+    if (sId && (!pl.trackSpotifyIds || !pl.trackSpotifyIds.includes(sId))) {
+      pl.tracksCount = (pl.tracksCount || 0) + 1;
+      pl.trackSpotifyIds = [...(pl.trackSpotifyIds || []), sId];
+    }
+  } else {
+    fetchUserPlaylists();
+  }
+};
+
+const handlePlaylistTrackRemoved = (e) => {
+  const { playlistId, spotifyId } = e.detail || {};
+  const pl = userPlaylists.value.find(p => String(p.id) === String(playlistId));
+  const sId = spotifyId || getCurrentSpotifyId();
+  if (pl && sId && pl.trackSpotifyIds) {
+    if (pl.trackSpotifyIds.includes(sId)) {
+      pl.tracksCount = Math.max(0, (pl.tracksCount || 1) - 1);
+      pl.trackSpotifyIds = pl.trackSpotifyIds.filter(id => id !== sId);
+    }
+  }
 };
 
 const handleTrackFavoriteUpdated = (e) => {
@@ -1138,13 +1747,14 @@ const fetchLikedTracks = async () => {
 };
 
 // Shuffle & Repeat State
-const isShuffle = ref(false);
-const repeatMode = ref('off'); // 'off' | 'context' | 'track'
+const isShuffle = ref(globalState.isShuffle !== undefined ? globalState.isShuffle : loadSavedShuffle());
+const repeatMode = ref(globalState.repeatMode || loadSavedRepeat()); // 'off' | 'context' | 'track'
 
 // Queue State
 const showQueue = ref(false);
-const queueTracks = ref([]);
-const originalQueueTracks = ref([]);
+const queueTracks = ref(loadSavedQueue());
+const savedOrigQueue = loadSavedOriginalQueue();
+const originalQueueTracks = ref(savedOrigQueue.length > 0 ? savedOrigQueue : [...loadSavedQueue()]);
 const queueContextName = ref('');
 const draggedIndex = ref(null);
 
@@ -1189,6 +1799,9 @@ const upcomingQueue = computed(() => {
 
 const toggleQueue = () => {
   showQueue.value = !showQueue.value;
+  if (showQueue.value) {
+    nextTick(updatePlayerHeight);
+  }
 };
 
 const toggleShuffle = async () => {
@@ -1376,6 +1989,60 @@ const mobileLyricRefs = ref([]);
 const lyricsContainer = ref(null);
 const mobileLyricsContainer = ref(null);
 
+const currentTrackCover = computed(() => {
+  return currentTrack.value?.album?.images?.[0]?.url || currentTrack.value?.albumCoverUrl || '';
+});
+
+const currentTrackTitle = computed(() => {
+  return currentTrack.value?.name || currentTrack.value?.title || 'Невідомий трек';
+});
+
+const currentTrackArtist = computed(() => {
+  if (!currentTrack.value) return '';
+  return currentTrack.value.artists?.map(a => a.name).join(', ') || currentTrack.value.artistName || currentTrack.value.artist || 'Невідомий виконавець';
+});
+
+const isInstrumentalBreak = computed(() => {
+  if (lyricsList.value.length === 0 || !isPlaying.value) return false;
+  const currentPosSec = position.value / 1000;
+  
+  // Case 1: Intro break (before the first line)
+  if (activeLyricIndex.value === -1) {
+    const firstLine = lyricsList.value[0];
+    return Boolean(firstLine && firstLine.time > 4.5 && currentPosSec < firstLine.time - 0.8);
+  }
+  
+  // Case 2: Solo break between lines (gap >= 7s)
+  if (activeLyricIndex.value >= 0 && activeLyricIndex.value < lyricsList.value.length - 1) {
+    const curr = lyricsList.value[activeLyricIndex.value];
+    const next = lyricsList.value[activeLyricIndex.value + 1];
+    if (next && next.time - curr.time >= 7) {
+      return currentPosSec > curr.time + 3.8 && currentPosSec < next.time - 1.0;
+    }
+  }
+  
+  // Case 3: Outro break (after the last line)
+  if (activeLyricIndex.value === lyricsList.value.length - 1) {
+    const last = lyricsList.value[lyricsList.value.length - 1];
+    const totalSec = duration.value / 1000;
+    if (totalSec - last.time >= 8) {
+      return currentPosSec > last.time + 4.0;
+    }
+  }
+  
+  return false;
+});
+
+const instrumentalBreakLabel = computed(() => {
+  if (activeLyricIndex.value === -1) {
+    return t('global_player.karaoke_intro') || 'Вступ';
+  }
+  if (activeLyricIndex.value === lyricsList.value.length - 1) {
+    return t('global_player.karaoke_outro') || 'Завершення';
+  }
+  return t('global_player.karaoke_solo') || 'Музичний програш';
+});
+
 // Sync refs with global state so updates are preserved
 watch(isConnected, val => { if (typeof window !== 'undefined') window.__spotifyState.isConnected = val; });
 watch(token, val => { if (typeof window !== 'undefined') window.__spotifyState.token = val; });
@@ -1384,14 +2051,40 @@ watch(isPlaying, val => { if (typeof window !== 'undefined') window.__spotifySta
 watch(currentTrack, val => { if (typeof window !== 'undefined') window.__spotifyState.currentTrack = val; });
 watch(position, val => { if (typeof window !== 'undefined') window.__spotifyState.position = val; });
 watch(duration, val => { if (typeof window !== 'undefined') window.__spotifyState.duration = val; });
+watch(isShuffle, val => {
+  if (typeof window !== 'undefined') {
+    window.__spotifyState.isShuffle = val;
+    localStorage.setItem('player_shuffle', String(val));
+  }
+});
+watch(repeatMode, val => {
+  if (typeof window !== 'undefined') {
+    window.__spotifyState.repeatMode = val;
+    localStorage.setItem('player_repeat', val);
+  }
+});
+watch(originalQueueTracks, val => {
+  if (typeof window !== 'undefined' && Array.isArray(val) && val.length > 0) {
+    try {
+      localStorage.setItem('lastPlayedOriginalQueue', JSON.stringify(val.slice(0, 50)));
+    } catch (e) {}
+  }
+}, { deep: true });
 
 watch(isPlaying, (newVal) => {
   if (newVal) startProgressTimer();
   else stopProgressTimer();
 });
 
-// Watch currentTrack for lyrics
+// Watch currentTrack for lyrics & explicit status
 watch(currentTrack, (newTrack, oldTrack) => {
+  if (newTrack) {
+    if (newTrack.explicit) {
+      registerTracksExplicit([newTrack]);
+    } else {
+      fetchMissingExplicitStatus([newTrack]);
+    }
+  }
   if (newTrack?.id !== oldTrack?.id) {
     lyricsList.value = [];
     lyricsNotFound.value = false;
@@ -1408,6 +2101,18 @@ watch(currentTrack, (newTrack, oldTrack) => {
 // Variables to hold forced lyric state
 let forcedLyricIndex = -1;
 let forcedLyricTimeout = null;
+let isUserScrollingLyrics = false;
+let userScrollTimeout = null;
+
+const onLyricsScroll = () => {
+  if (forcedLyricIndex !== -1) return;
+  isUserScrollingLyrics = true;
+  clearTimeout(userScrollTimeout);
+  userScrollTimeout = setTimeout(() => {
+    isUserScrollingLyrics = false;
+    scrollToActiveLyric();
+  }, 3000);
+};
 
 // Sync lyrics scroll position
 watch(position, (newPosMs) => {
@@ -1425,7 +2130,9 @@ watch(position, (newPosMs) => {
   
   if (newIndex !== activeLyricIndex.value) {
     activeLyricIndex.value = newIndex;
-    scrollToActiveLyric();
+    if (!isUserScrollingLyrics) {
+      scrollToActiveLyric();
+    }
   }
 });
 
@@ -1440,9 +2147,11 @@ const scrollToActiveLyric = () => {
     const containerHeight = container.offsetHeight;
     
     container.scrollTo({
-      top: elTop - (containerHeight / 2) + (elHeight / 2),
+      top: Math.max(0, elTop - (containerHeight / 2) + (elHeight / 2)),
       behavior: 'smooth'
     });
+  } else if (activeLyricIndex.value === -1 && lyricsContainer.value) {
+    lyricsContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // Mobile
@@ -1455,15 +2164,20 @@ const scrollToActiveLyric = () => {
     const mContainerHeight = mContainer.offsetHeight;
     
     mContainer.scrollTo({
-      top: Math.max(0, mElTop - (mContainerHeight * 0.35) + (mElHeight / 2)),
+      top: Math.max(0, mElTop - (mContainerHeight * 0.42) + (mElHeight / 2)),
       behavior: 'smooth'
     });
+  } else if (activeLyricIndex.value === -1 && mobileLyricsContainer.value) {
+    mobileLyricsContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
 
 const seekToLyric = (timeSec, index) => {
   const newPosMs = Math.max(0, Math.floor(timeSec * 1000));
   position.value = newPosMs;
+  
+  isUserScrollingLyrics = false;
+  clearTimeout(userScrollTimeout);
   
   forcedLyricIndex = index;
   activeLyricIndex.value = index;
@@ -1601,6 +2315,11 @@ const stopProgressTimer = () => {
     clearInterval(progressInterval);
     progressInterval = null;
   }
+  if (currentTrack.value && position.value > 0) {
+    try {
+      localStorage.setItem('lastPlayedPosition', String(Math.floor(position.value)));
+    } catch (e) {}
+  }
 };
 
 const formatTime = (ms) => {
@@ -1621,15 +2340,22 @@ const handleSeek = (event) => {
 
 const checkConnection = async () => {
   checkRoute();
-  if (isAuthRoute.value) return;
+  if (isAuthRoute.value) {
+    isCheckingConnection.value = false;
+    return;
+  }
 
   if (window.__spotifyState.player) {
     isConnected.value = true;
+    isCheckingConnection.value = false;
     return;
   }
 
   const localToken = localStorage.getItem('token');
-  if (!localToken) return;
+  if (!localToken) {
+    isCheckingConnection.value = false;
+    return;
+  }
 
   try {
     const res = await fetch('http://localhost:5001/api/spotify/me', {
@@ -1642,10 +2368,74 @@ const checkConnection = async () => {
         isConnected.value = true;
         token.value = data.token;
         initializePlayer();
+      } else {
+        isConnected.value = false;
       }
+    } else {
+      isConnected.value = false;
     }
   } catch (e) {
     console.error('Failed to check spotify status', e);
+    isConnected.value = false;
+  } finally {
+    isCheckingConnection.value = false;
+  }
+};
+
+const fetchLastPlayedFromHistory = async () => {
+  if (currentTrack.value) return;
+  const t = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!t) return;
+  try {
+    const res = await fetch('http://localhost:5001/api/history', {
+      headers: { 'Authorization': `Bearer ${t}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.history && data.history.length > 0 && !currentTrack.value) {
+        const firstItem = data.history[0];
+        const first = firstItem.track || firstItem;
+        if (first) {
+          const trackObj = {
+            id: first.spotifyId || first.id,
+            name: first.title || first.name,
+            artists: [{ name: first.artistName || 'Unknown Artist' }],
+            album: {
+              images: first.albumCoverUrl ? [{ url: first.albumCoverUrl }] : []
+            },
+            duration_ms: first.duration || 180000,
+            uri: first.spotifyId ? `spotify:track:${first.spotifyId}` : (first.id ? `spotify:track:${first.id}` : null)
+          };
+          currentTrack.value = trackObj;
+          duration.value = trackObj.duration_ms;
+          saveLastPlayed(trackObj);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch initial track from history', e);
+  }
+};
+
+const connectSpotify = async () => {
+  const localToken = localStorage.getItem('token');
+  if (!localToken) return;
+  isConnectingSpotify.value = true;
+  try {
+    const res = await fetch('http://localhost:5001/api/spotify/auth-url', {
+      headers: { 'Authorization': `Bearer ${localToken}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to initiate Spotify connection:', err);
+  } finally {
+    isConnectingSpotify.value = false;
   }
 };
 
@@ -1701,6 +2491,22 @@ const setupSpotifyPlayer = () => {
   player.addListener('ready', ({ device_id }) => {
     console.log('Ready with Device ID', device_id);
     deviceId.value = device_id;
+
+    // Sync saved shuffle & repeat state to Spotify
+    if (token.value && device_id) {
+      if (isShuffle.value) {
+        fetch(`https://api.spotify.com/v1/me/player/shuffle?state=true&device_id=${device_id}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token.value}` }
+        }).catch(() => {});
+      }
+      if (repeatMode.value && repeatMode.value !== 'off') {
+        fetch(`https://api.spotify.com/v1/me/player/repeat?state=${repeatMode.value}&device_id=${device_id}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token.value}` }
+        }).catch(() => {});
+      }
+    }
   });
 
   player.addListener('not_ready', ({ device_id }) => {
@@ -1726,11 +2532,19 @@ const setupSpotifyPlayer = () => {
   player.addListener('player_state_changed', state => {
     if (!state) return;
     isPlaying.value = !state.paused;
-    currentTrack.value = state.track_window.current_track;
+    if (state.track_window?.current_track) {
+      currentTrack.value = state.track_window.current_track;
+      saveLastPlayed(state.track_window.current_track, queueTracks.value, state.position);
+    }
     
-    // Sync repeat from Spotify if available
-    if (typeof state.repeat_mode !== 'undefined') {
-      repeatMode.value = state.repeat_mode === 2 ? 'track' : state.repeat_mode === 1 ? 'context' : 'off';
+    // Sync repeat & shuffle from Spotify if available
+    if (state.track_window?.current_track) {
+      if (typeof state.shuffle !== 'undefined') {
+        isShuffle.value = !!state.shuffle;
+      }
+      if (typeof state.repeat_mode !== 'undefined') {
+        repeatMode.value = state.repeat_mode === 2 ? 'track' : state.repeat_mode === 1 ? 'context' : 'off';
+      }
     }
 
     if (queueTracks.value.length === 0 && state.track_window.current_track) {
@@ -1757,15 +2571,38 @@ const setupSpotifyPlayer = () => {
   player.connect();
 };
 
+const waitForDeviceReady = async (timeoutMs = 4000) => {
+  if (deviceId.value) return deviceId.value;
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (deviceId.value) return deviceId.value;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  return deviceId.value;
+};
+
 const togglePlay = async () => {
   const player = window.__spotifyState?.player;
   const currentToken = token.value;
   const currentDevId = deviceId.value;
 
+  if (!currentTrack.value) {
+    const saved = loadSavedTrack();
+    if (saved) {
+      currentTrack.value = saved;
+      duration.value = saved.duration_ms || 0;
+    } else {
+      await fetchLastPlayedFromHistory();
+    }
+  }
+
+  if (!currentTrack.value) {
+    return;
+  }
+
   const previousPlaying = isPlaying.value;
   const targetPlaying = !previousPlaying;
 
-  // Optimistic UI update immediately so user sees instant icon response
   isPlaying.value = targetPlaying;
   window.dispatchEvent(new CustomEvent('spotify-state-update', { 
     detail: { 
@@ -1775,66 +2612,75 @@ const togglePlay = async () => {
   }));
 
   try {
-    let success = false;
-    if (player) {
+    let state = null;
+    if (player && typeof player.getCurrentState === 'function') {
       try {
-        if (targetPlaying) {
-          if (typeof player.resume === 'function') {
-            await player.resume();
-          } else {
-            await player.togglePlay();
-          }
+        state = await player.getCurrentState();
+      } catch (e) {}
+    }
+
+    if (targetPlaying) {
+      if (state && state.track_window?.current_track) {
+        // Player already has this track loaded: resume
+        if (typeof player.resume === 'function') {
+          await player.resume();
         } else {
-          if (typeof player.pause === 'function') {
-            await player.pause();
-          } else {
-            await player.togglePlay();
-          }
+          await player.togglePlay();
         }
-        success = true;
-      } catch (sdkErr) {
-        console.warn('Spotify SDK toggle error, falling back to Web API:', sdkErr);
+      } else {
+        // Player has no track buffered: start playback of currentTrack
+        const uri = currentTrack.value.uri || (currentTrack.value.id ? `spotify:track:${currentTrack.value.id}` : null);
+        if (uri) {
+          const queueUris = queueTracks.value.length > 0 
+            ? queueTracks.value.map(t => getQueueTrackUri(t)).filter(Boolean) 
+            : [uri];
+          const allUris = queueUris.includes(uri) ? queueUris : [uri, ...queueUris];
+          const savedPos = position.value > 1000 ? Math.floor(position.value) : 0;
+          await playTrack(uri, allUris, savedPos);
+          return;
+        }
+      }
+    } else {
+      // Pause
+      if (player) {
+        if (typeof player.pause === 'function') {
+          await player.pause();
+        } else {
+          await player.togglePlay();
+        }
+      } else if (currentToken && currentDevId) {
+        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${currentDevId}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+      }
+      if (currentTrack.value) {
+        saveLastPlayed(currentTrack.value, queueTracks.value, position.value);
       }
     }
 
-    // Fallback to Spotify Web API if SDK call had an issue or player is not attached
-    if (!success && currentToken && currentDevId) {
-      const endpoint = targetPlaying ? 'play' : 'pause';
-      const res = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}?device_id=${currentDevId}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${currentToken}` }
-      });
-      if (res.ok || res.status === 204) {
-        success = true;
-      }
-    }
-
-    // Check actual state from SDK to ensure perfect sync
     setTimeout(async () => {
       if (player && typeof player.getCurrentState === 'function') {
         try {
-          const state = await player.getCurrentState();
-          if (state) {
-            const actualStatePlaying = !state.paused;
+          const currentState = await player.getCurrentState();
+          if (currentState) {
+            const actualStatePlaying = !currentState.paused;
             if (isPlaying.value !== actualStatePlaying) {
               isPlaying.value = actualStatePlaying;
               window.dispatchEvent(new CustomEvent('spotify-state-update', { 
                 detail: { 
                   isPlaying: actualStatePlaying, 
-                  trackId: state.track_window?.current_track?.id || currentTrack.value?.id 
+                  trackId: currentState.track_window?.current_track?.id || currentTrack.value?.id 
                 } 
               }));
             }
           }
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       }
-    }, 200);
+    }, 250);
 
   } catch (err) {
     console.error('Failed to toggle play state:', err);
-    // Revert optimistic update on failure
     isPlaying.value = previousPlaying;
     window.dispatchEvent(new CustomEvent('spotify-state-update', { 
       detail: { 
@@ -1858,6 +2704,18 @@ const nextTrack = () => {
     const nextItem = upcomingQueue.value[0];
     playFromQueue(nextItem, 0);
     return;
+  }
+
+  if (repeatMode.value === 'context' && queueTracks.value.length > 0) {
+    const loopTracks = originalQueueTracks.value.length > 0 ? originalQueueTracks.value : queueTracks.value;
+    const first = loopTracks[0];
+    if (first) {
+      const uri = getQueueTrackUri(first);
+      queueTracks.value = [...loopTracks];
+      const allUris = loopTracks.map(t => getQueueTrackUri(t)).filter(Boolean);
+      playTrack(uri, allUris);
+      return;
+    }
   }
 
   if (window.__spotifyState.player) {
@@ -1888,9 +2746,14 @@ const previousTrack = () => {
   }
 };
 
-const playTrack = async (uri, allUris = null) => {
+const playTrack = async (uri, allUris = null, positionMs = 0) => {
+  if (!deviceId.value) {
+    await waitForDeviceReady(4000);
+  }
+
   if (!deviceId.value || !token.value) {
     alert(t('global_player.error_not_ready'));
+    isPlaying.value = false;
     return;
   }
   
@@ -1900,6 +2763,9 @@ const playTrack = async (uri, allUris = null) => {
       uris: allUris,
       offset: { uri: uri }
     };
+  }
+  if (positionMs && positionMs > 1000) {
+    body.position_ms = positionMs;
   }
   
   try {
@@ -1912,7 +2778,22 @@ const playTrack = async (uri, allUris = null) => {
       }
     });
 
-    if (!response.ok) {
+    if (response.ok) {
+      if (deviceId.value && token.value) {
+        if (isShuffle.value) {
+          fetch(`https://api.spotify.com/v1/me/player/shuffle?state=true&device_id=${deviceId.value}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token.value}` }
+          }).catch(() => {});
+        }
+        if (repeatMode.value && repeatMode.value !== 'off') {
+          fetch(`https://api.spotify.com/v1/me/player/repeat?state=${repeatMode.value}&device_id=${deviceId.value}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token.value}` }
+          }).catch(() => {});
+        }
+      }
+    } else {
       const errorData = await response.json().catch(() => ({}));
       console.error('Spotify API Error:', errorData);
       
@@ -1933,6 +2814,10 @@ const playTrack = async (uri, allUris = null) => {
 const handleNav = () => {
   checkRoute();
   checkWindowSize();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (token && userPlaylists.value.length === 0) {
+    fetchUserPlaylists();
+  }
 };
 
 onMounted(() => {
@@ -1941,11 +2826,21 @@ onMounted(() => {
   document.addEventListener('astro:after-swap', handleNav);
   window.addEventListener('popstate', handleNav);
   window.addEventListener('resize', checkWindowSize);
+  if (typeof ResizeObserver !== 'undefined' && playerBarRef.value) {
+    playerResizeObserver = new ResizeObserver(updatePlayerHeight);
+    playerResizeObserver.observe(playerBarRef.value);
+  }
 
   checkConnection();
   fetchLikedTracks();
+  fetchUserPlaylists();
+  if (!currentTrack.value) {
+    fetchLastPlayedFromHistory();
+  }
 
   window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+  window.addEventListener('playlist-track-added', handlePlaylistTrackAdded);
+  window.addEventListener('playlist-track-removed', handlePlaylistTrackRemoved);
   window.addEventListener('track-liked', (e) => {
     if (e.detail?.spotifyId) {
       const newSet = new Set(likedSpotifyIds.value);
@@ -2002,6 +2897,25 @@ onMounted(() => {
 
       queueTracks.value = tracks;
       queueContextName.value = e.detail.contextName || '';
+
+      if (tracks.length > 0) {
+        const selected = tracks[0];
+        if (selected) {
+          const trackObj = {
+            id: getQueueTrackId(selected),
+            name: getQueueTrackTitle(selected),
+            artists: [{ name: getQueueTrackArtist(selected) }],
+            album: {
+              images: getQueueTrackCover(selected) ? [{ url: getQueueTrackCover(selected) }] : []
+            },
+            duration_ms: selected.duration_ms || selected.duration || 180000,
+            uri: targetUri
+          };
+          currentTrack.value = trackObj;
+          saveLastPlayed(trackObj, tracks, 0);
+        }
+      }
+
       playTrack(targetUri, uris.length > 0 ? uris : e.detail.uris);
 
       // On mobile screens (< 768px), expand to full player when user clicks to play a song
@@ -2024,14 +2938,26 @@ onMounted(() => {
   window.addEventListener('open-mobile-karaoke', () => {
     openMobileKaraoke();
   });
+
+  window.addEventListener('keydown', handleGlobalKeydown);
 });
 
+const handleGlobalKeydown = (e) => {
+  if (e.key === 'Escape' && showLyrics.value) {
+    showLyrics.value = false;
+  }
+};
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown);
   window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+  window.removeEventListener('playlist-track-added', handlePlaylistTrackAdded);
+  window.removeEventListener('playlist-track-removed', handlePlaylistTrackRemoved);
   document.removeEventListener('astro:page-load', handleNav);
   document.removeEventListener('astro:after-swap', handleNav);
   window.removeEventListener('popstate', handleNav);
   window.removeEventListener('resize', checkWindowSize);
+  playerResizeObserver?.disconnect();
   stopProgressTimer();
   // DO NOT disconnect the player here, because Astro View Transitions might unmount/remount
   // this component while we navigate. Disconnecting it would stop the music.
@@ -2051,5 +2977,101 @@ onBeforeUnmount(() => {
   .mobile-full-player-active {
     display: none !important;
   }
+}
+
+/* Dynamic Ambient Floating Orbs Keyframes (smooth continuous GPU transforms) */
+@keyframes orbFloat1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  20% {
+    transform: translate3d(38vw, 22vh, 0) scale(1.15);
+  }
+  40% {
+    transform: translate3d(62vw, 55vh, 0) scale(0.95);
+  }
+  60% {
+    transform: translate3d(28vw, 70vh, 0) scale(1.12);
+  }
+  80% {
+    transform: translate3d(-8vw, 42vh, 0) scale(0.9);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes orbFloat2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(-38vw, -28vh, 0) scale(0.9);
+  }
+  50% {
+    transform: translate3d(-58vw, -52vh, 0) scale(1.16);
+  }
+  75% {
+    transform: translate3d(-18vw, -18vh, 0) scale(0.94);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes orbFloat3 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  30% {
+    transform: translate3d(-42vw, 38vh, 0) scale(1.18);
+  }
+  55% {
+    transform: translate3d(-68vw, 12vh, 0) scale(0.92);
+  }
+  80% {
+    transform: translate3d(-24vw, 58vh, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+}
+
+@keyframes orbFloat4 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  28% {
+    transform: translate3d(48vw, -42vh, 0) scale(0.9);
+  }
+  60% {
+    transform: translate3d(68vw, -12vh, 0) scale(1.14);
+  }
+  85% {
+    transform: translate3d(22vw, -55vh, 0) scale(0.96);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+}
+
+.animate-orb-1 {
+  animation: orbFloat1 13s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-orb-2 {
+  animation: orbFloat2 15s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-orb-3 {
+  animation: orbFloat3 12s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-orb-4 {
+  animation: orbFloat4 14s ease-in-out infinite;
+  will-change: transform;
 }
 </style>

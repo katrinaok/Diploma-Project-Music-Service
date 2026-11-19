@@ -44,6 +44,9 @@
     "add_to_playlist": "Додати в плейлист",
     "select_playlist": "Оберіть плейлист",
     "no_playlists": "У вас ще немає плейлистів.",
+    "added": "Додано",
+    "in_playlist": "Вже у плейлісті",
+    "click_to_remove": "Натисніть, щоб вилучити з плейліста",
     "recently_played": "Нещодавно прослухано",
     "recommended_title": "Рекомендовано для вас",
     "recommended_subtitle": "Треки, підібрані спеціально за вашим музичним смаком",
@@ -158,6 +161,9 @@
     "default_title": "Spotify Плеєр",
     "ready_to_play": "Готовий до відтворення",
     "spotify_connect": "Spotify підключено",
+    "connect_spotify_prompt": "Підключіть Spotify для прослуховування треків",
+    "connect_spotify_desc": "Отримайте доступ до повної музики, синхронізації та караоке",
+    "connect_spotify_btn": "Підключити Spotify",
     "initializing": "Ініціалізація плеєра Spotify",
     "loading_player": "Завантаження плеєра...",
     "error_not_ready": "Spotify плеєр ще не готовий або вимагає оновлення сторінки.",
@@ -176,6 +182,12 @@
     "lyrics_retry": "Спробувати ще раз",
     "lyrics_close": "Закрити",
     "lyrics_error": "Помилка завантаження тексту",
+    "karaoke_live": "Живе караоке",
+    "karaoke_intro": "Вступ",
+    "karaoke_solo": "Музичний програш",
+    "karaoke_outro": "Завершення",
+    "align_center": "По центру",
+    "align_left": "Ліворуч",
     "shuffle": "Перемішати",
     "shuffle_on": "Перемішування увімкнено",
     "shuffle_off": "Перемішування вимкнено",
@@ -268,5 +280,8 @@
     "cancel": "Скасувати",
     "delete_color": "Видалити колір",
     "add_custom_color": "Додати свій колір"
+  },
+  "track": {
+    "explicit_tooltip": "Містить нецензурну лексику або дорослий зміст (18+)"
   }
 }

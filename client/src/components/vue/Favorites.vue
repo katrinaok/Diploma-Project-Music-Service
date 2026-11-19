@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full p-4 md:p-8 pb-32">
+  <div class="w-full p-4 md:p-8 pb-20 md:pb-28">
     <div class="w-full mx-auto space-y-6">
       
       <!-- Loading State -->
@@ -85,7 +85,10 @@
               </div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
-                <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 class="text-sm font-bold text-text-primary truncate">{{ item.track.title }}</h3>
+                  <ExplicitBadge v-if="isExplicitTrack(item.track)" size="xs" />
+                </div>
                 <div class="flex items-center gap-2 mt-0.5">
                   <p class="text-xs text-text-tertiary truncate">{{ item.track.artistName }}</p>
                 </div>
@@ -109,7 +112,16 @@
                   <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div v-else class="text-xs text-text-muted italic px-2">Прев'ю недоступне</div>
+              <button 
+                v-else 
+                type="button"
+                @click.stop="connectSpotify"
+                class="text-xs text-text-muted hover:text-purple-600 dark:hover:text-purple-400 italic px-2 transition-colors cursor-pointer group/prev flex items-center gap-1"
+                :title="$t('global_player.connect_spotify_prompt') || 'Підключіть Spotify, щоб слухати'"
+              >
+                <span>{{ $t('home.preview_unavailable') || 'Прев\'ю недоступне' }}</span>
+                <span class="text-purple-600 dark:text-purple-400 font-medium not-italic group-hover/prev:underline hidden sm:inline">• {{ $t('settings.connect') || 'Підключити' }}</span>
+              </button>
               
               <div class="flex items-center gap-1 relative">
                 <LikeButton 
@@ -131,6 +143,8 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LikeButton from './LikeButton.vue';
+import ExplicitBadge from './ExplicitBadge.vue';
+import { isExplicitTrack, fetchMissingExplicitStatus } from '../../utils/explicit';
 import { recordListeningHistory } from '../../utils/history.js';
 import { getTracksCountText } from '../../utils/plural';
 
@@ -220,7 +234,10 @@ const togglePlay = (track) => {
     return;
   }
 
-  if (!track.previewUrl) return;
+  if (!track.previewUrl) {
+    connectSpotify();
+    return;
+  }
 
   if (playingTrackId.value === track.spotifyId) {
     currentAudio.value.pause();
@@ -244,6 +261,24 @@ const togglePlay = (track) => {
   currentAudio.value.onended = () => {
     playingTrackId.value = null;
   };
+};
+
+const connectSpotify = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const res = await fetch('http://localhost:5001/api/spotify/auth-url', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to connect Spotify:', err);
+  }
 };
 
 onMounted(async () => {
@@ -285,6 +320,9 @@ onMounted(async () => {
     if (response.ok) {
       const data = await response.json();
       tracks.value = data.favorites;
+      if (Array.isArray(data.favorites) && data.favorites.length > 0) {
+        fetchMissingExplicitStatus(data.favorites.map(f => f.track));
+      }
     } else {
       error.value = 'Помилка завантаження улюблених треків';
     }

@@ -390,6 +390,17 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
         },
         _count: {
           select: { savedBy: true, tracks: true }
+        },
+        tracks: {
+          include: {
+            track: {
+              select: { id: true, spotifyId: true, albumCoverUrl: true }
+            }
+          },
+          orderBy: [
+            { position: 'asc' },
+            { addedAt: 'asc' }
+          ]
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -408,6 +419,17 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
               },
               _count: {
                 select: { savedBy: true, tracks: true }
+              },
+              tracks: {
+                include: {
+                  track: {
+                    select: { id: true, spotifyId: true, albumCoverUrl: true }
+                  }
+                },
+                orderBy: [
+                  { position: 'asc' },
+                  { addedAt: 'asc' }
+                ]
               }
             }
           }
@@ -423,6 +445,13 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
           isSaved: true,
           savesCount: s.playlist._count.savedBy,
           tracksCount: s.playlist._count.tracks,
+          trackCovers: (s.playlist.tracks || [])
+            .map(t => t.track?.albumCoverUrl)
+            .filter((url): url is string => Boolean(url))
+            .slice(0, 4),
+          trackSpotifyIds: (s.playlist.tracks || [])
+            .map(t => t.track?.spotifyId)
+            .filter((id): id is string => Boolean(id)),
           savedAt: s.savedAt
         }));
     }
@@ -445,7 +474,14 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
       isOwner: currentUserId ? p.userId === currentUserId : false,
       isSaved: savedIdsSet.has(p.id),
       savesCount: p._count.savedBy,
-      tracksCount: p._count.tracks
+      tracksCount: p._count.tracks,
+      trackCovers: (p.tracks || [])
+        .map(t => t.track?.albumCoverUrl)
+        .filter((url): url is string => Boolean(url))
+        .slice(0, 4),
+      trackSpotifyIds: (p.tracks || [])
+        .map(t => t.track?.spotifyId)
+        .filter((id): id is string => Boolean(id))
     }));
 
     res.json({

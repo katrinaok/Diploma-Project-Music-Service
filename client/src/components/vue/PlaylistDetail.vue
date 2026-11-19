@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full px-2 sm:px-4 md:px-8 py-3 sm:py-6 pb-32">
+  <div class="w-full px-2 sm:px-4 md:px-8 py-3 sm:py-6 pb-20 md:pb-28">
     <div class="w-full mx-auto space-y-4 sm:space-y-6">
       
       <!-- Loading State -->
@@ -28,21 +28,18 @@
         <div class="bg-surface rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-sm border border-border-subtle transition-colors flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-10 items-center md:items-start">
           
           <!-- Playlist Cover -->
-          <div 
-            class="group relative w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300"
+          <PlaylistCover
+            :coverUrl="playlistCoverUrl"
+            :trackCovers="playlist?.tracks || []"
+            :alt="playlist?.title || 'Playlist Cover'"
+            containerClass="group relative w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-sm border-2 border-border-strong flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300"
             :class="{ 'cursor-pointer hover:scale-[1.02]': isOwner }"
+            :imgClass="{ 'group-hover:scale-110': isOwner, 'transition-transform duration-500': true }"
+            iconClass="h-20 w-20 opacity-50"
             @click="isOwner ? triggerCoverUpload() : null"
           >
-            <img v-if="playlistCoverUrl" :src="playlistCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform duration-500" :class="{ 'group-hover:scale-110': isOwner }" />
-            <img v-else-if="playlist.tracks && playlist.tracks.length > 0 && playlist.tracks[0]?.track?.albumCoverUrl" :src="playlist.tracks[0].track.albumCoverUrl" alt="Playlist Cover" class="w-full h-full object-cover transition-transform duration-500" :class="{ 'group-hover:scale-110': isOwner }" />
-            <div v-else class="w-full h-full flex items-center justify-center text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-            </div>
-            
             <!-- Hover Edit Overlay (Owner only) -->
-            <div v-if="isOwner" class="absolute inset-0 bg-purple-900/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white">
+            <div v-if="isOwner" class="absolute inset-0 bg-purple-900/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300 text-white pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -50,7 +47,7 @@
               <span class="text-xs font-semibold uppercase tracking-widest">{{ $t('profile.update_photo') }}</span>
             </div>
             <input v-if="isOwner" type="file" ref="coverInput" class="hidden" accept="image/*" @change="handleCoverUpload" />
-          </div>
+          </PlaylistCover>
 
           <!-- Playlist Info -->
           <div class="flex-grow flex flex-col justify-center text-center md:text-left h-full py-2">
@@ -517,7 +514,10 @@
               </div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
-                <h3 class="text-xs sm:text-sm font-bold text-text-primary truncate" :title="item.track.title">{{ item.track.title }}</h3>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 class="text-xs sm:text-sm font-bold text-text-primary truncate" :title="item.track.title">{{ item.track.title }}</h3>
+                  <ExplicitBadge v-if="isExplicitTrack(item.track)" size="xs" />
+                </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-0.5">
                   <p class="text-[11px] sm:text-xs text-text-tertiary truncate" :title="item.track.artistName">{{ item.track.artistName }}</p>
                   
@@ -561,7 +561,16 @@
                   <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div v-else class="text-xs text-text-muted italic px-1 sm:px-2 flex-shrink-0">{{ $t('home.preview_unavailable') }}</div>
+              <button 
+                v-else 
+                type="button"
+                @click.stop="connectSpotify"
+                class="text-xs text-text-muted hover:text-purple-600 dark:hover:text-purple-400 italic px-1 sm:px-2 flex-shrink-0 transition-colors cursor-pointer group/prev flex items-center gap-1"
+                :title="$t('global_player.connect_spotify_prompt') || 'Підключіть Spotify, щоб слухати'"
+              >
+                <span>{{ $t('home.preview_unavailable') }}</span>
+                <span class="text-purple-600 dark:text-purple-400 font-medium not-italic group-hover/prev:underline hidden sm:inline">• {{ $t('settings.connect') || 'Підключити' }}</span>
+              </button>
               
               <!-- Menu and Like logic -->
               <div class="flex items-center gap-0.5 sm:gap-1 relative flex-shrink-0" @click.stop>
@@ -636,17 +645,21 @@
       class="fixed inset-0 z-[60] flex items-center justify-center p-4 pb-24 sm:pb-28 bg-black/60 backdrop-blur-xs transition-opacity"
       @click.self="closeSavesModal"
     >
-      <div class="bg-surface border border-border-strong rounded-3xl max-w-md w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[75vh]">
-        <div class="flex items-center justify-between pb-4 border-b border-border-subtle">
-          <div class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
-            </svg>
-            <h3 class="text-lg font-bold text-text-primary">{{ $t('playlist.saves_modal_title') }}</h3>
+      <div class="bg-surface border border-border-strong rounded-3xl max-w-sm sm:max-w-md w-full p-4 sm:p-5 shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
+        <div class="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-border-subtle gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-600 dark:text-purple-400 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+              </svg>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-text-primary whitespace-nowrap truncate">
+              {{ $t('playlist.saves_modal_title') }}
+            </h3>
           </div>
           <button 
             @click="closeSavesModal" 
-            class="text-text-tertiary hover:text-text-primary p-1.5 rounded-full hover:bg-surface-hover transition-colors cursor-pointer"
+            class="text-text-tertiary hover:text-text-primary p-1.5 rounded-full hover:bg-surface-hover transition-colors cursor-pointer flex-shrink-0"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -655,22 +668,23 @@
         </div>
 
         <!-- Users List -->
-        <div class="overflow-y-auto py-2 divide-y divide-border-subtle flex-1 min-h-[140px]">
-          <div v-if="isSavesLoading" class="py-12 flex justify-center items-center">
-            <div class="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="overflow-y-auto py-1 divide-y divide-border-subtle max-h-72">
+          <div v-if="isSavesLoading" class="py-8 flex justify-center items-center">
+            <div class="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <div v-else-if="savedUsersList.length === 0" class="py-10 text-center text-text-tertiary text-sm">
+          <div v-else-if="savedUsersList.length === 0" class="py-6 text-center text-text-tertiary text-xs sm:text-sm">
             <p>{{ $t('playlist.no_saves_yet') }}</p>
           </div>
-          <div 
+          <a 
             v-else 
             v-for="u in savedUsersList" 
             :key="u.id" 
-            class="flex items-center justify-between py-3 px-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer group"
-            @click="navigateToUserProfile(u.id)"
+            :href="`/${locale}/profile?id=${u.id}`"
+            @click="closeSavesModal"
+            class="flex items-center justify-between py-2.5 px-2 hover:bg-surface-hover rounded-2xl transition-colors cursor-pointer group"
           >
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-sm font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
+              <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-xs sm:text-sm font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
                 <img v-if="u.avatarUrl" :src="u.avatarUrl" alt="" class="w-full h-full object-cover" />
                 <span v-else>{{ (u.username || 'U')[0].toUpperCase() }}</span>
               </div>
@@ -686,7 +700,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-tertiary group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-          </div>
+          </a>
         </div>
       </div>
     </div>
@@ -808,9 +822,12 @@
 
               <!-- Title & Artist -->
               <div class="min-w-0 flex-1 pr-2">
-                <p class="text-sm font-semibold text-text-primary truncate">
-                  {{ track.name || track.title }}
-                </p>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <p class="text-sm font-semibold text-text-primary truncate">
+                    {{ track.name || track.title }}
+                  </p>
+                  <ExplicitBadge v-if="isExplicitTrack(track)" size="xs" />
+                </div>
                 <p class="text-xs text-text-secondary truncate mt-0.5">
                   {{ getModalTrackArtists(track) }}
                 </p>
@@ -865,6 +882,9 @@ import { useI18n } from 'vue-i18n';
 import TagModal from './TagModal.vue';
 import LikeButton from './LikeButton.vue';
 import ConfirmModal from './ConfirmModal.vue';
+import PlaylistCover from './PlaylistCover.vue';
+import ExplicitBadge from './ExplicitBadge.vue';
+import { isExplicitTrack, fetchMissingExplicitStatus, registerTracksExplicit } from '../../utils/explicit';
 import { recordListeningHistory } from '../../utils/history.js';
 import { getTracksCountText, getSavesCountText } from '../../utils/plural';
 import { multiTokenFuzzyRank } from '../../utils/searchAlgorithm';
@@ -1264,6 +1284,8 @@ onBeforeUnmount(() => {
   if (currentAudio.value) currentAudio.value.pause();
   window.removeEventListener('spotify-state-update', handleSpotifyState);
   window.removeEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+  window.removeEventListener('playlist-track-added', handlePlaylistTrackAdded);
+  window.removeEventListener('playlist-track-removed', handlePlaylistTrackRemoved);
   document.removeEventListener('click', closeMenuOnClickOutside);
   window.removeEventListener('keydown', handleGlobalKeydown);
 });
@@ -1338,7 +1360,10 @@ const togglePlay = (track) => {
     return;
   }
   
-  if (!track.previewUrl) return;
+  if (!track.previewUrl) {
+    connectSpotify();
+    return;
+  }
 
   if (playingTrackId.value === track.spotifyId) {
     currentAudio.value.pause();
@@ -1364,6 +1389,24 @@ const togglePlay = (track) => {
   };
 };
 
+const connectSpotify = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const res = await fetch('http://localhost:5001/api/spotify/auth-url', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to connect Spotify:', err);
+  }
+};
+
 const isDeletePlaylistModalOpen = ref(false);
 const isDeletingPlaylist = ref(false);
 const isRemoveTrackModalOpen = ref(false);
@@ -1384,12 +1427,18 @@ const executeRemoveTrack = async () => {
   if (!token) return;
   
   try {
+    const targetTrack = playlist.value?.tracks?.find(t => t.track.id === trackToRemoveId.value);
+    const removedSpotifyId = targetTrack?.track?.spotifyId;
+
     const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/tracks/${trackToRemoveId.value}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
       playlist.value.tracks = playlist.value.tracks.filter(t => t.track.id !== trackToRemoveId.value);
+      window.dispatchEvent(new CustomEvent('playlist-track-removed', { 
+        detail: { playlistId: props.playlistId, trackId: trackToRemoveId.value, spotifyId: removedSpotifyId } 
+      }));
     }
   } catch (err) {
     console.error('Failed to remove track', err);
@@ -1576,11 +1625,6 @@ const closeSavesModal = () => {
   isSavesModalOpen.value = false;
 };
 
-const navigateToUserProfile = (userId) => {
-  closeSavesModal();
-  window.location.href = `/${locale.value}/profile?id=${userId}`;
-};
-
 // Add Tracks Modal State & Handlers
 const isAddTracksModalOpen = ref(false);
 const addTrackSearchQuery = ref('');
@@ -1640,6 +1684,7 @@ const onAddTrackSearchInput = () => {
       if (res.ok) {
         const data = await res.json();
         modalSearchResults.value = data.tracks || [];
+        registerTracksExplicit(data.tracks || []);
       } else {
         modalSearchResults.value = [];
       }
@@ -1733,6 +1778,9 @@ const addTrackFromModal = async (track) => {
           tags: []
         }
       });
+      window.dispatchEvent(new CustomEvent('playlist-track-added', { 
+        detail: { playlistId: props.playlistId, track: data.track } 
+      }));
     }
   } catch (err) {
     console.error('Failed to add track from modal', err);
@@ -1782,15 +1830,12 @@ onMounted(async () => {
 
     window.addEventListener('spotify-state-update', handleSpotifyState);
     window.addEventListener('track-favorite-updated', handleTrackFavoriteUpdated);
+    window.addEventListener('playlist-track-added', handlePlaylistTrackAdded);
+    window.addEventListener('playlist-track-removed', handlePlaylistTrackRemoved);
 
-    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      cache: 'no-store'
-    });
-    
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+    await loadPlaylistDetails(false);
+
+    if (playlist.value === null && error.value) {
       return;
     }
     
@@ -1814,10 +1859,36 @@ onMounted(async () => {
     } catch (e) {
       console.error('Failed to fetch favorites:', e);
     }
+  } catch (e) {
+    console.error('Failed to init playlist detail:', e);
+    error.value = t('playlist.error_fetch');
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+const loadPlaylistDetails = async (showLoading = false) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  if (showLoading) isLoading.value = true;
+  try {
+    const response = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store'
+    });
+    
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+      return;
+    }
     
     if (response.ok) {
       const data = await response.json();
       playlist.value = data.playlist;
+      if (data.playlist?.tracks?.length > 0) {
+        fetchMissingExplicitStatus(data.playlist.tracks.map(t => t.track));
+      }
       if (data.isOwner !== undefined) {
         isOwnerServer.value = !!data.isOwner;
       }
@@ -1827,13 +1898,26 @@ onMounted(async () => {
       const errorData = await response.json();
       error.value = errorData.error || t('playlist.error_fetch');
     }
-  } catch (e) {
-    console.error('Failed to fetch playlist:', e);
-    error.value = t('playlist.error_fetch');
+  } catch (err) {
+    console.error('Failed to reload playlist details:', err);
   } finally {
-    isLoading.value = false;
+    if (showLoading) isLoading.value = false;
   }
-});
+};
+
+const handlePlaylistTrackAdded = (e) => {
+  const { playlistId } = e.detail || {};
+  if (String(playlistId) === String(props.playlistId)) {
+    loadPlaylistDetails(false);
+  }
+};
+
+const handlePlaylistTrackRemoved = (e) => {
+  const { playlistId } = e.detail || {};
+  if (String(playlistId) === String(props.playlistId)) {
+    loadPlaylistDetails(false);
+  }
+};
 </script>
 
 <style scoped>

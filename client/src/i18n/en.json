@@ -44,6 +44,9 @@
     "add_to_playlist": "Add to playlist",
     "select_playlist": "Select a playlist",
     "no_playlists": "You don't have any playlists yet.",
+    "added": "Added",
+    "in_playlist": "Already in playlist",
+    "click_to_remove": "Click to remove from playlist",
     "recently_played": "Recently Played",
     "recommended_title": "Recommended for You",
     "recommended_subtitle": "Tracks curated specifically to match your musical taste",
@@ -158,6 +161,9 @@
     "default_title": "Spotify Player",
     "ready_to_play": "Ready to play",
     "spotify_connect": "Spotify Connected",
+    "connect_spotify_prompt": "Connect Spotify to play tracks",
+    "connect_spotify_desc": "Get access to full playback, sync, and karaoke",
+    "connect_spotify_btn": "Connect Spotify",
     "initializing": "Initializing Spotify Player",
     "loading_player": "Loading player...",
     "error_not_ready": "Spotify player is not ready or requires page refresh.",
@@ -176,6 +182,12 @@
     "lyrics_retry": "Try again",
     "lyrics_close": "Close",
     "lyrics_error": "Error loading lyrics",
+    "karaoke_live": "Live Karaoke",
+    "karaoke_intro": "Intro",
+    "karaoke_solo": "Instrumental Break",
+    "karaoke_outro": "Outro",
+    "align_center": "Center",
+    "align_left": "Left",
     "shuffle": "Shuffle",
     "shuffle_on": "Shuffle on",
     "shuffle_off": "Shuffle off",
@@ -268,5 +280,8 @@
     "cancel": "Cancel",
     "delete_color": "Delete color",
     "add_custom_color": "Add custom color"
+  },
+  "track": {
+    "explicit_tooltip": "Contains explicit language or mature content (18+)"
   }
 }

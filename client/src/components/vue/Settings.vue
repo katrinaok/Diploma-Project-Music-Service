@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full px-2.5 py-4 sm:px-6 md:px-8 pb-40">
+  <div class="w-full px-2.5 py-4 sm:px-6 md:px-8 pb-20 md:pb-28">
     <div class="w-full max-w-4xl mx-auto bg-surface rounded-2xl shadow-sm border border-border-subtle overflow-hidden transition-colors">
       
       <div class="p-3.5 sm:p-6 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">

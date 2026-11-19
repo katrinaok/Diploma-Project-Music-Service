@@ -25,6 +25,47 @@ spotifyRouter.get('/test', async (req: Request, res: Response) => {
   }
 });
 
+// Отримання інформації про треки (включаючи explicit) за списком Spotify ID
+spotifyRouter.get('/tracks-info', async (req: Request, res: Response) => {
+  try {
+    const rawIds = req.query.ids;
+    if (!rawIds) {
+      return res.status(400).json({ error: 'Параметр ids обов\'язковий' });
+    }
+    const ids = String(rawIds)
+      .split(',')
+      .map(s => s.trim().replace(/^spotify:track:/, ''))
+      .filter(s => /^[a-zA-Z0-9]{15,30}$/.test(s))
+      .slice(0, 50);
+
+    if (ids.length === 0) {
+      return res.json({ status: 'success', tracks: [] });
+    }
+
+    const token = await getSpotifyAccessToken();
+    const response = await fetch(`https://api.spotify.com/v1/tracks?ids=${ids.join(',')}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Помилка отримання даних від Spotify' });
+    }
+
+    const data = await response.json();
+    const tracks = (data.tracks || []).filter(Boolean).map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      explicit: Boolean(t.explicit),
+      duration_ms: t.duration_ms
+    }));
+
+    res.json({ status: 'success', tracks });
+  } catch (error) {
+    console.error('Error fetching tracks info:', error);
+    res.status(500).json({ error: 'Внутрішня помилка сервера' });
+  }
+});
+
 // Роут для інтелектуального пошуку треків за алгоритмом багатофакторного нечіткого ранжування
 spotifyRouter.get('/search', async (req: Request, res: Response) => {
   try {
