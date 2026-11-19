@@ -473,7 +473,7 @@ userRouter.get('/:id/playlists', optionalAuthenticateToken, async (req: Request,
       ...p,
       isOwner: currentUserId ? p.userId === currentUserId : false,
       isSaved: savedIdsSet.has(p.id),
-      savesCount: p._count.savedBy,
+      savesCount: p.isPublic ? p._count.savedBy : 0,
       tracksCount: p._count.tracks,
       trackCovers: (p.tracks || [])
         .map(t => t.track?.albumCoverUrl)

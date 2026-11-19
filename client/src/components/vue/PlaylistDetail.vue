@@ -91,11 +91,11 @@
               <template v-if="isOwner">
                 <h1 
                   v-if="!isEditingTitle"
-                  class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words"
+                  class="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight text-text-primary cursor-pointer hover:text-text-accent transition-colors inline-flex items-center justify-center md:justify-start text-center md:text-left break-words py-1"
                   @click="startEditingTitle"
                   :title="$t('profile.edit_name')"
                 >
-                  <span class="line-clamp-2">{{ playlist.title }}</span>
+                  <span class="break-words">{{ playlist.title }}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2 sm:ml-3 mt-1 sm:mt-2 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
@@ -107,14 +107,14 @@
                     v-model="editTitleValue" 
                     @blur="saveTitle"
                     @keyup.enter="saveTitle"
-                    class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
+                    class="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight text-text-primary bg-transparent border-b-2 border-purple-500 focus:outline-none w-full max-w-sm md:max-w-md py-1 text-center md:text-left"
                     autofocus
                     ref="titleInputRef"
                   />
                 </div>
               </template>
-              <h1 v-else class="text-2xl sm:text-3xl md:text-5xl font-bold text-text-primary inline-flex items-center justify-center md:justify-start text-center md:text-left break-words">
-                <span class="line-clamp-2">{{ playlist.title }}</span>
+              <h1 v-else class="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight text-text-primary inline-flex items-center justify-center md:justify-start text-center md:text-left break-words py-1">
+                <span class="break-words">{{ playlist.title }}</span>
               </h1>
             </div>
             
@@ -158,8 +158,9 @@
                 <span>{{ new Date(playlist.createdAt).toLocaleDateString() }}</span>
               </div>
 
-              <!-- Saves Count (Clickable modal for creator/visitors to see who saved it) -->
+              <!-- Saves Count (Clickable modal for creator only) -->
               <button 
+                v-if="isOwner"
                 type="button" 
                 @click="openSavesModal"
                 class="group/stat inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-alt/70 hover:bg-surface-hover border border-border-subtle hover:border-purple-500/40 text-xs font-medium text-text-secondary transition-all cursor-pointer shadow-xs active:scale-95"
@@ -171,6 +172,18 @@
                 <span class="font-bold text-text-primary group-hover/stat:text-purple-600 dark:group-hover/stat:text-purple-400 transition-colors">{{ savesCount }}</span>
                 <span>{{ getSavesCountText(savesCount, locale) }}</span>
               </button>
+
+              <!-- Saves Count (Static non-clickable badge for visitors) -->
+              <div 
+                v-else
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-alt/70 border border-border-subtle text-xs font-medium text-text-secondary shadow-xs"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <span class="font-bold text-text-primary">{{ savesCount }}</span>
+                <span>{{ getSavesCountText(savesCount, locale) }}</span>
+              </div>
             </div>
 
             <!-- Actions Row (Owner actions or Visitor actions) -->
@@ -639,9 +652,9 @@
       @cancel="isRemoveTrackModalOpen = false"
     />
 
-    <!-- Saves Modal (Who saved this playlist) -->
+    <!-- Saves Modal (Who saved this playlist - Owner only) -->
     <div 
-      v-if="isSavesModalOpen" 
+      v-if="isSavesModalOpen && isOwner" 
       class="fixed inset-0 z-[60] flex items-center justify-center p-4 pb-24 sm:pb-28 bg-black/60 backdrop-blur-xs transition-opacity"
       @click.self="closeSavesModal"
     >
@@ -1532,7 +1545,14 @@ const togglePublicStatus = async () => {
     });
     
     if (response.ok) {
+      const data = await response.json();
       playlist.value.isPublic = newStatus;
+      if (!newStatus) {
+        savesCount.value = 0;
+        savedUsersList.value = [];
+      } else if (data.savesCount !== undefined) {
+        savesCount.value = data.savesCount;
+      }
     }
   } catch (err) {
     console.error('Failed to update playlist public status:', err);
@@ -1605,11 +1625,15 @@ const toggleSavePlaylist = async () => {
 };
 
 const openSavesModal = async () => {
+  if (!isOwner.value) return;
   isSavesModalOpen.value = true;
   isSavesLoading.value = true;
   savedUsersList.value = [];
   try {
-    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/saved-users`);
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5001/api/playlists/${props.playlistId}/saved-users`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
     if (res.ok) {
       const data = await res.json();
       savedUsersList.value = data.users || [];

@@ -122,8 +122,8 @@
               <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
               <button 
                 @click="openPlaylistModal(track)" 
-                class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
-                :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt'"
+                class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 cursor-pointer flex-shrink-0 focus:outline-none"
+                :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400'"
                 :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
               >
                 <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
@@ -250,8 +250,8 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
-                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover'"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400'"
                   :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
                   <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
@@ -408,8 +408,8 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
-                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-hover'"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-muted hover:text-purple-600 dark:hover:text-purple-400'"
                   :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
                   <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
@@ -512,8 +512,8 @@
                 <LikeButton :track="track" :initial-liked="favoriteTrackIds.has(getTrackId(track))" />
                 <button 
                   @click="openPlaylistModal(track)" 
-                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 rounded-lg cursor-pointer flex-shrink-0 focus:outline-none"
-                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400 hover:bg-surface-alt'"
+                  class="transition-transform hover:scale-110 active:scale-95 p-1 sm:p-2 cursor-pointer flex-shrink-0 focus:outline-none"
+                  :class="isTrackInAnyPlaylist(track) ? 'text-purple-600 dark:text-purple-400 hover:text-purple-500' : 'text-text-tertiary hover:text-purple-600 dark:hover:text-purple-400'"
                   :title="isTrackInAnyPlaylist(track) ? ($t('home.in_playlist') || 'Вже у плейлісті') : ($t('home.add_to_playlist') || 'Додати в плейлист')"
                 >
                   <svg v-if="isTrackInAnyPlaylist(track)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">

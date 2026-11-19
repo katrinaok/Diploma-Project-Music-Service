@@ -20,8 +20,12 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     // @ts-ignore
     req.user = decoded; // Додаємо дані користувача в об'єкт req
     next();
-  } catch (error) {
-    console.error('Помилка валідації токену:', error);
+  } catch (error: any) {
+    if (error?.name === 'TokenExpiredError') {
+      console.warn(`[Auth] JWT токен прострочений (закінчився термін дії). Очікується оновлення або новий вхід.`);
+    } else {
+      console.error('Помилка валідації токену:', error?.message || error);
+    }
     return res.status(401).json({ error: 'Токен недійсний або його термін дії минув' });
   }
 };

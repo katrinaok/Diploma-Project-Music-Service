@@ -23,8 +23,26 @@
         <div class="absolute bottom-1/4 -left-20 w-[420px] h-[420px] bg-violet-400/18 dark:bg-violet-500/20 rounded-full blur-[90px] md:blur-[120px] pointer-events-none animate-orb-4"></div>
       </div>
 
-      <!-- Floating Top Close Action Button (Minimalist, no duplicate track info) -->
-      <div class="absolute top-0 right-0 z-50 p-6 sm:p-8 flex items-center justify-end pointer-events-none">
+      <!-- Floating Top Actions (Sync button + Close button) -->
+      <div class="absolute top-0 right-0 z-50 p-6 sm:p-8 flex items-center gap-2.5 sm:gap-3 justify-end pointer-events-none">
+        <transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 scale-90 translate-x-2"
+          enter-to-class="opacity-100 scale-100 translate-x-0"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100 scale-100 translate-x-0"
+          leave-to-class="opacity-0 scale-90 translate-x-2"
+        >
+          <button 
+            v-if="isUserScrollingLyrics"
+            @click="returnToActiveLyric"
+            class="pointer-events-auto px-4 py-2.5 rounded-full bg-surface/80 hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-text-secondary hover:text-text-primary dark:text-white/80 dark:hover:text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer border border-border-subtle/60 dark:border-white/15 shadow-md active:scale-95 backdrop-blur-md flex items-center"
+            title="Повернутися до рядка, який зараз грає"
+          >
+            <span>{{ $t('global_player.sync_lyrics') || 'До поточної стрічки' }}</span>
+          </button>
+        </transition>
+
         <button 
           @click="showLyrics = false" 
           class="w-11 h-11 rounded-full bg-surface/80 hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-text-secondary hover:text-text-primary transition-all cursor-pointer border border-border-subtle/60 dark:border-white/15 flex items-center justify-center group shadow-md active:scale-90 pointer-events-auto backdrop-blur-md"
@@ -77,16 +95,16 @@
       <!-- Lyrics List Body with Top & Bottom Mask Fade -->
       <div 
         v-else-if="lyricsList.length > 0" 
-        class="w-full flex-1 min-h-0 overflow-y-auto px-6 sm:px-12 md:px-16 lyrics-container no-scrollbar scroll-smooth relative"
+        class="w-full flex-1 min-h-0 overflow-y-auto px-6 sm:px-12 md:px-16 lyrics-container no-scrollbar relative"
         :style="{
-          '-webkit-mask-image': 'linear-gradient(to bottom, transparent 0%, black 10%, black 85%, transparent 100%)',
-          'mask-image': 'linear-gradient(to bottom, transparent 0%, black 10%, black 85%, transparent 100%)'
+          '-webkit-mask-image': 'linear-gradient(to bottom, transparent 0%, black 12%, black 85%, transparent 100%)',
+          'mask-image': 'linear-gradient(to bottom, transparent 0%, black 12%, black 85%, transparent 100%)'
         }"
         ref="lyricsContainer"
-        @wheel.passive="onLyricsScroll"
-        @touchmove.passive="onLyricsScroll"
+        @wheel.passive="triggerUserScroll"
+        @touchmove.passive="triggerUserScroll"
       >
-        <div class="flex flex-col gap-6 md:gap-7 pt-[40vh] pb-[46vh] text-center max-w-4xl mx-auto">
+        <div class="flex flex-col gap-6 md:gap-8 pt-[42vh] pb-[48vh] text-center max-w-4xl lg:max-w-5xl mx-auto">
           <!-- Intro Instrumental Break Indicator (if song starts with music break) -->
           <div 
             v-if="isInstrumentalBreak && activeLyricIndex === -1" 
@@ -105,21 +123,13 @@
           <!-- Lyrics Lines -->
           <template v-for="(line, index) in lyricsList" :key="index">
             <div 
-              class="cursor-pointer select-none px-4 py-2 transition-all duration-300 rounded-2xl group/line relative"
+              class="cursor-pointer select-none px-4 py-2 sm:py-3 rounded-2xl group/line relative flex items-center justify-center"
               @click="seekToLyric(line.time, index)"
               :ref="el => { if(el) lyricRefs[index] = el }"
             >
               <span
-                :class="[
-                  'inline-block text-xl sm:text-2xl md:text-3xl font-bold break-words leading-relaxed transform-gpu origin-center transition-all duration-500 ease-out select-none',
-                  activeLyricIndex === index
-                    ? 'text-purple-600 dark:text-purple-400 scale-[1.05] drop-shadow-sm dark:drop-shadow-[0_2px_24px_rgba(192,132,252,0.65)] opacity-100'
-                    : activeLyricIndex + 1 === index
-                    ? 'text-gray-400 dark:text-white/60 hover:text-gray-700 dark:hover:text-white/80 scale-100 opacity-70'
-                    : activeLyricIndex > index
-                    ? 'text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/60 scale-[0.98] opacity-35'
-                    : 'text-gray-400 dark:text-white/35 hover:text-gray-600 dark:hover:text-white/70 scale-[0.98] opacity-40'
-                ]"
+                class="inline-block break-words select-none max-w-full text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight leading-snug md:leading-normal transform-gpu origin-center transition-[transform,opacity,color,filter] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                :class="getLyricLineClass(index)"
               >
                 {{ line.text }}
               </span>
@@ -402,10 +412,29 @@
             </svg>
           </button>
 
-          <!-- Center Header Info -->
+          <!-- Center Header Info / Sync button -->
           <div class="flex-1 text-center px-2 min-w-0 flex items-center justify-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
-            <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Караоке</span>
+            <transition
+              mode="out-in"
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="opacity-0 scale-90"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-90"
+            >
+              <button
+                v-if="isUserScrollingLyrics"
+                @click="returnToActiveLyric"
+                class="px-3 py-1 rounded-full bg-surface-alt/90 hover:bg-surface-hover dark:bg-white/10 dark:hover:bg-white/20 text-purple-600 dark:text-purple-300 text-xs font-bold border border-purple-500/30 shadow-xs cursor-pointer active:scale-95 transition-all"
+              >
+                {{ $t('global_player.sync_lyrics') || 'До поточної' }}
+              </button>
+              <div v-else class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Караоке</span>
+              </div>
+            </transition>
           </div>
 
           <!-- Quick Switch to Artwork Button -->
@@ -462,14 +491,14 @@
           <!-- Edge-to-Edge Synced Lyrics Scroll (Spotify mobile style) -->
           <div 
             v-else-if="lyricsList.length > 0" 
-            class="flex-1 w-full overflow-y-auto px-6 pt-6 pb-52 no-scrollbar scroll-smooth"
+            class="flex-1 w-full overflow-y-auto px-6 pt-6 pb-52 no-scrollbar"
             :style="{
               '-webkit-mask-image': 'linear-gradient(to bottom, transparent 0%, black 6%, black 82%, transparent 100%)',
               'mask-image': 'linear-gradient(to bottom, transparent 0%, black 6%, black 82%, transparent 100%)'
             }"
             ref="mobileLyricsContainer"
-            @wheel.passive="onLyricsScroll"
-            @touchmove.passive="onLyricsScroll"
+            @wheel.passive="triggerUserScroll"
+            @touchmove.passive="triggerUserScroll"
           >
             <div class="flex flex-col gap-6 pt-[35vh] pb-[40vh] text-left">
               <!-- Intro Instrumental Break on mobile -->
@@ -488,15 +517,11 @@
                 <div 
                   :ref="el => { if (el) mobileLyricRefs[index] = el; }"
                   @click="seekToLyric(line.time, index)"
-                  class="cursor-pointer select-none transition-all duration-300 py-2 rounded-2xl active:scale-[0.98]"
+                  class="cursor-pointer select-none py-2 rounded-2xl active:scale-[0.98]"
                 >
                   <p 
-                    class="leading-tight tracking-tight transition-all duration-300 select-none break-words font-bold"
-                    :class="[
-                      activeLyricIndex === index 
-                        ? 'text-purple-600 dark:text-purple-400 text-2xl sm:text-3xl scale-[1.04] origin-left drop-shadow-[0_4px_24px_rgba(147,51,234,0.35)] dark:drop-shadow-[0_0_24px_rgba(192,132,252,0.6)]' 
-                        : 'text-text-primary/35 dark:text-white/35 text-2xl sm:text-3xl hover:text-text-primary/70 dark:hover:text-white/70'
-                    ]"
+                    class="select-none break-words text-xl sm:text-2xl font-extrabold leading-snug tracking-tight transform-gpu origin-left transition-[transform,opacity,color,filter] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                    :class="getMobileLyricLineClass(index)"
                   >
                     {{ line.text }}
                   </p>
@@ -2098,20 +2123,27 @@ watch(currentTrack, (newTrack, oldTrack) => {
   }
 });
 
-// Variables to hold forced lyric state
+// Variables to hold forced lyric state & user manual scrolling
 let forcedLyricIndex = -1;
 let forcedLyricTimeout = null;
-let isUserScrollingLyrics = false;
+const isUserScrollingLyrics = ref(false);
 let userScrollTimeout = null;
+let isProgrammaticScroll = false;
+let programmaticScrollTimeout = null;
 
-const onLyricsScroll = () => {
-  if (forcedLyricIndex !== -1) return;
-  isUserScrollingLyrics = true;
+const triggerUserScroll = () => {
+  if (forcedLyricIndex !== -1 || isProgrammaticScroll) return;
+  isUserScrollingLyrics.value = true;
   clearTimeout(userScrollTimeout);
   userScrollTimeout = setTimeout(() => {
-    isUserScrollingLyrics = false;
-    scrollToActiveLyric();
-  }, 3000);
+    returnToActiveLyric();
+  }, 6000);
+};
+
+const returnToActiveLyric = () => {
+  isUserScrollingLyrics.value = false;
+  clearTimeout(userScrollTimeout);
+  scrollToActiveLyric();
 };
 
 // Sync lyrics scroll position
@@ -2130,13 +2162,19 @@ watch(position, (newPosMs) => {
   
   if (newIndex !== activeLyricIndex.value) {
     activeLyricIndex.value = newIndex;
-    if (!isUserScrollingLyrics) {
+    if (!isUserScrollingLyrics.value) {
       scrollToActiveLyric();
     }
   }
 });
 
 const scrollToActiveLyric = () => {
+  isProgrammaticScroll = true;
+  clearTimeout(programmaticScrollTimeout);
+  programmaticScrollTimeout = setTimeout(() => {
+    isProgrammaticScroll = false;
+  }, 750);
+
   // Desktop
   if (activeLyricIndex.value >= 0 && lyricRefs.value[activeLyricIndex.value] && lyricsContainer.value) {
     const el = lyricRefs.value[activeLyricIndex.value];
@@ -2176,7 +2214,7 @@ const seekToLyric = (timeSec, index) => {
   const newPosMs = Math.max(0, Math.floor(timeSec * 1000));
   position.value = newPosMs;
   
-  isUserScrollingLyrics = false;
+  isUserScrollingLyrics.value = false;
   clearTimeout(userScrollTimeout);
   
   forcedLyricIndex = index;
@@ -2193,9 +2231,66 @@ const seekToLyric = (timeSec, index) => {
   }
 };
 
+// Dynamic visual falloff gradient for lyrics based on distance from the active center line
+const getLyricLineClass = (index) => {
+  const activeIdx = activeLyricIndex.value;
+  const dist = activeIdx === -1 ? index + 1 : Math.abs(index - activeIdx);
+
+  // When user is manually scrolling through lyrics to read ahead or behind:
+  if (isUserScrollingLyrics.value) {
+    if (dist === 0) {
+      return 'text-purple-600 dark:text-purple-400 scale-[1.08] drop-shadow-sm dark:drop-shadow-[0_2px_28px_rgba(192,132,252,0.85)] opacity-100';
+    }
+    return 'text-gray-700 dark:text-white/80 hover:text-purple-600 dark:hover:text-purple-300 scale-100 opacity-70 dark:opacity-85 hover:opacity-100 hover:scale-[1.02]';
+  }
+
+  // Normal synced playback depth-of-field focus:
+  if (dist === 0) {
+    return 'text-purple-600 dark:text-purple-400 scale-[1.10] drop-shadow-sm dark:drop-shadow-[0_2px_28px_rgba(192,132,252,0.85)] opacity-100';
+  } else if (dist === 1) {
+    return 'text-gray-700 dark:text-white/80 hover:text-purple-600 dark:hover:text-purple-300 scale-100 opacity-70';
+  } else if (dist === 2) {
+    return 'text-gray-500 dark:text-white/50 hover:text-purple-600 dark:hover:text-purple-300 scale-[0.93] opacity-40';
+  } else if (dist === 3) {
+    return 'text-gray-400 dark:text-white/30 hover:text-purple-600 dark:hover:text-purple-300 scale-[0.87] opacity-20';
+  } else if (dist === 4) {
+    return 'text-gray-400 dark:text-white/18 hover:text-purple-600 dark:hover:text-purple-300 scale-[0.82] opacity-10';
+  } else {
+    return 'text-gray-400 dark:text-white/10 hover:text-purple-600 dark:hover:text-purple-300 scale-[0.78] opacity-5';
+  }
+};
+
+const getMobileLyricLineClass = (index) => {
+  const activeIdx = activeLyricIndex.value;
+  const dist = activeIdx === -1 ? index + 1 : Math.abs(index - activeIdx);
+
+  if (isUserScrollingLyrics.value) {
+    if (dist === 0) {
+      return 'text-purple-600 dark:text-purple-400 scale-[1.06] origin-left drop-shadow-[0_2px_20px_rgba(192,132,252,0.7)] opacity-100';
+    }
+    return 'text-text-primary/80 dark:text-white/80 scale-100 origin-left opacity-70 dark:opacity-85';
+  }
+
+  if (dist === 0) {
+    return 'text-purple-600 dark:text-purple-400 scale-[1.08] drop-shadow-[0_2px_20px_rgba(192,132,252,0.7)] opacity-100';
+  } else if (dist === 1) {
+    return 'text-text-primary/80 dark:text-white/80 scale-100 origin-left opacity-70';
+  } else if (dist === 2) {
+    return 'text-text-primary/50 dark:text-white/50 scale-[0.94] origin-left opacity-40';
+  } else if (dist === 3) {
+    return 'text-text-primary/30 dark:text-white/30 scale-[0.88] origin-left opacity-20';
+  } else if (dist === 4) {
+    return 'text-text-primary/18 dark:text-white/18 scale-[0.83] origin-left opacity-10';
+  } else {
+    return 'text-text-primary/10 dark:text-white/10 scale-[0.78] origin-left opacity-5';
+  }
+};
+
 const openMobileKaraoke = async () => {
   isMobileFullPlayerOpen.value = true;
   isMobileKaraokeMode.value = true;
+  isUserScrollingLyrics.value = false;
+  clearTimeout(userScrollTimeout);
   if (lyricsList.value.length === 0 && !lyricsLoading.value) {
     await fetchLyrics();
   }
@@ -2206,6 +2301,8 @@ const openMobileKaraoke = async () => {
 const toggleMobileKaraoke = async () => {
   isMobileKaraokeMode.value = !isMobileKaraokeMode.value;
   if (isMobileKaraokeMode.value) {
+    isUserScrollingLyrics.value = false;
+    clearTimeout(userScrollTimeout);
     if (lyricsList.value.length === 0 && !lyricsLoading.value) {
       await fetchLyrics();
     }
@@ -2225,11 +2322,15 @@ const toggleLyrics = async () => {
     return;
   }
   showLyrics.value = !showLyrics.value;
-  if (showLyrics.value && lyricsList.value.length === 0 && !lyricsLoading.value) {
-    await fetchLyrics();
+  if (showLyrics.value) {
+    isUserScrollingLyrics.value = false;
+    clearTimeout(userScrollTimeout);
+    if (lyricsList.value.length === 0 && !lyricsLoading.value) {
+      await fetchLyrics();
+    }
+    await nextTick();
+    scrollToActiveLyric();
   }
-  await nextTick();
-  scrollToActiveLyric();
 };
 
 const parseLrc = (lrcString) => {

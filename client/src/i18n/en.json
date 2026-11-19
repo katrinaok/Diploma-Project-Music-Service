@@ -210,7 +210,8 @@
     "queue_move_up": "Move up",
     "queue_move_down": "Move down",
     "queue_remove": "Remove from queue",
-    "queue_tracks_count": "tracks"
+    "queue_tracks_count": "tracks",
+    "sync_lyrics": "Jump to current lyric"
   },
   "settings": {
     "title": "Settings",

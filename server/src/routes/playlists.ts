@@ -72,7 +72,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       ...p,
       isOwner: true,
       isSaved: false,
-      savesCount: p._count.savedBy,
+      savesCount: p.isPublic ? p._count.savedBy : 0,
       tracksCount: p._count.tracks,
       trackCovers: (p.tracks || [])
         .map(t => t.track?.albumCoverUrl)
@@ -379,7 +379,16 @@ router.get('/:id', optionalAuthenticateToken, async (req: Request, res: Response
 
     const isOwner = !!currentUserId && playlist.userId === currentUserId;
     const isSaved = !!savedRecord;
-    const savesCount = playlist._count.savedBy;
+    let savesCount = playlist._count.savedBy;
+
+    // Якщо плейліст приватний, видаляємо старі збереження (якщо вони були) і обнуляємо лічильник
+    if (!playlist.isPublic) {
+      if (savesCount > 0) {
+        await prisma.savedPlaylist.deleteMany({ where: { playlistId } });
+      }
+      savesCount = 0;
+    }
+
     const trackCovers = (playlist.tracks || [])
       .map(t => t.track?.albumCoverUrl)
       .filter((url): url is string => Boolean(url));
@@ -482,10 +491,11 @@ router.delete('/:id/save', authenticateToken, async (req: Request, res: Response
   }
 });
 
-// Отримати список користувачів, які зберегли цей плейліст
-router.get('/:id/saved-users', optionalAuthenticateToken, async (req: Request, res: Response) => {
+// Отримати список користувачів, які зберегли цей плейліст (тільки для автора плейлиста)
+router.get('/:id/saved-users', authenticateToken, async (req: Request, res: Response) => {
   try {
     const playlistId = parseInt(req.params.id as string, 10);
+    const userId = (req as any).user?.userId;
 
     if (isNaN(playlistId)) {
       return res.status(400).json({ error: 'Некоректний ID плейлиста' });
@@ -497,6 +507,10 @@ router.get('/:id/saved-users', optionalAuthenticateToken, async (req: Request, r
 
     if (!playlist) {
       return res.status(404).json({ error: 'Плейлист не знайдено' });
+    }
+
+    if (playlist.userId !== userId) {
+      return res.status(403).json({ error: 'Тільки автор може бачити список користувачів, які зберегли плейлист' });
     }
 
     const savedRecords = await prisma.savedPlaylist.findMany({
@@ -563,7 +577,21 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ status: 'success', playlist: updatedPlaylist });
+    let currentSavesCount = await prisma.savedPlaylist.count({ where: { playlistId } });
+
+    // Якщо автор робить плейліст приватним, автоматично видаляємо всі збереження цього плейліста
+    if (isPublic === false) {
+      await prisma.savedPlaylist.deleteMany({
+        where: { playlistId }
+      });
+      currentSavesCount = 0;
+    }
+
+    res.json({ 
+      status: 'success', 
+      playlist: updatedPlaylist,
+      savesCount: currentSavesCount
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка оновлення плейлиста' });

@@ -407,17 +407,6 @@
             </svg>
           </div>
         </div>
-
-        <!-- Footer -->
-        <div class="pt-3 border-t border-border-subtle flex justify-end">
-          <button 
-            type="button"
-            @click="closeUsersModal"
-            class="px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:bg-surface-alt transition-colors cursor-pointer"
-          >
-            {{ $t('profile.btn_cancel') || 'Закрити' }}
-          </button>
-        </div>
       </div>
     </div>
 

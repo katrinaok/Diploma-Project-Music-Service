@@ -210,7 +210,8 @@
     "queue_move_up": "Перемістити вище",
     "queue_move_down": "Перемістити нижче",
     "queue_remove": "Видалити з черги",
-    "queue_tracks_count": "треків"
+    "queue_tracks_count": "треків",
+    "sync_lyrics": "До поточної стрічки"
   },
   "settings": {
     "title": "Налаштування",
