@@ -17,7 +17,7 @@
 
       <template v-else-if="playlist">
         <!-- Back Button -->
-        <a :href="isOwner ? `/${$i18n.locale}/profile` : `/${$i18n.locale}/profile?id=${playlist.userId}`" class="inline-flex items-center gap-2 text-sm font-medium text-text-tertiary hover:text-text-accent transition-colors mb-2">
+        <a :href="backProfileUrl" @click="handleBack" class="inline-flex items-center gap-2 text-sm font-medium text-text-tertiary hover:text-text-accent transition-colors mb-2 cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -937,6 +937,38 @@ if (typeof window !== 'undefined') {
     }
   }
 }
+
+const backProfileUrl = computed(() => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get('from');
+    if (from === 'my') {
+      return `/${locale.value}/profile`;
+    }
+    if (from && from !== 'my') {
+      return `/${locale.value}/profile?id=${from}`;
+    }
+  }
+  if (isOwner.value) {
+    return `/${locale.value}/profile`;
+  }
+  if (playlist.value?.userId) {
+    return `/${locale.value}/profile?id=${playlist.value.userId}`;
+  }
+  return `/${locale.value}/profile`;
+});
+
+const handleBack = (e) => {
+  if (e) e.preventDefault();
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('from')) {
+      window.history.back();
+      return;
+    }
+  }
+  window.location.href = backProfileUrl.value;
+};
 
 const isOwner = computed(() => {
   if (!playlist.value) return false;

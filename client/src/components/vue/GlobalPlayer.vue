@@ -589,12 +589,12 @@
           <div class="mb-2">
             <div class="relative h-1.5 bg-black/10 dark:bg-white/20 rounded-full flex items-center group cursor-pointer">
               <div 
-                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none"
-                :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none max-w-full"
+                :style="{ width: `${progressPercentage}%` }"
               ></div>
               <div 
                 class="absolute w-3 h-3 bg-purple-600 dark:bg-white rounded-full shadow-md pointer-events-none"
-                :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 6px)` }"
+                :style="{ left: `calc(${progressPercentage}% - 6px)` }"
               ></div>
               <input 
                 type="range" 
@@ -611,8 +611,8 @@
               />
             </div>
             <div class="flex items-center justify-between text-[10px] font-semibold text-text-tertiary mt-1">
-              <span>{{ formatTime(position) }}</span>
-              <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
+              <span class="tabular-nums">{{ formattedCurrentTime }}</span>
+              <span class="tabular-nums">-{{ formattedRemainingTime }}</span>
             </div>
           </div>
 
@@ -802,12 +802,12 @@
           <div class="px-6 py-1.5">
             <div class="relative h-2 bg-black/10 dark:bg-white/15 rounded-full flex items-center group cursor-pointer">
               <div 
-                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none"
-                :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+                class="absolute left-0 h-full bg-purple-600 dark:bg-purple-500 rounded-full pointer-events-none max-w-full"
+                :style="{ width: `${progressPercentage}%` }"
               ></div>
               <div 
                 class="absolute w-3.5 h-3.5 bg-purple-600 dark:bg-white rounded-full shadow-md pointer-events-none"
-                :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 7px)` }"
+                :style="{ left: `calc(${progressPercentage}% - 7px)` }"
               ></div>
               <input 
                 type="range" 
@@ -824,8 +824,8 @@
               />
             </div>
             <div class="flex items-center justify-between text-[11px] font-semibold text-text-tertiary mt-1.5">
-              <span>{{ formatTime(position) }}</span>
-              <span>-{{ formatTime(Math.max(0, duration - position)) }}</span>
+              <span class="tabular-nums">{{ formattedCurrentTime }}</span>
+              <span class="tabular-nums">-{{ formattedRemainingTime }}</span>
             </div>
           </div>
 
@@ -916,8 +916,8 @@
         <!-- Top Thin Progress Bar -->
         <div class="relative w-full h-1 bg-border-subtle overflow-hidden">
           <div 
-            class="h-full bg-purple-600 dark:bg-purple-500 transition-all duration-300"
-            :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+            class="h-full bg-purple-600 dark:bg-purple-500 transition-all duration-300 max-w-full"
+            :style="{ width: `${progressPercentage}%` }"
           ></div>
         </div>
 
@@ -1143,18 +1143,18 @@
       </div>
 
       <div class="w-full flex items-center gap-3 text-xs text-text-tertiary">
-        <span class="w-10 text-right font-medium">{{ formatTime(position) }}</span>
+        <span class="w-10 text-right font-medium tabular-nums">{{ formattedCurrentTime }}</span>
         <div class="flex-grow relative h-1.5 rounded-lg bg-black/10 dark:bg-white/20 group flex items-center cursor-pointer">
           <!-- Filled portion -->
           <div 
-            class="absolute left-0 h-full bg-purple-500 rounded-lg pointer-events-none" 
-            :style="{ width: `${duration ? (position / duration) * 100 : 0}%` }"
+            class="absolute left-0 h-full bg-purple-500 rounded-lg pointer-events-none max-w-full" 
+            :style="{ width: `${progressPercentage}%` }"
           ></div>
           
           <!-- Thumb -->
           <div 
             class="absolute w-3 h-3 bg-purple-500 rounded-full shadow pointer-events-none"
-            :style="{ left: `calc(${duration ? (position / duration) * 100 : 0}% - 6px)` }"
+            :style="{ left: `calc(${progressPercentage}% - 6px)` }"
           ></div>
 
           <!-- Invisible interactive range input (larger hit area) -->
@@ -1170,7 +1170,7 @@
             class="absolute top-1/2 left-0 w-full -translate-y-1/2 h-6 opacity-0 cursor-pointer z-10 m-0"
           />
         </div>
-        <span class="w-10 text-left font-medium">-{{ formatTime(Math.max(0, duration - position)) }}</span>
+        <span class="w-10 text-left font-medium tabular-nums">-{{ formattedRemainingTime }}</span>
       </div>
     </div>
     
@@ -1527,16 +1527,33 @@ const saveLastPlayed = (track, queue = null, pos = 0) => {
     if (queue && Array.isArray(queue) && queue.length > 0) {
       localStorage.setItem('lastPlayedQueue', JSON.stringify(queue.slice(0, 50)));
     }
-    if (pos > 0) {
+    if (pos > 0 && (!trackObj.duration_ms || pos <= trackObj.duration_ms)) {
       localStorage.setItem('lastPlayedPosition', String(Math.floor(pos)));
+    } else {
+      localStorage.setItem('lastPlayedPosition', '0');
     }
   } catch (e) {
     console.warn('Failed to save last played to localStorage', e);
   }
 };
 
+const loadSavedPosition = (track) => {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = parseInt(localStorage.getItem('lastPlayedPosition') || '0', 10);
+    if (isNaN(raw) || raw < 0) return 0;
+    if (track?.duration_ms && raw > track.duration_ms) {
+      try { localStorage.setItem('lastPlayedPosition', '0'); } catch (e) {}
+      return 0;
+    }
+    return raw;
+  } catch (e) {
+    return 0;
+  }
+};
+
 const initialSavedTrack = loadSavedTrack();
-const initialSavedPosition = typeof window !== 'undefined' ? parseInt(localStorage.getItem('lastPlayedPosition') || '0', 10) : 0;
+const initialSavedPosition = loadSavedPosition(initialSavedTrack);
 
 const isConnected = ref(globalState.isConnected);
 const isCheckingConnection = ref(!globalState.isConnected);
@@ -1545,10 +1562,33 @@ const token = ref(globalState.token);
 const deviceId = ref(globalState.deviceId);
 const isPlaying = ref(globalState.isPlaying);
 const currentTrack = ref(globalState.currentTrack || initialSavedTrack);
-const position = ref(globalState.position || (initialSavedTrack ? (isNaN(initialSavedPosition) ? 0 : initialSavedPosition) : 0));
 const duration = ref(globalState.duration || (initialSavedTrack?.duration_ms || 0));
+const initialRawPos = globalState.position || (initialSavedTrack ? initialSavedPosition : 0);
+const position = ref((duration.value > 0 && initialRawPos > duration.value) ? 0 : initialRawPos);
 const isSeeking = ref(false);
 let progressInterval = null;
+
+const progressPercentage = computed(() => {
+  const dur = Number(duration.value) || 0;
+  if (dur <= 0) return 0;
+  const pos = Math.max(0, Number(position.value) || 0);
+  const pct = (pos / dur) * 100;
+  return Math.min(100, Math.max(0, isNaN(pct) ? 0 : pct));
+});
+
+const formattedCurrentTime = computed(() => {
+  const curPos = Math.max(0, Number(position.value) || 0);
+  const curDur = Number(duration.value) || 0;
+  const safePos = (curDur > 0 && curPos > curDur) ? curDur : curPos;
+  return formatTime(safePos);
+});
+
+const formattedRemainingTime = computed(() => {
+  const curPos = Math.max(0, Number(position.value) || 0);
+  const curDur = Number(duration.value) || 0;
+  const rem = Math.max(0, curDur - curPos);
+  return formatTime(rem);
+});
 
 // Track formatted for LikeButton
 const currentTrackLikeData = computed(() => {
@@ -2405,8 +2445,15 @@ const fetchLyrics = async () => {
 const startProgressTimer = () => {
   stopProgressTimer();
   progressInterval = setInterval(() => {
-    if (isPlaying.value && !isSeeking.value && position.value < duration.value) {
-      position.value = Number(position.value) + 100;
+    if (isPlaying.value && !isSeeking.value) {
+      const curDur = Number(duration.value) || 0;
+      const curPos = Number(position.value) || 0;
+      if (curDur > 0 && curPos >= curDur) {
+        position.value = curDur;
+        stopProgressTimer();
+      } else {
+        position.value = curPos + 100;
+      }
     }
   }, 100);
 };
@@ -2416,10 +2463,17 @@ const stopProgressTimer = () => {
     clearInterval(progressInterval);
     progressInterval = null;
   }
+  const curDur = Number(duration.value) || 0;
   if (currentTrack.value && position.value > 0) {
-    try {
-      localStorage.setItem('lastPlayedPosition', String(Math.floor(position.value)));
-    } catch (e) {}
+    if (!curDur || position.value <= curDur) {
+      try {
+        localStorage.setItem('lastPlayedPosition', String(Math.floor(position.value)));
+      } catch (e) {}
+    } else {
+      try {
+        localStorage.setItem('lastPlayedPosition', '0');
+      } catch (e) {}
+    }
   }
 };
 
@@ -2656,10 +2710,13 @@ const setupSpotifyPlayer = () => {
       originalQueueTracks.value = [...queueTracks.value];
     }
 
+    const stateDur = Number(state.duration) || 0;
+    const statePos = Number(state.position) || 0;
+    duration.value = stateDur;
+
     if (!isSeeking.value) {
-      position.value = state.position;
+      position.value = (stateDur > 0 && statePos > stateDur) ? stateDur : statePos;
     }
-    duration.value = state.duration;
 
     window.dispatchEvent(new CustomEvent('spotify-state-update', { 
       detail: { 

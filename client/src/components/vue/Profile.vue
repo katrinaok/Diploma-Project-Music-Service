@@ -905,7 +905,8 @@ const closePlaylistModal = () => {
 };
 
 const goToPlaylist = (id) => {
-  navigate(`/${locale.value}/playlist/${id}`);
+  const fromParam = isOwnProfile.value ? 'my' : activeProfileUserId.value;
+  navigate(`/${locale.value}/playlist/${id}?from=${fromParam}`);
 };
 
 const goToFavorites = () => {

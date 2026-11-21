@@ -11,45 +11,63 @@
         </p>
       </div>
 
-      <div v-if="message" :class="isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'" class="p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm text-center font-semibold">
-        {{ message }}
+      <div v-if="message" 
+        :class="isError ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/25' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'" 
+        class="flex items-center justify-center gap-2 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm text-center font-medium transition-all">
+        <svg v-if="isError" class="w-4 h-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <svg v-else class="w-4 h-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>{{ message }}</span>
       </div>
 
-      <form class="mt-6 sm:mt-8 space-y-5 sm:space-y-6" @submit.prevent="handleSubmit">
+      <form class="mt-6 sm:mt-8 space-y-5 sm:space-y-6" novalidate @submit.prevent="handleSubmit">
         <div class="flex flex-col gap-3.5 sm:gap-4">
           
           <div v-if="!isLogin">
             <label for="username" class="sr-only">{{ $t('auth.username') }}</label>
-            <input v-model="form.username" id="username" name="username" type="text" required
-              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm transition-all shadow-xs"
+            <input v-model="form.username" id="username" name="username" type="text"
+              @input="clearFieldError('username')"
+              :class="fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong focus:border-purple-500 focus:ring-purple-500/20'"
+              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 text-sm transition-all shadow-xs"
               :placeholder="$t('auth.username')" />
           </div>
 
           <div v-if="!isLogin">
             <label for="email-address" class="sr-only">{{ $t('auth.email') }}</label>
-            <input v-model="form.email" id="email-address" name="email" type="email" required
-              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm transition-all shadow-xs"
+            <input v-model="form.email" id="email-address" name="email" type="email"
+              @input="clearFieldError('email')"
+              :class="fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong focus:border-purple-500 focus:ring-purple-500/20'"
+              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 text-sm transition-all shadow-xs"
               :placeholder="$t('auth.email')" />
           </div>
 
           <div v-else>
             <label for="login-identifier" class="sr-only">{{ $t('auth.login_identifier') }}</label>
-            <input v-model="form.login" id="login-identifier" name="login" type="text" required
-              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm transition-all shadow-xs"
+            <input v-model="form.login" id="login-identifier" name="login" type="text"
+              @input="clearFieldError('login')"
+              :class="fieldErrors.login ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong focus:border-purple-500 focus:ring-purple-500/20'"
+              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 text-sm transition-all shadow-xs"
               :placeholder="$t('auth.login_identifier')" />
           </div>
 
           <div>
             <label for="password" class="sr-only">{{ $t('auth.password') }}</label>
-            <input v-model="form.password" id="password" name="password" type="password" required
-              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm transition-all shadow-xs"
+            <input v-model="form.password" id="password" name="password" type="password"
+              @input="clearFieldError('password')"
+              :class="fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong focus:border-purple-500 focus:ring-purple-500/20'"
+              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 text-sm transition-all shadow-xs"
               :placeholder="$t('auth.password')" />
           </div>
 
           <div v-if="!isLogin">
             <label for="password-confirm" class="sr-only">{{ $t('auth.password_confirm') }}</label>
-            <input v-model="form.passwordConfirm" id="password-confirm" name="passwordConfirm" type="password" required
-              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border-strong bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm transition-all shadow-xs"
+            <input v-model="form.passwordConfirm" id="password-confirm" name="passwordConfirm" type="password"
+              @input="clearFieldError('passwordConfirm')"
+              :class="fieldErrors.passwordConfirm ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border-strong focus:border-purple-500 focus:ring-purple-500/20'"
+              class="appearance-none relative block w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border bg-surface text-text-primary placeholder-text-muted rounded-xl focus:outline-none focus:ring-2 text-sm transition-all shadow-xs"
               :placeholder="$t('auth.password_confirm')" />
           </div>
 
@@ -105,6 +123,32 @@ const form = reactive({
   passwordConfirm: ''
 });
 
+const fieldErrors = reactive({
+  username: false,
+  email: false,
+  login: false,
+  password: false,
+  passwordConfirm: false
+});
+
+const clearFieldError = (field) => {
+  fieldErrors[field] = false;
+  if (message.value && isError.value) {
+    message.value = '';
+    isError.value = false;
+  }
+};
+
+const resetErrors = () => {
+  fieldErrors.username = false;
+  fieldErrors.email = false;
+  fieldErrors.login = false;
+  fieldErrors.password = false;
+  fieldErrors.passwordConfirm = false;
+  message.value = '';
+  isError.value = false;
+};
+
 onMounted(() => {
   // If user already has an active token, immediately redirect to /home
   const token = localStorage.getItem('token');
@@ -122,20 +166,97 @@ onMounted(() => {
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
-  message.value = '';
+  resetErrors();
   form.username = '';
   form.password = '';
   form.passwordConfirm = '';
 };
 
 const handleSubmit = async () => {
-  message.value = '';
-  isError.value = false;
+  resetErrors();
 
-  if (!isLogin.value && form.password !== form.passwordConfirm) {
-    isError.value = true;
-    message.value = t('auth.err_password_mismatch');
-    return;
+  if (isLogin.value) {
+    const hasLogin = !!form.login.trim();
+    const hasPass = !!form.password;
+
+    if (!hasLogin && !hasPass) {
+      fieldErrors.login = true;
+      fieldErrors.password = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_fields');
+      return;
+    }
+    if (!hasLogin) {
+      fieldErrors.login = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_login');
+      return;
+    }
+    if (!hasPass) {
+      fieldErrors.password = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_password');
+      return;
+    }
+  } else {
+    const hasUsername = !!form.username.trim();
+    const hasEmail = !!form.email.trim();
+    const hasPass = !!form.password;
+    const hasConfirm = !!form.passwordConfirm;
+
+    if (!hasUsername && !hasEmail && !hasPass && !hasConfirm) {
+      fieldErrors.username = true;
+      fieldErrors.email = true;
+      fieldErrors.password = true;
+      fieldErrors.passwordConfirm = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_fields');
+      return;
+    }
+
+    if (!hasUsername) {
+      fieldErrors.username = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_username');
+      return;
+    }
+
+    if (!hasEmail) {
+      fieldErrors.email = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_email');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      fieldErrors.email = true;
+      isError.value = true;
+      message.value = t('auth.err_invalid_email');
+      return;
+    }
+
+    if (!hasPass) {
+      fieldErrors.password = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_password');
+      return;
+    }
+
+    if (!hasConfirm) {
+      fieldErrors.passwordConfirm = true;
+      isError.value = true;
+      message.value = t('auth.err_fill_password_confirm');
+      return;
+    }
+
+    if (form.password !== form.passwordConfirm) {
+      fieldErrors.password = true;
+      fieldErrors.passwordConfirm = true;
+      isError.value = true;
+      message.value = t('auth.err_password_mismatch');
+      return;
+    }
   }
 
   const endpoint = isLogin.value ? '/api/auth/login' : '/api/auth/register';
